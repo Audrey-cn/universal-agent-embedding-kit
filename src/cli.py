@@ -884,10 +884,16 @@ def audit(iterations: int, output: str, baseline: str | None):
         f"{gates['benchmark_evidence_count']} suites",
         f"errors: {len(result['errors'])}",
     )
+    ci_url = gates.get("ci_remote_run_url")
+    ci_detail = (
+        f"✓ {ci_url}" if gates["ci_remote_verified"] and ci_url
+        else "✓ detected" if gates["ci_remote_verified"]
+        else "配置完成，待远端运行"
+    )
     table.add_row(
         "CI 远端验证",
-        "✗" if not gates["ci_remote_verified"] else "✓",
-        "配置完成，待远端运行",
+        "✓" if gates["ci_remote_verified"] else "✗",
+        ci_detail,
     )
     table.add_row(
         "外部 Baseline",

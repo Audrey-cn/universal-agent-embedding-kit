@@ -44,3 +44,62 @@ jobs:
 
       - name: Product interface coverage
         run: python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing
+
+  release-gate:
+    name: Release gate (wheel + install + smoke)
+    needs: quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist/
+
+      - name: Install wheel in clean venv
+        run: |
+          python -m venv /tmp/release-venv
+          /tmp/release-venv/bin/pip install dist/uaek-0.1.0-*.whl
+
+      - name: CLI smoke test
+        run: |
+          /tmp/release-venv/bin/uaek --version
+          /tmp/release-venv/bin/uaek --help
+
+      - name: Benchmark quick (from wheel)
+        run: |
+          /tmp/release-venv/bin/uaek benchmark --suite quick --iterations 1 \
+            --output /tmp/release-benchmarks
+
+      - name: Benchmark adversarial (from wheel)
+        run: |
+          /tmp/release-venv/bin/uaek benchmark --suite adversarial --iterations 1 \
+            --output /tmp/release-benchmarks
+
+      - name: Capability manifest dry-run (from wheel)
+        run: |
+          /tmp/release-venv/bin/uaek capability batch \
+            benchmarks/manifests/capability-batch.ci-example.json \
+            --dry-run \
+            --output /tmp/release-benchmarks/manifest-validation.json
+
+      - name: Audit (from wheel)
+        run: |
+          /tmp/release-venv/bin/uaek audit --iterations 1 \
+            --output /tmp/release-benchmarks
+
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gate-evidence
+          path: /tmp/release-benchmarks/
+          retention-days: 90
