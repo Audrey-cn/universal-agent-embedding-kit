@@ -332,6 +332,72 @@ def test_cli_capability_batch_runs_manifest_and_writes_matrix(tmp_path: Path, mo
     assert batch["status"] == "completed"
 
 
+def test_cli_capability_batch_dry_run_validates_manifest_without_running(
+    tmp_path: Path, monkeypatch
+):
+    runner = CliRunner()
+    output_path = tmp_path / "dry-run.json"
+    manifest_path = tmp_path / "capability-manifest.json"
+    manifest = {
+        "artifact_dir": str(tmp_path / "capability-runs"),
+        "provider_home_root": str(tmp_path / "provider-homes"),
+        "providers": [
+            {
+                "provider": "codex",
+                "command": ["codex", "exec"],
+                "provider_home_seed_paths": ["~/missing/auth.json"],
+            }
+        ],
+    }
+    _write_json(manifest_path, manifest)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("dry-run must not execute providers")
+
+    monkeypatch.setattr("src.capability_matrix.run_capability_suite_live", fail_if_called)
+
+    result = runner.invoke(
+        main,
+        [
+            "capability",
+            "batch",
+            str(manifest_path),
+            "--dry-run",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Capability Batch Dry Run" in result.output
+    validation = json.loads(output_path.read_text(encoding="utf-8"))
+    assert validation["valid"] is True
+    assert validation["providers"][0]["provider_home"] == str(tmp_path / "provider-homes/codex")
+    assert validation["warnings"]
+
+
+def test_cli_capability_batch_dry_run_rejects_bad_output_mode(tmp_path: Path):
+    runner = CliRunner()
+    manifest_path = tmp_path / "bad-capability-manifest.json"
+    _write_json(
+        manifest_path,
+        {
+            "providers": [
+                {
+                    "provider": "codex",
+                    "command": ["codex", "exec"],
+                    "output_mode": "xml",
+                }
+            ]
+        },
+    )
+
+    result = runner.invoke(main, ["capability", "batch", str(manifest_path), "--dry-run"])
+
+    assert result.exit_code == 1
+    assert "output_mode unsupported" in result.output
+
+
 FAKE_PROVIDER = '''
 import sys
 prompt = sys.argv[-1]

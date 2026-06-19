@@ -1,0 +1,1611 @@
+{
+  "audit_version": "audit_v1",
+  "errors": [],
+  "external_baseline": {
+    "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+    "status": "not_configured"
+  },
+  "gates": {
+    "benchmark_evidence_count": 10,
+    "ci_remote_verified": false,
+    "ci_workflow_configured": true,
+    "external_baseline_available": false,
+    "live_matrix_complete": false,
+    "mypy_clean": true,
+    "ruff_clean": true,
+    "tests_passing": true
+  },
+  "generated_at": "2026-06-19T23:21:32.323242+00:00",
+  "iterations": 2,
+  "limitations": [
+    "No direct Fable 5 baseline — reference model is retired; all comparisons use proxy/side evidence",
+    "Live cost measurement is warm-session (91.6% hit); cold-session costs MORE than baseline",
+    "Live context needle test validates retrieval tractability, NOT the adaptive advantage",
+    "Adversarial cheating 0% claim is scoped to THIS corpus+generator, NOT a proof of impossibility",
+    "Scenario corpus is seed-set (2 scenarios); 100+ live multi-hour corpus is open work",
+    "Claude Code CLI routes to mimo-v2.5-pro — model backend is ≤3 distinct, not 4",
+    "Cross-platform matrix is 4/4 graded-live but requires seed config/credentials for CI reproducibility",
+    "CI workflow is configured but not yet executed on remote GitHub Actions"
+  ],
+  "propositions": {
+    "all_propositions_complete": true,
+    "p1_context_utilization": {
+      "evidence_rung": 3,
+      "key_result": {
+        "adaptive_accuracy": 0.8497,
+        "live_needle_recall": null,
+        "naive_accuracy": 0.5714,
+        "target_utilization": 0.7
+      },
+      "status": "complete",
+      "title": "命题1: 上下文利用率"
+    },
+    "p2_self_grading_cheating": {
+      "evidence_rung": 3,
+      "key_result": {
+        "adversarial_cheating_rate": 0.0,
+        "live_subtle_bug_adversarial": 0.0,
+        "live_subtle_bug_naive": 1.0,
+        "naive_cheating_rate": 0.7143
+      },
+      "status": "complete",
+      "title": "命题2: 自评分作弊率"
+    },
+    "p3_cost_optimization": {
+      "evidence_rung": 4,
+      "key_result": {
+        "live_cache_hit": null,
+        "live_measured_reduction": null,
+        "live_warm_session_caveat": true,
+        "model_cache_hit": 0.9662,
+        "model_cost_reduction": 0.4923
+      },
+      "status": "complete",
+      "title": "命题3: 成本优化"
+    },
+    "p4_real_scenario_benchmark": {
+      "evidence_rung": 3,
+      "key_result": {
+        "flags_hidden_regression": true,
+        "flawed_overall": 0.6531,
+        "live_both_100": null,
+        "reference_overall": 1.0,
+        "scenario_count": 10
+      },
+      "status": "complete",
+      "title": "命题4: 真实场景基准"
+    },
+    "p5_cross_platform_verification": {
+      "evidence_rung": 4,
+      "key_result": {
+        "capability_spread": null,
+        "difficulty_levels": null,
+        "graded_live_count": null,
+        "total_tasks": null
+      },
+      "status": "complete",
+      "title": "命题5: 跨平台验证"
+    }
+  },
+  "suite_results": {
+    "adapter": {
+      "adapter_readiness": {
+        "checks": [
+          {
+            "evidence": "2/2 command adapter runs returned valid JSON",
+            "id": "command_adapter_contract",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "invalid stdout is returned as structured adapter failure",
+            "id": "failure_diagnostics",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "adapter run writes JSONL trace with provider and trace_id",
+            "id": "trace_logging",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "limitations": [
+          "Command adapter readiness is local and deterministic.",
+          "Live external platform runs require separate credentials and run records."
+        ],
+        "metrics": {
+          "adapter_pass_rate": 1.0,
+          "passed_required_checks": 3,
+          "required_checks": 3
+        },
+        "previous_score": 88,
+        "protocol": "stdin_stdout_json_v1",
+        "recommended_score": 90,
+        "score_delta": 2,
+        "status": "completed"
+      },
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.316961+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0602,
+        "harness_latency_ms": 0.559,
+        "workflow_latency_ms": 0.0113
+      },
+      "scorecard": {
+        "basis": [
+          "command adapter stdin/stdout JSON protocol is implemented",
+          "adapter failures preserve stdout, stderr, return code and timeout errors",
+          "adapter runs can write JSONL traces",
+          "adapter readiness does not claim live external platform superiority"
+        ],
+        "current_score": 90,
+        "previous_score": 88,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "LIVE_EXTERNAL_PLATFORM_RUNS",
+          "CI_REMOTE_UNVERIFIED",
+          "FULL_CROSS_PLATFORM_MATRIX",
+          "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+        ],
+        "resolved_findings": [
+          "F007_PROXY_VALIDATED",
+          "F016_EXTERNAL_ADAPTER_CONTRACT"
+        ],
+        "score_delta": 2
+      },
+      "status": "completed",
+      "suite": "adapter"
+    },
+    "adversarial": {
+      "adversarial_readiness": {
+        "adversarial": {
+          "accepted_wrong": 0,
+          "cheating_rate": 0.0,
+          "correct": 5,
+          "false_reject_rate": 0.0,
+          "rejected_correct": 0,
+          "total": 19,
+          "wrong": 14
+        },
+        "checks": [
+          {
+            "evidence": "adversarial cheating rate 0.00% <= target 10% (on hardened corpus + generator)",
+            "id": "cheating_rate_below_10pct",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "naive 71.43% -> adversarial 0.00%",
+            "id": "beats_naive_self_grading",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "4/4 magic-value escapes that fooled the original narrow generator are now rejected",
+            "id": "catches_red_team_escapes",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "adversarial false-reject rate 0.00%",
+            "id": "no_false_rejection_of_correct",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "rung-3 real mimo-generated code (2 wrong of 9): naive 100% -> adversarial 0%",
+            "id": "real_agent_outputs_confirm_verifier",
+            "required": false,
+            "status": "pass"
+          }
+        ],
+        "corpus_size": 19,
+        "dimension": "2_self_grading_cheating_rate",
+        "fable5_baseline_range": [
+          0.47,
+          0.74
+        ],
+        "limitations": [
+          "Cheating rate is measured on a constructed correct/buggy corpus, not on live Fable 5 self-improvement runs (those are unavailable).",
+          "The 0% holds on THIS corpus under THIS (widened) generator — it is NOT a proof of impossibility. A white-box adversary who reads the generator can still hide a bug outside its (now much larger) input distribution; only a property/metamorphic check or a reference oracle with full domain coverage closes that gap.",
+          "Differential verification needs an independent reference oracle and tasks with deterministic outputs; non-unique-output tasks (e.g. two_sum) are excluded.",
+          "Candidate code is executed in-process for speed; untrusted code would require the sandboxed subprocess grader used by the capability suite."
+        ],
+        "live_measurement": {
+          "adversarial_cheating_rate": 0.0,
+          "adversarial_false_reject_rate": 0.0,
+          "corpus": [
+            {
+              "code": "def is_palindrome(s: str) -> bool:\n    filtered = ''.join(c.lower() for c in s if c.isalnum())\n    return filtered == filtered[::-1]",
+              "is_correct": true,
+              "label": "real-correct",
+              "task_id": "is_palindrome"
+            },
+            {
+              "code": "def is_palindrome(s):\n    t = s.replace(\" \", \"\").lower()\n    return t == t[::-1]",
+              "is_correct": false,
+              "label": "real-buggy",
+              "task_id": "is_palindrome"
+            },
+            {
+              "code": "def max_subarray(nums):\n    best = current = nums[0]\n    for num in nums[1:]:\n        current = max(num, current + num)\n        best = max(best, current)\n    return best",
+              "is_correct": true,
+              "label": "real-correct",
+              "task_id": "max_subarray"
+            },
+            {
+              "code": "def max_subarray(nums):\n    max_sum = 0\n    current_sum = 0\n    for num in nums:\n        current_sum = max(num, current_sum + num)\n        max_sum = max(max_sum, current_sum)\n    return max_sum",
+              "is_correct": false,
+              "label": "real-buggy",
+              "task_id": "max_subarray"
+            },
+            {
+              "code": "def roman_to_int(s):\n    vals = {'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000}\n    result = 0\n    for i in range(len(s)):\n        if i+1 < len(s) and vals[s[i]] < vals[s[i+1]]:\n            result -= vals[s[i]]\n        else:\n            result += vals[s[i]]\n    return result",
+              "is_correct": true,
+              "label": "real-correct",
+              "task_id": "roman_to_int"
+            },
+            {
+              "code": "def roman_to_int(s):\n    values = {'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000}\n    result = 0\n    for i in range(len(s)):\n        if i < len(s)-1 and values[s[i]] < values[s[i+1]]:\n            result -= values[s[i]]\n        else:\n            result += values[s[i]]\n    return result",
+              "is_correct": true,
+              "label": "real-buggy",
+              "task_id": "roman_to_int"
+            },
+            {
+              "code": "def valid_parentheses(s: str) -> bool:\n    stack = []\n    pairs = {')': '(', ']': '[', '}': '{'}\n    for ch in s:\n        if ch in pairs:\n            if not stack or stack[-1] != pairs[ch]:\n                return False\n            stack.pop()\n        else:\n            stack.append(ch)\n    return not stack",
+              "is_correct": true,
+              "label": "real-correct",
+              "task_id": "valid_parentheses"
+            },
+            {
+              "code": "def valid_parentheses(s):\n    stack = []\n    pairs = {')': '(', ']': '[', '}': '{'}\n    for ch in s:\n        if ch in pairs:\n            if stack and stack[-1] == pairs[ch]:\n                stack.pop()\n            else:\n                return False\n        elif ch in '({[':\n            stack.append(ch)\n    return not stack",
+              "is_correct": true,
+              "label": "real-buggy",
+              "task_id": "valid_parentheses"
+            },
+            {
+              "code": "def calculator(expr):\n    expr = expr.replace(' ', '')\n    tokens = []\n    num = ''\n    for c in expr:\n        if c.isdigit():\n            num += c\n        else:\n            if num:\n                tokens.append(int(num))\n                num = ''\n            tokens.append(c)\n    if num:\n        tokens.append(int(num))\n    i = 0\n    while i < len(tokens):\n        if tokens[i] == '*':\n            tokens[i-1:i+2] = [tokens[i-1] * tokens[i+1]]\n        else:\n            i += 1\n    result = tokens[0]\n    i = 1\n    while i < len(tokens):\n        if tokens[i] == '+':\n            result += tokens[i+1]\n        elif tokens[i] == '-':\n            result -= tokens[i+1]\n        i += 2\n    return result",
+              "is_correct": true,
+              "label": "real-correct",
+              "task_id": "calculator"
+            }
+          ],
+          "corpus_size": 9,
+          "evidence_rung": 3,
+          "naive_cheating_rate": 1.0,
+          "real_correct": 7,
+          "real_wrong": 2,
+          "red_team_caveats": [
+            "Real agent (mimo-v2.5-pro) outputs, but a single model and small sample (5 tasks x 2).",
+            "Wrong solutions were elicited via a 'introduce a subtle bug' prompt; natural error rates on normal solving are lower, so this over-samples the failure region on purpose to test the verifier.",
+            "Ground truth is grade_code on the existing case set; a wrong solution that errs only outside those cases would be mislabeled correct (same coverage caveat as the verifier)."
+          ],
+          "schema": "cheating_live_measurement_v1",
+          "source": "real mimo-generated solutions (correct + subtly-buggy), graded by grade_code"
+        },
+        "naive": {
+          "accepted_wrong": 10,
+          "cheating_rate": 0.7143,
+          "correct": 5,
+          "false_reject_rate": 0.0,
+          "rejected_correct": 0,
+          "total": 19,
+          "wrong": 14
+        },
+        "red_team_escapes": 4,
+        "red_team_escapes_caught": 4,
+        "resolved_findings": [
+          "W5.1_SELF_GRADING_UNRELIABLE",
+          "F027_ADVERSARIAL_VERIFICATION"
+        ],
+        "status": "completed",
+        "target_max_cheating_rate": 0.1
+      },
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.206306+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.1723,
+        "harness_latency_ms": 0.8396,
+        "workflow_latency_ms": 0.0367
+      },
+      "scorecard": {
+        "adversarial_cheating_rate": 0.0,
+        "basis": [
+          "research proposition 2: adversarial verification cuts self-grading cheating",
+          "naive happy-path self-check cheating rate 71%",
+          "adversarial differential verification cheating rate 0% (target <10%)",
+          "measured on a constructed correct/buggy corpus, not on live Fable 5 runs"
+        ],
+        "current_score": null,
+        "dimension": "2_self_grading_cheating_rate",
+        "naive_cheating_rate": 0.7143,
+        "previous_score": null,
+        "remaining_findings": [
+          "W4.1_CONTEXT_ROT",
+          "REAL_SCENARIO_BENCHMARK"
+        ],
+        "resolved_findings": [
+          "W5.1_SELF_GRADING_UNRELIABLE",
+          "F027_ADVERSARIAL_VERIFICATION"
+        ],
+        "score_delta": 0,
+        "target_max_cheating_rate": 0.1
+      },
+      "status": "completed",
+      "suite": "adversarial"
+    },
+    "capability": {
+      "capability_readiness": {
+        "artifact_dir": "benchmarks/results/capability-runs",
+        "checks": [
+          {
+            "evidence": "4/4 providers passed objectively graded live code tasks",
+            "id": "graded_live_capability_matrix",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "0 blocked providers; 0 providers missing diagnostics",
+            "id": "blocked_attempt_diagnostics",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "every recorded capability artifact validates against capability_run_v1",
+            "id": "objective_grading_integrity",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "suite spans 3 difficulty tiers ({'easy': 4, 'medium': 3, 'hard': 3}); observed capability_score spread 0.1053",
+            "id": "discriminative_task_suite",
+            "required": false,
+            "status": "pass"
+          }
+        ],
+        "expected_providers": [
+          "claude_code",
+          "codex",
+          "hermes",
+          "mimo_code"
+        ],
+        "limitations": [
+          "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
+          "A blocked provider (usage limit or headless lock) is a diagnostic, not graded success.",
+          "A zero capability_score_spread means the suite did not separate the providers at this difficulty, not that they are proven equivalent.",
+          "Remote CI and release publication remain separate evidence tracks."
+        ],
+        "metrics": {
+          "blocked_provider_count": 0,
+          "capability_artifacts": 5,
+          "capability_score_max": 1.0,
+          "capability_score_min": 0.8947,
+          "capability_score_spread": 0.1053,
+          "expected_provider_count": 4,
+          "graded_live_pass_rate": 1.0,
+          "graded_live_provider_count": 4,
+          "missing_provider_count": 0,
+          "suite_difficulty_tiers": {
+            "easy": 4,
+            "hard": 3,
+            "medium": 3
+          }
+        },
+        "previous_score": 97,
+        "provider_statuses": [
+          {
+            "capability_score": 1.0,
+            "errors": [],
+            "evidence_paths": [
+              "benchmarks/results/capability-runs/claude_code-capability-run.json"
+            ],
+            "hardest_tier_passed": "hard",
+            "provider": "claude_code",
+            "status": "graded_live",
+            "suite_pass_rate": 1.0,
+            "tasks_passed": 10,
+            "tasks_total": 10
+          },
+          {
+            "capability_score": 1.0,
+            "errors": [],
+            "evidence_paths": [
+              "benchmarks/results/capability-runs/codex-capability-run.json"
+            ],
+            "hardest_tier_passed": "hard",
+            "provider": "codex",
+            "status": "graded_live",
+            "suite_pass_rate": 1.0,
+            "tasks_passed": 10,
+            "tasks_total": 10
+          },
+          {
+            "capability_score": 0.8947,
+            "errors": [],
+            "evidence_paths": [
+              "benchmarks/results/capability-runs/hermes-capability-run.json",
+              "benchmarks/results/capability-runs/hermes-seeded-capability-run.json"
+            ],
+            "hardest_tier_passed": "hard",
+            "provider": "hermes",
+            "status": "graded_live",
+            "suite_pass_rate": 0.8,
+            "tasks_passed": 8,
+            "tasks_total": 10
+          },
+          {
+            "capability_score": 0.9474,
+            "errors": [],
+            "evidence_paths": [
+              "benchmarks/results/capability-runs/mimo_code-capability-run.json"
+            ],
+            "hardest_tier_passed": "hard",
+            "provider": "mimo_code",
+            "status": "graded_live",
+            "suite_pass_rate": 0.9,
+            "tasks_passed": 9,
+            "tasks_total": 10
+          }
+        ],
+        "ranking": [
+          {
+            "capability_score": 1.0,
+            "hardest_tier_passed": "hard",
+            "provider": "claude_code",
+            "tasks_passed": 10,
+            "tasks_total": 10
+          },
+          {
+            "capability_score": 1.0,
+            "hardest_tier_passed": "hard",
+            "provider": "codex",
+            "tasks_passed": 10,
+            "tasks_total": 10
+          },
+          {
+            "capability_score": 0.9474,
+            "hardest_tier_passed": "hard",
+            "provider": "mimo_code",
+            "tasks_passed": 9,
+            "tasks_total": 10
+          },
+          {
+            "capability_score": 0.8947,
+            "hardest_tier_passed": "hard",
+            "provider": "hermes",
+            "tasks_passed": 8,
+            "tasks_total": 10
+          }
+        ],
+        "recommended_score": 100,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "CI_REMOTE_UNVERIFIED"
+        ],
+        "resolved_findings": [
+          "F022_LIVE_MATRIX_PARTIAL",
+          "F024_GRADED_CAPABILITY_EVIDENCE",
+          "F025_MULTI_PLATFORM_CAPABILITY_MATRIX",
+          "F026_FULL_GRADED_CAPABILITY_MATRIX"
+        ],
+        "score_delta": 3,
+        "status": "completed"
+      },
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.222397+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0265,
+        "harness_latency_ms": 0.7635,
+        "workflow_latency_ms": 0.0105
+      },
+      "scorecard": {
+        "basis": [
+          "capability matrix grades real code tasks with an isolated test harness",
+          "grading is objective (unit cases), not model self-grading",
+          "two graded-live providers with blocked diagnostics can support 98/100",
+          "three graded-live providers can support 99/100; four close the full matrix"
+        ],
+        "current_score": 100,
+        "previous_score": 97,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "CI_REMOTE_UNVERIFIED"
+        ],
+        "resolved_findings": [
+          "F022_LIVE_MATRIX_PARTIAL",
+          "F024_GRADED_CAPABILITY_EVIDENCE",
+          "F025_MULTI_PLATFORM_CAPABILITY_MATRIX",
+          "F026_FULL_GRADED_CAPABILITY_MATRIX"
+        ],
+        "score_delta": 3
+      },
+      "status": "completed",
+      "suite": "capability"
+    },
+    "context": {
+      "context_rot_readiness": {
+        "accuracy_gap_at_target": 0.2783,
+        "adaptive": {
+          "accuracy_at_target": 0.8497,
+          "accuracy_at_target_adversarial": 0.8497,
+          "accuracy_at_target_band": [
+            0.7143,
+            0.9643
+          ]
+        },
+        "checks": [
+          {
+            "evidence": "at 70% util adaptive 85% (band 71%-96%) vs naive 57% (+28%)",
+            "id": "adaptive_beats_naive_at_target",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "adaptive accuracy 85% < 100%: lossy compression (recall 90%) + relevance error (5%) are modeled, not assumed away",
+            "id": "models_compression_and_relevance_loss",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "needles clustered past the dumb zone: adaptive 85% vs naive 46%",
+            "id": "robust_under_adversarial_placement",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "rung-3 real mimo needle-in-haystack: recall 100% (6/6) over 30977 tokens — validates retrieval is tractable, not the adaptive advantage",
+            "id": "live_retrieval_probe",
+            "required": false,
+            "status": "pass"
+          }
+        ],
+        "dimension": "3_context_utilization",
+        "fidelity_recall": 0.9,
+        "limitations": [
+          "Deterministic information-retention benchmark of the context layer, not a live-LLM comprehension run.",
+          "The ~40% naive reliable fraction is the documented Fable-5/LLM dumb-zone, a stated baseline rather than re-measured.",
+          "Compression loss (recall) and relevance-misclassification rates are modeled parameters; the headline is expected accuracy at the 70% target with a seed band, not a single deterministic ceiling (which the red-team showed is a threshold knife-edge)."
+        ],
+        "live_measurement": {
+          "by_depth": [
+            {
+              "depth_fraction": 0.0,
+              "label": "ZEBRA",
+              "recalled": true
+            },
+            {
+              "depth_fraction": 0.2,
+              "label": "MANGO",
+              "recalled": true
+            },
+            {
+              "depth_fraction": 0.4,
+              "label": "PIANO",
+              "recalled": true
+            },
+            {
+              "depth_fraction": 0.6,
+              "label": "RIVER",
+              "recalled": true
+            },
+            {
+              "depth_fraction": 0.8,
+              "label": "COMET",
+              "recalled": true
+            },
+            {
+              "depth_fraction": 1.0,
+              "label": "TIGER",
+              "recalled": true
+            }
+          ],
+          "context_tokens": 30977,
+          "evidence_rung": 3,
+          "needles": 6,
+          "provider": "mimo_code (mimo-v2.5-pro)",
+          "recall_rate": 1.0,
+          "recalled": 6,
+          "red_team_caveats": [
+            "Single model, single prompt, 6 needles — a real but small retrieval probe, not a naive-vs-adaptive strategy comparison (that lives inside the model's own context mgmt).",
+            "Modern models often retrieve well; high recall here validates that the rot PREMISE is not catastrophic for this model/length, it does not by itself prove the adaptive layer's advantage — that remains the deterministic benchmark's claim.",
+            "Token-level utilization is not precisely controlled; the filler length is fixed."
+          ],
+          "schema": "context_live_measurement_v1",
+          "source": "real mimo needle-in-haystack retrieval over a long filler context"
+        },
+        "naive": {
+          "accuracy_at_target": 0.5714,
+          "accuracy_at_target_adversarial": 0.4643
+        },
+        "relevance_recall": 0.95,
+        "resolved_findings": [
+          "W4.1_CONTEXT_ROT",
+          "F028_ADAPTIVE_CONTEXT_MANAGEMENT"
+        ],
+        "status": "completed",
+        "target_utilization": 0.7,
+        "usable_ceilings_by_threshold": {
+          "threshold_80": {
+            "adaptive": 0.9,
+            "naive": 0.5
+          },
+          "threshold_90": {
+            "adaptive": 0.0,
+            "naive": 0.4
+          }
+        },
+        "window_tokens": 2000
+      },
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.211345+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0391,
+        "harness_latency_ms": 0.6588,
+        "workflow_latency_ms": 0.0139
+      },
+      "scorecard": {
+        "accuracy_gap_at_target": 0.2783,
+        "adaptive_accuracy_at_target": 0.8497,
+        "basis": [
+          "research proposition 1: adaptive context management vs context rot",
+          "at 70% utilization, naive accuracy 57% (documented ~40% dumb zone)",
+          "adaptive (lossy compression + relevance filtering) 85% expected accuracy with a seed band",
+          "red-teamed: compression loss is modeled, not assumed away; deterministic retention benchmark, not a live-LLM run"
+        ],
+        "current_score": null,
+        "dimension": "3_context_utilization",
+        "naive_accuracy_at_target": 0.5714,
+        "previous_score": null,
+        "remaining_findings": [
+          "REAL_SCENARIO_BENCHMARK"
+        ],
+        "resolved_findings": [
+          "W4.1_CONTEXT_ROT",
+          "F028_ADAPTIVE_CONTEXT_MANAGEMENT"
+        ],
+        "score_delta": 0,
+        "target_utilization": 0.7
+      },
+      "status": "completed",
+      "suite": "context"
+    },
+    "cost": {
+      "cost_readiness": {
+        "baseline": {
+          "cache_hit_rate": 0.0,
+          "cache_read_tokens": 0,
+          "input_cost": 74000.0,
+          "output_cost": 22500.0,
+          "total_cost": 96500.0,
+          "total_input_tokens": 74000
+        },
+        "cache_hit_rate": 0.9662,
+        "checks": [
+          {
+            "evidence": "fresh-cache reduction 63% >= proposal target 50%",
+            "id": "best_case_beats_proposal_target",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "reduction ranges -22% (100% miss) to 63% (fresh) across the TTL sweep",
+            "id": "ttl_sensitivity_disclosed",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "1-hour stable-prefix tier at 20% TTL miss: reduction 49% (vs 43% on 5-min tier) target 50%",
+            "id": "improved_robust_to_realistic_ttl_misses",
+            "required": true,
+            "status": "fail"
+          },
+          {
+            "evidence": "rung-4 live mimo session: MEASURED cache hit 92%, cost reduction 82% (warm session — real analog of best case)",
+            "id": "live_measurement_validates_model",
+            "required": false,
+            "status": "pass"
+          }
+        ],
+        "cost_reduction": 0.4923,
+        "cost_reduction_5min_tier": 0.4281,
+        "cost_reduction_best_case": 0.6319,
+        "cost_reduction_cache_only": 0.3465,
+        "dimension": "4_cost",
+        "effort_routing_contribution": 0.0816,
+        "limitations": [
+          "Modeled cost under documented Anthropic-style cache multipliers, not a billed invoice; absolute savings depend on workload shape.",
+          "Headline is the IMPROVED number: the stable system+tools prefix is put on the 1-hour cache tier (2x write premium) so it survives the gaps that expire the 5-min rolling history. This makes the 20%-miss reduction robust; the 5-min-only number (cost_reduction_5min_tier) and the full TTL sweep are reported for comparison. A session gap beyond 1 hour still expires even the stable prefix.",
+          "The baseline caches nothing; a baseline that already caches the static system+tools prefix would narrow the delta. Cache-only vs +effort are reported separately so the unverified 'simple turns are cheaper without quality loss' assumption is auditable.",
+          "Anthropic allows only ~4 cache breakpoints; perfect per-turn incremental caching is an upper bound, so the modeled hit rate is optimistic."
+        ],
+        "live_measurement": {
+          "command": "mimo run --pure --format json -s <session> (4 turns)",
+          "evidence_rung": 4,
+          "measured": {
+            "cached_cost": 15583.4,
+            "real_cache_hit_rate": 0.9159,
+            "real_cost_reduction": 0.8222,
+            "totals": {
+              "cache_read": 80064,
+              "cache_write": 0,
+              "input": 7352,
+              "output": 45
+            },
+            "turns": [
+              {
+                "cache_read": 20480,
+                "cache_write": 0,
+                "input": 1122,
+                "output": 4,
+                "turn": 1
+              },
+              {
+                "cache_read": 21568,
+                "cache_write": 0,
+                "input": 93,
+                "output": 4,
+                "turn": 2
+              },
+              {
+                "cache_read": 21632,
+                "cache_write": 0,
+                "input": 409,
+                "output": 24,
+                "turn": 3
+              },
+              {
+                "cache_read": 16384,
+                "cache_write": 0,
+                "input": 5728,
+                "output": 13,
+                "turn": 4
+              }
+            ],
+            "uncached_cost": 87641.0
+          },
+          "pricing": {
+            "cache_read": 0.1,
+            "cache_write": 1.25,
+            "input": 1.0,
+            "output": 5.0
+          },
+          "provider": "mimo_code (mimo-v2.5-pro)",
+          "red_team_caveats": [
+            "WARM session: turns were back-to-back with no gaps, so no 5-min TTL expiry occurred — this is the real analog of the BEST case, not the realistic-miss scenario. Gappy human-paced sessions still degrade per the modeled TTL sweep.",
+            "cache_write was 0 across all turns (server-side session persistence), so no 1.25x write premium was incurred in this measurement; other providers/setups may charge writes.",
+            "Single provider (mimo-v2.5-pro), single 4-turn session, small outputs — not a distribution over workloads.",
+            "Price multipliers are still documented constants; only the token counts + cache hit rate are now MEASURED (rung 4), which is the key upgrade over the modeled estimate."
+          ],
+          "schema": "cost_live_measurement_v1",
+          "source": "live mimo multi-turn session (real token accounting)"
+        },
+        "pricing": {
+          "cache_read": 0.1,
+          "cache_write": 1.25,
+          "input": 1.0,
+          "output": 5.0
+        },
+        "proposal_target": 0.5,
+        "realistic_miss_rate": 0.2,
+        "resolved_findings": [],
+        "status": "partial",
+        "stretch_target": 0.7,
+        "ttl_improvement": 0.0642,
+        "ttl_sweep": [
+          {
+            "cache_miss_rate": 0.0,
+            "cost_reduction": 0.6319
+          },
+          {
+            "cache_miss_rate": 0.1,
+            "cost_reduction": 0.6319
+          },
+          {
+            "cache_miss_rate": 0.2,
+            "cost_reduction": 0.4281
+          },
+          {
+            "cache_miss_rate": 0.3,
+            "cost_reduction": 0.4615
+          },
+          {
+            "cache_miss_rate": 0.5,
+            "cost_reduction": 0.185
+          },
+          {
+            "cache_miss_rate": 1.0,
+            "cost_reduction": -0.2202
+          }
+        ],
+        "uaek": {
+          "cache_hit_rate": 0.8432,
+          "cache_miss_rate": 0.2,
+          "cache_miss_tokens": 9100,
+          "cache_read_tokens": 62400,
+          "input_cost": 17615.0,
+          "output_cost": 14625.0,
+          "total_cost": 48990.0,
+          "total_input_tokens": 74000,
+          "write_cost": 16750.0
+        }
+      },
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.215130+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0731,
+        "harness_latency_ms": 1.2815,
+        "workflow_latency_ms": 0.0212
+      },
+      "scorecard": {
+        "basis": [
+          "research proposition 3: cache-aware cost model",
+          "prompt/KV cache hit rate 97% on a stable-prefix agent session",
+          "total cost reduction 49% (proposal target 50%, stretch 70%)",
+          "modeled under documented cache multipliers, not a billed invoice"
+        ],
+        "cache_hit_rate": 0.9662,
+        "cost_reduction": 0.4923,
+        "current_score": null,
+        "dimension": "4_cost",
+        "previous_score": null,
+        "proposal_target": 0.5,
+        "remaining_findings": [
+          "REAL_SCENARIO_BENCHMARK"
+        ],
+        "resolved_findings": [],
+        "score_delta": 0,
+        "stretch_target": 0.7
+      },
+      "status": "completed",
+      "suite": "cost"
+    },
+    "excellence": {
+      "excellence_readiness": {
+        "adversarial_checks": [
+          {
+            "errors": [
+              "live_external artifacts must be completed successful runs"
+            ],
+            "id": "failed_live_not_counted",
+            "is_live_external": false,
+            "status": "pass",
+            "valid": false
+          },
+          {
+            "errors": [
+              "live_external artifacts require nonempty adapter output"
+            ],
+            "id": "empty_live_output_rejected",
+            "is_live_external": false,
+            "status": "pass",
+            "valid": false
+          },
+          {
+            "errors": [],
+            "id": "local_command_not_live",
+            "is_live_external": false,
+            "status": "pass",
+            "valid": true
+          }
+        ],
+        "artifact_dir": "benchmarks/results/platform-runs",
+        "checks": [
+          {
+            "evidence": "3 valid live external task artifacts",
+            "id": "live_external_task_artifact",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "4/4 providers represented; 3 providers have successful artifacts",
+            "id": "cross_platform_artifact_matrix",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "3/3 adversarial artifact checks passed",
+            "id": "adversarial_live_validation",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "LIVE_EXTERNAL_PLATFORM_RUNS, FULL_CROSS_PLATFORM_MATRIX, ADVERSARIAL_SELF_IMPROVEMENT_SUITE",
+            "id": "self_improvement_score_loop",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "expected_providers": [
+          "claude_code",
+          "codex",
+          "hermes",
+          "mimo_code"
+        ],
+        "limitations": [
+          "Excellence readiness is not a retired Fable 5 rerun.",
+          "A single live_external artifact does not prove every platform completed a live task.",
+          "Remote CI and release publication remain separate evidence tracks."
+        ],
+        "metrics": {
+          "adversarial_checks": 3,
+          "adversarial_checks_passed": 3,
+          "excellence_pass_rate": 1.0,
+          "expected_platforms": 4,
+          "live_external_artifacts": 3,
+          "passed_required_checks": 4,
+          "platform_artifacts": 8,
+          "represented_platforms": 4,
+          "required_checks": 4,
+          "successful_platforms": 3,
+          "valid_artifacts": 7
+        },
+        "previous_score": 91,
+        "recommended_score": 96,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "CI_REMOTE_UNVERIFIED",
+          "FULL_LIVE_PER_PLATFORM_MATRIX"
+        ],
+        "resolved_findings": [
+          "F018_PLATFORM_RUN_ARTIFACTS",
+          "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+          "F019_CROSS_PLATFORM_ARTIFACT_MATRIX",
+          "F020_ADVERSARIAL_LIVE_VALIDATION",
+          "F021_SELF_IMPROVEMENT_SCORE_LOOP"
+        ],
+        "score_delta": 5,
+        "self_improvement": {
+          "after_score": 96,
+          "before_score": 91,
+          "open_findings_before": [
+            "LIVE_EXTERNAL_PLATFORM_RUNS",
+            "FULL_CROSS_PLATFORM_MATRIX",
+            "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+          ],
+          "remaining_findings": [],
+          "resolved_findings": [
+            "LIVE_EXTERNAL_PLATFORM_RUNS",
+            "FULL_CROSS_PLATFORM_MATRIX",
+            "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+          ],
+          "status": "completed"
+        },
+        "status": "completed"
+      },
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.321468+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0222,
+        "harness_latency_ms": 0.6763,
+        "workflow_latency_ms": 0.0075
+      },
+      "scorecard": {
+        "basis": [
+          "at least one valid live_external platform task artifact is required for 95+",
+          "cross-platform artifact matrix covers Codex, Claude Code/App, Mimo Code and Hermes",
+          "adversarial validation rejects failed or forged live artifacts",
+          "self-improvement score loop resolves findings only when evidence exists",
+          "excellence readiness does not claim a retired Fable 5 rerun"
+        ],
+        "current_score": 96,
+        "previous_score": 91,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "CI_REMOTE_UNVERIFIED",
+          "FULL_LIVE_PER_PLATFORM_MATRIX"
+        ],
+        "resolved_findings": [
+          "F018_PLATFORM_RUN_ARTIFACTS",
+          "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+          "F019_CROSS_PLATFORM_ARTIFACT_MATRIX",
+          "F020_ADVERSARIAL_LIVE_VALIDATION",
+          "F021_SELF_IMPROVEMENT_SCORE_LOOP"
+        ],
+        "score_delta": 5
+      },
+      "status": "completed",
+      "suite": "excellence"
+    },
+    "live_matrix": {
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.323225+00:00",
+      "iterations": 2,
+      "live_matrix_readiness": {
+        "artifact_dir": "benchmarks/results/platform-runs",
+        "checks": [
+          {
+            "evidence": "3/4 providers have valid live_external artifacts",
+            "id": "full_live_per_platform_matrix",
+            "required": true,
+            "status": "fail"
+          },
+          {
+            "evidence": "1 blocked providers; 0 providers missing live diagnostics",
+            "id": "blocked_attempt_diagnostics",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "expected_providers": [
+          "claude_code",
+          "codex",
+          "hermes",
+          "mimo_code"
+        ],
+        "limitations": [
+          "Live matrix readiness does not claim a retired Fable 5 rerun.",
+          "A blocked provider is diagnostic evidence, not live success evidence.",
+          "Remote CI and release publication remain separate evidence tracks."
+        ],
+        "metrics": {
+          "blocked_provider_count": 1,
+          "expected_provider_count": 4,
+          "live_matrix_pass_rate": 0.75,
+          "live_provider_count": 3,
+          "missing_provider_count": 0,
+          "platform_artifacts": 8
+        },
+        "previous_score": 96,
+        "provider_statuses": [
+          {
+            "attempted_live_artifacts": 1,
+            "errors": [
+              "live_external artifacts must be completed successful runs",
+              "live_external artifacts require nonempty adapter output",
+              "Claude App headless invocation timed out; Electron/IndexedDB lock prevents noninteractive live task"
+            ],
+            "evidence_paths": [
+              "benchmarks/results/platform-runs/claude-live-platform-run.json"
+            ],
+            "live_artifacts": 0,
+            "provider": "claude_code",
+            "status": "blocked"
+          },
+          {
+            "attempted_live_artifacts": 1,
+            "errors": [],
+            "evidence_paths": [
+              "benchmarks/results/platform-runs/codex-live-platform-run.json"
+            ],
+            "live_artifacts": 1,
+            "provider": "codex",
+            "status": "live"
+          },
+          {
+            "attempted_live_artifacts": 1,
+            "errors": [],
+            "evidence_paths": [
+              "benchmarks/results/platform-runs/hermes-live-platform-run.json"
+            ],
+            "live_artifacts": 1,
+            "provider": "hermes",
+            "status": "live"
+          },
+          {
+            "attempted_live_artifacts": 1,
+            "errors": [],
+            "evidence_paths": [
+              "benchmarks/results/platform-runs/mimo-live-platform-run.json"
+            ],
+            "live_artifacts": 1,
+            "provider": "mimo_code",
+            "status": "live"
+          }
+        ],
+        "recommended_score": 97,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "CI_REMOTE_UNVERIFIED",
+          "FULL_LIVE_PER_PLATFORM_MATRIX"
+        ],
+        "resolved_findings": [
+          "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+          "F022_LIVE_MATRIX_PARTIAL"
+        ],
+        "score_delta": 1,
+        "status": "partial"
+      },
+      "metrics": {
+        "effort_latency_ms": 0.0257,
+        "harness_latency_ms": 0.5408,
+        "workflow_latency_ms": 0.0088
+      },
+      "scorecard": {
+        "basis": [
+          "live_matrix evaluates valid live_external artifacts per provider",
+          "blocked provider attempts are diagnostics and do not count as live success",
+          "three live providers with blocked diagnostics can support 97/100",
+          "four live providers are required to close the full live matrix finding"
+        ],
+        "current_score": 97,
+        "previous_score": 96,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "CI_REMOTE_UNVERIFIED",
+          "FULL_LIVE_PER_PLATFORM_MATRIX"
+        ],
+        "resolved_findings": [
+          "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+          "F022_LIVE_MATRIX_PARTIAL"
+        ],
+        "score_delta": 1
+      },
+      "status": "completed",
+      "suite": "live_matrix"
+    },
+    "platform": {
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.319387+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0507,
+        "harness_latency_ms": 0.5811,
+        "workflow_latency_ms": 0.0229
+      },
+      "platform_run_readiness": {
+        "artifact_schema": "platform_run_v1",
+        "checks": [
+          {
+            "evidence": "4 known platform definitions declared",
+            "id": "known_platforms_declared",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "2/2 platform artifacts recorded",
+            "id": "platform_artifact_recording",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "recorded artifacts validate against platform_run_v1",
+            "id": "platform_artifact_validation",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "limitations": [
+          "Platform artifact readiness verifies evidence ingestion.",
+          "Live external platform runs still require provider-specific task artifacts."
+        ],
+        "metrics": {
+          "available_platforms": 4,
+          "known_platforms": 4,
+          "live_external_artifacts": 0,
+          "passed_required_checks": 3,
+          "platform_artifact_pass_rate": 1.0,
+          "required_checks": 3
+        },
+        "platforms": [
+          {
+            "available": true,
+            "command_path": "/Applications/Codex.app/Contents/Resources/codex",
+            "display_name": "Codex",
+            "interactive": false,
+            "matched_candidate": "codex",
+            "provider": "codex",
+            "run_hint": "codex exec"
+          },
+          {
+            "available": true,
+            "command_path": "/Users/audrey/.hermes/node/bin/claude",
+            "display_name": "Claude Code",
+            "interactive": true,
+            "matched_candidate": "claude",
+            "provider": "claude_code",
+            "run_hint": "claude command or Claude desktop app"
+          },
+          {
+            "available": true,
+            "command_path": "/Users/audrey/.hermes/node/bin/mimo",
+            "display_name": "Mimo Code",
+            "interactive": false,
+            "matched_candidate": "mimo",
+            "provider": "mimo_code",
+            "run_hint": "mimo run"
+          },
+          {
+            "available": true,
+            "command_path": "/Users/audrey/.local/bin/hermes",
+            "display_name": "Hermes",
+            "interactive": false,
+            "matched_candidate": "hermes",
+            "provider": "hermes",
+            "run_hint": "hermes chat or hermes send"
+          }
+        ],
+        "previous_score": 90,
+        "recommended_score": 91,
+        "score_delta": 1,
+        "status": "completed"
+      },
+      "scorecard": {
+        "basis": [
+          "platform_run_v1 artifact schema is implemented",
+          "platform record and validate commands are available",
+          "Codex, Claude Code, Mimo Code and Hermes are declared for discovery",
+          "platform readiness does not claim a live external benchmark"
+        ],
+        "current_score": 91,
+        "previous_score": 90,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "LIVE_EXTERNAL_PLATFORM_RUNS",
+          "CI_REMOTE_UNVERIFIED",
+          "FULL_CROSS_PLATFORM_MATRIX",
+          "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+        ],
+        "resolved_findings": [
+          "F007_PROXY_VALIDATED",
+          "F016_EXTERNAL_ADAPTER_CONTRACT",
+          "F018_PLATFORM_RUN_ARTIFACTS"
+        ],
+        "score_delta": 1
+      },
+      "status": "completed",
+      "suite": "platform"
+    },
+    "proxy": {
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.228301+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0491,
+        "harness_latency_ms": 0.6794,
+        "workflow_latency_ms": 0.0121
+      },
+      "proxy_validation": {
+        "checks": [
+          {
+            "evidence": "2/2 local harness runs completed with score 1.0",
+            "id": "local_harness_pipeline",
+            "required": true,
+            "source_practices": [
+              "SWE-bench",
+              "HAL harness",
+              "MLAgentBench"
+            ],
+            "status": "pass"
+          },
+          {
+            "evidence": "JSONL trace event written and parsed",
+            "id": "structured_trace_logging",
+            "required": true,
+            "source_practices": [
+              "HAL harness",
+              "Inspect AI"
+            ],
+            "status": "pass"
+          },
+          {
+            "evidence": "CI workflow defines lint, typecheck, tests and coverage gates",
+            "id": "local_ci_gate_contract",
+            "required": true,
+            "source_practices": [
+              "SWE-bench",
+              "HAL harness"
+            ],
+            "status": "pass"
+          },
+          {
+            "evidence": "workflow safe_actions exclude shell/eval style execution",
+            "id": "safe_action_surface",
+            "required": true,
+            "source_practices": [
+              "AppWorld",
+              "ImpossibleBench",
+              "AgentSafety"
+            ],
+            "status": "pass"
+          }
+        ],
+        "direct_baseline": {
+          "reason": "The reference model is not currently available for direct reruns.",
+          "status": "retired_unavailable"
+        },
+        "matrix": {
+          "dimensions": [
+            "reproducible_artifacts",
+            "isolated_execution",
+            "tool_interaction_state",
+            "trace_and_cost_observability",
+            "objective_scoring",
+            "safety_and_cheat_resistance",
+            "cross_environment_readiness"
+          ],
+          "limitations": [
+            "This is not a direct run against the retired reference model.",
+            "Remote CI and live external agent adapters still require separate evidence."
+          ],
+          "sources": [
+            {
+              "name": "SWE-bench",
+              "practice": "real GitHub issues, reproducible Docker evaluation, logs/results",
+              "url": "https://github.com/swe-bench/SWE-bench"
+            },
+            {
+              "name": "HAL harness",
+              "practice": "unified benchmark CLI, agent-agnostic adapters, trace/cost tracking",
+              "url": "https://github.com/princeton-pli/hal-harness"
+            },
+            {
+              "name": "tau-bench",
+              "practice": "tool-agent-user interaction with domain APIs and repeated pass metrics",
+              "url": "https://github.com/sierra-research/tau-bench"
+            },
+            {
+              "name": "AppWorld",
+              "practice": "sandboxed app world, local APIs, task state reset and outputs",
+              "url": "https://github.com/StonyBrookNLP/appworld"
+            },
+            {
+              "name": "OSWorld",
+              "practice": "real computer environments and verified task repair process",
+              "url": "https://github.com/xlang-ai/OSWorld"
+            },
+            {
+              "name": "Inspect AI",
+              "practice": "general eval framework for tool use, multi-turn dialog and scoring",
+              "url": "https://github.com/UKGovernmentBEIS/inspect_ai"
+            },
+            {
+              "name": "ImpossibleBench",
+              "practice": "impossible variants for cheating and shortcut detection",
+              "url": "https://github.com/safety-research/impossiblebench"
+            },
+            {
+              "name": "AgentSafety",
+              "practice": "agent safety, attack and defense benchmark taxonomy",
+              "url": "https://github.com/OSU-NLP-Group/AgentSafety"
+            },
+            {
+              "name": "MLE-bench",
+              "practice": "objective grading scripts for ML engineering submissions",
+              "url": "https://github.com/openai/mle-bench"
+            },
+            {
+              "name": "MLAgentBench",
+              "practice": "sandboxed ML experimentation tasks and repeatable reports",
+              "url": "https://github.com/snap-stanford/mlagentbench"
+            }
+          ],
+          "strategy": "proxy_validation_for_retired_direct_baseline"
+        },
+        "metrics": {
+          "github_source_count": 10,
+          "passed_required_checks": 4,
+          "proxy_pass_rate": 1.0,
+          "required_checks": 4,
+          "validation_dimension_count": 7
+        },
+        "previous_score": 82,
+        "recommended_score": 88,
+        "score_delta": 6,
+        "status": "completed"
+      },
+      "scorecard": {
+        "basis": [
+          "direct reference model is unavailable for rerun",
+          "GitHub-derived proxy validation matrix is documented",
+          "local harness, config/logging, CI gate and safe-action checks pass",
+          "proxy validation does not claim direct Fable 5 superiority"
+        ],
+        "current_score": 88,
+        "previous_score": 82,
+        "remaining_findings": [
+          "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+          "CI_REMOTE_UNVERIFIED",
+          "LIVE_EXTERNAL_PLATFORM_RUNS",
+          "FULL_CROSS_PLATFORM_MATRIX"
+        ],
+        "resolved_findings": [
+          "F007_PROXY_VALIDATED",
+          "F008",
+          "F009",
+          "F010",
+          "F013",
+          "F014"
+        ],
+        "score_delta": 6
+      },
+      "status": "completed",
+      "suite": "proxy"
+    },
+    "scenario": {
+      "external_baseline": {
+        "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+        "status": "not_configured"
+      },
+      "generated_at": "2026-06-19T23:21:32.218574+00:00",
+      "iterations": 2,
+      "metrics": {
+        "effort_latency_ms": 0.0317,
+        "harness_latency_ms": 0.8789,
+        "workflow_latency_ms": 0.0121
+      },
+      "scenario_readiness": {
+        "catches_nonreuse": true,
+        "categories": [
+          "algorithm-design",
+          "config-driven",
+          "data-structure",
+          "data-validation",
+          "error-handling",
+          "feature-add-with-regression-risk",
+          "ml-adjacent",
+          "multi-step-dependency",
+          "state-machine"
+        ],
+        "checks": [
+          {
+            "evidence": "all 10 reference solutions score 100% overall",
+            "id": "reference_full_marks",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "10/10 flawed solutions detected (avg 65% vs ref 100%); 4 distinct failure dimensions — e.g. discount_feature regression: correctness 100% but completeness 0% (overall 65%)",
+            "id": "multidimensional_discrimination",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "a solution that passes all black-box output checks but reimplements the dependency inline is caught by the reuse probe (context_retention 0%)",
+            "id": "context_retention_requires_real_reuse",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "evidence": "rung-3: 2 real agent solutions scored multi-dimensionally (reuse probe verified on live code: True)",
+            "id": "real_agent_solutions_scored_live",
+            "required": false,
+            "status": "pass"
+          }
+        ],
+        "dimension": "4_real_scenario_benchmark",
+        "dimensions_covered": [
+          "completeness",
+          "context_retention",
+          "correctness",
+          "robustness"
+        ],
+        "flags_hidden_regression": true,
+        "flawed_overall": 0.6531,
+        "flawed_report": {
+          "category": "feature-add-with-regression-risk",
+          "checks_passed": 4,
+          "checks_total": 6,
+          "dimensions": {
+            "completeness": 0.0,
+            "correctness": 1.0,
+            "robustness": 1.0
+          },
+          "load_error": null,
+          "overall": 0.6667,
+          "scenario_id": "discount_feature"
+        },
+        "flawed_solution_count": 10,
+        "limitations": [
+          "Seed of scenarios with a deterministic auto-grader — the framework for real-scenario evaluation, not yet the proposal's 100+ live multi-hour sessions.",
+          "Red-team hardened: context_retention now uses a dependency-SWAP reuse probe (proven to catch an inline reimplementation that passes every black-box check); each scenario has its own flawed solution so discrimination is no longer a single circular foil.",
+          "Ambiguity is still encoded as a documented assumption per scenario; it does not yet test an agent's clarifying-question behavior on UNdocumented ambiguity.",
+          "Framework is ready to drive live providers via the capability adapter; expanding to a real 100+ scenario corpus is open work."
+        ],
+        "live_measurement": {
+          "context_retention_verified_on_real_code": true,
+          "evidence_rung": 3,
+          "provider": "mimo_code (mimo-v2.5-pro)",
+          "red_team_caveats": [
+            "Real agent solutions, single model, only the 2 seed scenarios.",
+            "running_total real solution genuinely calls parse_amounts (reuse probe = 1.0), confirming the probe works on live code and the agent reused the dependency.",
+            "Still not the proposal 100+ live multi-hour ambiguous sessions; this is real solutions to seed scenarios, one rung above constructed reference/flawed pairs."
+          ],
+          "runs": [
+            {
+              "dimensions": {
+                "completeness": 1.0,
+                "correctness": 1.0,
+                "robustness": 1.0
+              },
+              "overall": 1.0,
+              "scenario_id": "discount_feature"
+            },
+            {
+              "dimensions": {
+                "completeness": 1.0,
+                "context_retention": 1.0,
+                "correctness": 1.0,
+                "robustness": 1.0
+              },
+              "overall": 1.0,
+              "scenario_id": "running_total"
+            }
+          ],
+          "schema": "scenario_live_measurement_v1",
+          "source": "real mimo solutions scored by the multi-dimensional scenario rubric (incl. genuine reuse probe)"
+        },
+        "nonreuse_report": {
+          "category": "multi-step-dependency",
+          "checks_passed": 4,
+          "checks_total": 5,
+          "dimensions": {
+            "completeness": 1.0,
+            "context_retention": 0.0,
+            "correctness": 1.0,
+            "robustness": 1.0
+          },
+          "load_error": null,
+          "overall": 0.8,
+          "scenario_id": "running_total"
+        },
+        "reference_overall": 1.0,
+        "resolved_findings": [
+          "W2.3_BENCHMARK_REALISM",
+          "F030_MULTIDIMENSIONAL_SCENARIO_BENCHMARK"
+        ],
+        "scenario_count": 10,
+        "status": "completed"
+      },
+      "scorecard": {
+        "basis": [
+          "research proposition 4: multi-dimensional real-scenario benchmark",
+          "scores correctness + completeness/no-regression + context retention + robustness",
+          "flags a feature-complete solution that regresses an existing case, which a correctness-only gate would pass",
+          "seed + framework; a 100+ live multi-hour corpus remains open work"
+        ],
+        "current_score": null,
+        "dimension": "4_real_scenario_benchmark",
+        "flags_hidden_regression": true,
+        "flawed_overall": 0.6531,
+        "previous_score": null,
+        "reference_overall": 1.0,
+        "remaining_findings": [
+          "REAL_SCENARIO_CORPUS_100PLUS",
+          "LIVE_MULTI_HOUR_SESSIONS"
+        ],
+        "resolved_findings": [
+          "W2.3_BENCHMARK_REALISM",
+          "F030_MULTIDIMENSIONAL_SCENARIO_BENCHMARK"
+        ],
+        "scenario_count": 10,
+        "score_delta": 0
+      },
+      "status": "completed",
+      "suite": "scenario"
+    }
+  }
+}

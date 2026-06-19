@@ -49,6 +49,16 @@ Each provider writes `<artifact_dir>/<provider>-capability-run.json` unless
 
 ## Run
 
+Validate a manifest in CI without touching provider CLIs or secrets:
+
+```bash
+uaek capability batch benchmarks/manifests/capability-batch.ci-example.json \
+  --dry-run \
+  --output /tmp/uaek-capability-manifest-validation.json
+```
+
+Run a real local batch:
+
 ```bash
 uaek capability batch capability-manifest.json \
   --matrix-output benchmarks/results/capability-matrix.json \
@@ -58,3 +68,7 @@ uaek capability batch capability-manifest.json \
 Use `provider_home_seed_paths` only for explicit config or auth files required by
 that provider. File contents are copied into the isolated HOME and are not
 printed by UAEK, but they should still be treated as local secrets.
+
+`--dry-run` checks structure, output modes, duplicate providers, resolved
+provider HOME paths, and expected-provider coverage. Missing seed files are
+reported as warnings so a CI template can stay secret-free.

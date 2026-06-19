@@ -40,10 +40,10 @@
 | Claude graded capability run（难套件） | `.venv/bin/uaek capability run --provider claude_code --command env -u ANTHROPIC_AUTH_TOKEN ... /Users/audrey/.hermes/node/bin/claude -p ...` | 10/10 graded，capability_score 1.0（CLI 路由 mimo-v2.5-pro，详见诚信注记） | pass |
 | Mimo graded capability run（难套件） | `.venv/bin/uaek capability run --provider mimo_code ... --output-mode mimo_jsonl --provider-home /tmp/uaek-provider-homes/mimo` | 9/10 graded，capability_score 0.9474；唯一失败=is_palindrome（120s 超时）| pass |
 | Hermes graded capability run（难套件） | `.venv/bin/uaek capability run --provider hermes ... -z --provider-home /tmp/uaek-provider-homes/hermes-seeded --provider-home-seed config.yaml --provider-home-seed .env` | 最佳加权 artifact 8/10，`capability_score 0.8947`；seeded 复跑 9/10，`capability_score 0.8421`（唯一失败=edit_distance 输出含非代码字符）| pass |
-| Capability batch CLI | `.venv/bin/uaek capability batch <manifest.json> --matrix-output ... --output ...` | 可从 JSON manifest 批量复跑 provider recipe、写 capability artifacts、聚合 matrix；支持隔离 HOME 和显式 seed | pass |
+| Capability batch CLI | `.venv/bin/uaek capability batch <manifest.json> --matrix-output ... --output ...` | 可从 JSON manifest 批量复跑 provider recipe、写 capability artifacts、聚合 matrix；支持隔离 HOME、显式 seed 和 `--dry-run` CI 校验 | pass |
 | Capability matrix CLI（区分度） | `.venv/bin/uaek capability matrix` | 4/4 graded-live（claude_code 1.0 = codex 1.0 > mimo_code 0.9474 > hermes 0.8947）；**capability_score_spread 0.1053**，推荐 100 | completed |
 | Capability benchmark CLI | `.venv/bin/uaek benchmark --suite capability --iterations 1 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results` | 生成 `benchmark-capability.json`，score 100，4 graded-live，难套件有区分度 | completed |
-| Capability tests | `.venv/bin/python -m pytest tests/unit/test_capability_matrix.py -q` | grade_code/extract_code、artifact 校验、live driver、环境隔离+显式 seed、seed 缺 provider_home 防误用、batch manifest、难度分层评分、矩阵排名+spread、benchmark/CLI 覆盖通过（33 passed） | pass |
+| Capability tests | `.venv/bin/python -m pytest tests/unit/test_capability_matrix.py -q` | grade_code/extract_code、artifact 校验、live driver、环境隔离+显式 seed、seed 缺 provider_home 防误用、batch manifest、dry-run 校验、难度分层评分、矩阵排名+spread、benchmark/CLI 覆盖通过（35 passed） | pass |
 | 对抗验证（命题2/P0） | `.venv/bin/uaek benchmark --suite adversarial` | `benchmark-adversarial.json`：naive 作弊率 60% → 对抗 0%（<10% 目标），误拒 0%；填补维度2 | pass |
 | 对抗验证 tests | `.venv/bin/python -m pytest tests/unit/test_adversarial_verification.py -q` | 参考 oracle 正确性、对抗 accept/reject+反例、naive 漏边界 bug、作弊率测量、readiness<10%、benchmark/CLI 覆盖通过（9 passed） | pass |
 | 上下文管理（命题1/P0） | `.venv/bin/uaek benchmark --suite context` | `benchmark-context.json`：可用利用率 naive 40% → 自适应 90%（≥70% 目标）；填补维度3 | pass |
@@ -58,7 +58,7 @@
 | Excellence tests | `.venv/bin/python -m pytest tests/unit/test_excellence.py -q` | strict live artifact validation、excellence evaluator、benchmark/CLI 覆盖通过 | pass |
 | Live matrix tests | `.venv/bin/python -m pytest tests/unit/test_live_matrix.py -q` | 3/4 partial matrix、4/4 full matrix、benchmark/CLI 覆盖通过 | pass |
 | Config/Logging tests | `.venv/bin/python -m pytest tests/unit/test_config_logging.py -q` | `load_config`、`uaek run --config`、`--log-file` 覆盖通过 | pass |
-| CI workflow | `.github/workflows/ci.yml` | 已配置 ruff/mypy/pytest/coverage 门禁；远端 Actions 尚未运行 | configured |
+| CI workflow | `.github/workflows/ci.yml` | 已配置 capability manifest dry-run、ruff/mypy/pytest/coverage 门禁；远端 Actions 尚未运行 | configured |
 | Baseline schema | `benchmarks/baselines/fable5.example.json` | 示例 schema 存在，明确不是 Fable 5 实测证据 | configured |
 | README 旧入口 | `.venv/bin/python -m uae --help` | No module named uae；文档已改为 `uaek` | resolved |
 

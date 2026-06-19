@@ -1,0 +1,72 @@
+{
+  "artifact_dir": "benchmarks/results/capability-runs",
+  "provider_home_root": "/tmp/uaek-provider-homes",
+  "timeout": 120,
+  "providers": [
+    {
+      "provider": "codex",
+      "command": [
+        "codex",
+        "exec",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only"
+      ],
+      "output_mode": "plain",
+      "provider_home_seed_paths": [
+        "~/.codex/auth.json",
+        "~/.codex/config.toml"
+      ]
+    },
+    {
+      "provider": "claude_code",
+      "command": [
+        "env",
+        "-u",
+        "ANTHROPIC_AUTH_TOKEN",
+        "-u",
+        "ANTHROPIC_BASE_URL",
+        "-u",
+        "ANTHROPIC_MODEL",
+        "-u",
+        "ANTHROPIC_API_KEY",
+        "claude",
+        "-p"
+      ],
+      "output_mode": "plain",
+      "provider_home_seed_paths": [
+        "~/.claude.json",
+        "~/.claude/settings.json",
+        "~/.claude/config.json"
+      ]
+    },
+    {
+      "provider": "mimo_code",
+      "command": [
+        "mimo",
+        "run",
+        "--pure",
+        "--dir",
+        "/tmp",
+        "--format",
+        "json"
+      ],
+      "output_mode": "mimo_jsonl"
+    },
+    {
+      "provider": "hermes",
+      "command": [
+        "hermes",
+        "--safe-mode",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "-z"
+      ],
+      "output_mode": "plain",
+      "provider_home_seed_paths": [
+        "~/.hermes/config.yaml",
+        "~/.hermes/.env"
+      ]
+    }
+  ]
+}

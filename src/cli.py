@@ -559,15 +559,45 @@ def capability_run(
 @click.option("--timeout", type=float, default=None, help="覆盖 manifest 默认单任务超时秒数")
 @click.option("--output", "-o", type=click.Path(path_type=Path), help="可选 batch summary JSON")
 @click.option("--matrix-output", type=click.Path(path_type=Path), help="可选 matrix JSON")
+@click.option("--dry-run", is_flag=True, help="仅校验 manifest，不启动 provider")
 def capability_batch(
     manifest_path: Path,
     output_dir: Path | None,
     timeout: float | None,
     output: Path | None,
     matrix_output: Path | None,
+    dry_run: bool,
 ):
     """按 JSON manifest 批量复跑 capability provider 矩阵"""
-    from src.capability_matrix import run_capability_manifest
+    from src.capability_matrix import run_capability_manifest, validate_capability_manifest
+
+    if dry_run:
+        validation = validate_capability_manifest(
+            manifest_path=manifest_path,
+            output_dir=output_dir,
+            timeout=timeout,
+        )
+        table = Table(title="Capability Batch Dry Run")
+        table.add_column("Provider", style="cyan")
+        table.add_column("Output mode", style="green")
+        table.add_column("Command tokens")
+        table.add_column("Seed paths")
+        for item in validation["providers"]:
+            table.add_row(
+                item["provider"],
+                item["output_mode"],
+                str(len(item["command"])),
+                str(len(item["provider_home_seed_paths"])),
+            )
+        console.print(table)
+        if validation["errors"]:
+            console.print("[red]Errors:[/red] " + "; ".join(validation["errors"]))
+        if validation["warnings"]:
+            console.print("[yellow]Warnings:[/yellow] " + "; ".join(validation["warnings"]))
+        if output:
+            output_path = _write_json(validation, output)
+            console.print(f"[green]written[/green] {output_path}")
+        sys.exit(0 if validation["valid"] else 1)
 
     result = run_capability_manifest(
         manifest_path=manifest_path,
@@ -749,6 +779,123 @@ def benchmark(suite: str, iterations: int, output: str, baseline: str | None):
         table.add_row("Capability readiness", result["capability_readiness"]["status"])
     console.print(table)
     console.print(f"[green]written[/green] {output_path}")
+
+
+
+@main.command()
+@click.option("--iterations", "-n", type=int, default=2, help="迭代次数")
+@click.option(
+    "--output", "-o", type=click.Path(), default="benchmarks/results", help="输出目录或 JSON 文件"
+)
+@click.option("--baseline", type=click.Path(exists=True), help="外部 baseline JSON 文件")
+def audit(iterations: int, output: str, baseline: str | None):
+    """运行全量审计：聚合所有 benchmark suite 为统一报告"""
+    from src.benchmark import run_audit
+
+    result = run_audit(
+        iterations=iterations,
+        baseline_path=Path(baseline) if baseline else None,
+    )
+
+    output_path = Path(output)
+    if output_path.suffix.lower() == ".json":
+        audit_path = output_path
+    else:
+        audit_path = output_path / "audit.json"
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
+    audit_path.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    # Print summary table
+    table = Table(title="UAEK Audit Report")
+    table.add_column("Dimension", style="cyan")
+    table.add_column("Status", style="green")
+    table.add_column("Key Result", style="yellow")
+
+    props = result["propositions"]
+
+    def _fmt_pct(v: Any) -> str:
+        if v is None:
+            return "—"
+        return f"{v:.0%}"
+
+    def _fmt_neg_pct(v: Any) -> str:
+        if v is None:
+            return "—"
+        return f"−{v:.0%}"
+
+    p1 = props["p1_context_utilization"]["key_result"]
+    table.add_row(
+        "P1 上下文利用率",
+        props["p1_context_utilization"]["status"],
+        f"adaptive {_fmt_pct(p1['adaptive_accuracy'])} @ {_fmt_pct(p1['target_utilization'])} util"
+        if p1["adaptive_accuracy"] is not None
+        else "—",
+    )
+    p2 = props["p2_self_grading_cheating"]["key_result"]
+    table.add_row(
+        "P2 自评分作弊率",
+        props["p2_self_grading_cheating"]["status"],
+        (
+            f"naive {_fmt_pct(p2['naive_cheating_rate'])} "
+            f"→ adv {_fmt_pct(p2['adversarial_cheating_rate'])}"
+        )
+        if p2["adversarial_cheating_rate"] is not None
+        else "—",
+    )
+    p3 = props["p3_cost_optimization"]["key_result"]
+    table.add_row(
+        "P3 成本优化",
+        props["p3_cost_optimization"]["status"],
+        (
+            f"model {_fmt_neg_pct(p3['model_cost_reduction'])}, "
+            f"live {_fmt_neg_pct(p3['live_measured_reduction'])}"
+        )
+        if p3["model_cost_reduction"] is not None
+        else "—",
+    )
+    p4 = props["p4_real_scenario_benchmark"]["key_result"]
+    table.add_row(
+        "P4 真实场景基准",
+        props["p4_real_scenario_benchmark"]["status"],
+        f"{p4['scenario_count'] or '—'} scenarios, ref {_fmt_pct(p4['reference_overall'])}"
+        if p4["reference_overall"] is not None
+        else "—",
+    )
+    cap_key = props["p5_cross_platform_verification"]["key_result"]
+    table.add_row(
+        "P5 跨平台验证",
+        props["p5_cross_platform_verification"]["status"],
+        f"{cap_key.get('graded_live_count', '—')}/{cap_key.get('total_tasks', '—')} graded-live"
+        if cap_key.get("graded_live_count") is not None
+        else "—",
+    )
+    table.add_section()
+    gates = result["gates"]
+    table.add_row(
+        "所有命题完成",
+        "✓" if props["all_propositions_complete"] else "✗",
+        "",
+    )
+    table.add_row(
+        "证据档案",
+        f"{gates['benchmark_evidence_count']} suites",
+        f"errors: {len(result['errors'])}",
+    )
+    table.add_row(
+        "CI 远端验证",
+        "✗" if not gates["ci_remote_verified"] else "✓",
+        "配置完成，待远端运行",
+    )
+    table.add_row(
+        "外部 Baseline",
+        "✗" if not gates["external_baseline_available"] else "✓",
+        "Fable 5 已退役，无可复跑 baseline",
+    )
+    console.print(table)
+    console.print(f"[green]written[/green] {audit_path}")
 
 
 def _list_skills(skills_dir: str):

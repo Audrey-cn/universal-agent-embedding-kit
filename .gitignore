@@ -41,3 +41,9 @@ __pycache__/
 # Stray candidate solutions from live runs
 /two_sum.py
 /max_subarray.py
+
+# --- Build artifacts ---
+build/
+dist/
+*.egg-info/
+-/

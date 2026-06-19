@@ -253,46 +253,28 @@ def run_capability_manifest(
 ) -> dict[str, Any]:
     """Run a batch of provider capability recipes from a JSON manifest."""
     manifest_file = Path(manifest_path)
-    manifest = _load_manifest(manifest_file)
-    provider_recipes = manifest.get("providers")
-    if not isinstance(provider_recipes, list) or not provider_recipes:
-        raise ValueError("capability manifest requires a non-empty providers list")
+    validation = validate_capability_manifest(manifest_file, output_dir=output_dir, timeout=timeout)
+    if not validation["valid"]:
+        raise ValueError("; ".join(validation["errors"]))
 
-    artifact_dir = _manifest_path(output_dir or manifest.get("artifact_dir"))
-    provider_home_root = manifest.get("provider_home_root")
-    provider_home_root_path = (
-        _manifest_path(provider_home_root) if provider_home_root is not None else None
-    )
-    default_timeout = float(timeout if timeout is not None else manifest.get("timeout", 120.0))
+    artifact_dir = Path(validation["artifact_dir"])
 
     runs: list[dict[str, Any]] = []
-    for index, recipe in enumerate(provider_recipes):
-        if not isinstance(recipe, dict):
-            raise ValueError(f"providers[{index}] must be an object")
-        provider = _required_string(recipe, "provider", index)
-        command = _required_string_list(recipe, "command", index)
-        output_mode = str(recipe.get("output_mode", "plain"))
-        provider_home = recipe.get("provider_home")
-        if provider_home is None and provider_home_root_path is not None:
-            provider_home = str(provider_home_root_path / provider)
-        seed_paths = tuple(str(item) for item in recipe.get("provider_home_seed_paths", []))
-        run_timeout = float(recipe.get("timeout", default_timeout))
-
+    for recipe in validation["providers"]:
         artifact = run_capability_suite_live(
-            provider=provider,
-            base_command=command,
-            output_mode=output_mode,
-            provider_home=str(provider_home) if provider_home is not None else None,
-            provider_home_seed_paths=seed_paths,
-            timeout=run_timeout,
+            provider=recipe["provider"],
+            base_command=recipe["command"],
+            output_mode=recipe["output_mode"],
+            provider_home=recipe["provider_home"],
+            provider_home_seed_paths=tuple(recipe["provider_home_seed_paths"]),
+            timeout=recipe["timeout"],
             source=f"uaek capability batch:{manifest_file}",
         )
-        artifact_name = str(recipe.get("artifact_name", f"{provider}-capability-run.json"))
-        artifact_path = write_capability_run(artifact, artifact_dir / artifact_name)
+        artifact_path = write_capability_run(artifact, artifact_dir / recipe["artifact_name"])
         validation = validate_capability_run_artifact(artifact)
         runs.append(
             {
-                "provider": provider,
+                "provider": recipe["provider"],
                 "artifact_path": str(artifact_path),
                 "status": artifact["status"],
                 "metrics": artifact["metrics"],
@@ -310,6 +292,97 @@ def run_capability_manifest(
         else "partial",
         "runs": runs,
         "matrix": matrix,
+    }
+
+
+def validate_capability_manifest(
+    manifest_path: Path | str,
+    output_dir: Path | str | None = None,
+    timeout: float | None = None,
+) -> dict[str, Any]:
+    """Validate and resolve a capability batch manifest without running providers."""
+    manifest_file = Path(manifest_path)
+    manifest = _load_manifest(manifest_file)
+    errors: list[str] = []
+    warnings: list[str] = []
+    resolved_providers: list[dict[str, Any]] = []
+
+    artifact_dir = _manifest_path(output_dir or manifest.get("artifact_dir"))
+    provider_home_root = manifest.get("provider_home_root")
+    provider_home_root_path = (
+        _manifest_path(provider_home_root) if provider_home_root is not None else None
+    )
+    try:
+        default_timeout = float(timeout if timeout is not None else manifest.get("timeout", 120.0))
+    except (TypeError, ValueError):
+        errors.append("timeout must be numeric")
+        default_timeout = 120.0
+
+    provider_recipes = manifest.get("providers")
+    if not isinstance(provider_recipes, list) or not provider_recipes:
+        errors.append("capability manifest requires a non-empty providers list")
+        provider_recipes = []
+
+    seen: set[str] = set()
+    for index, recipe in enumerate(provider_recipes):
+        if not isinstance(recipe, dict):
+            errors.append(f"providers[{index}] must be an object")
+            continue
+        try:
+            provider = _required_string(recipe, "provider", index)
+            command = _required_string_list(recipe, "command", index)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        if provider in seen:
+            errors.append(f"providers[{index}].provider duplicates {provider}")
+        seen.add(provider)
+
+        output_mode = str(recipe.get("output_mode", "plain"))
+        if output_mode not in OUTPUT_MODES:
+            errors.append(f"providers[{index}].output_mode unsupported: {output_mode}")
+
+        provider_home = recipe.get("provider_home")
+        if provider_home is None and provider_home_root_path is not None:
+            provider_home = str(provider_home_root_path / provider)
+        seed_paths = _optional_string_list(recipe, "provider_home_seed_paths", index, errors)
+        if seed_paths and provider_home is None:
+            errors.append(f"providers[{index}].provider_home_seed_paths require provider_home")
+        for seed in seed_paths:
+            if not Path(os.path.expanduser(seed)).exists():
+                warnings.append(f"providers[{index}] seed path not found locally: {seed}")
+
+        try:
+            run_timeout = float(recipe.get("timeout", default_timeout))
+        except (TypeError, ValueError):
+            errors.append(f"providers[{index}].timeout must be numeric")
+            run_timeout = default_timeout
+
+        artifact_name = str(recipe.get("artifact_name", f"{provider}-capability-run.json"))
+        resolved_providers.append(
+            {
+                "provider": provider,
+                "command": command,
+                "output_mode": output_mode,
+                "provider_home": str(provider_home) if provider_home is not None else None,
+                "provider_home_seed_paths": seed_paths,
+                "timeout": run_timeout,
+                "artifact_name": artifact_name,
+            }
+        )
+
+    missing_expected = sorted(EXPECTED_PROVIDERS - set(seen))
+    if missing_expected:
+        warnings.append(f"manifest does not cover expected providers: {missing_expected}")
+
+    return {
+        "schema": "capability_manifest_validation_v1",
+        "manifest_path": str(manifest_file),
+        "artifact_dir": str(artifact_dir),
+        "valid": not errors,
+        "errors": errors,
+        "warnings": warnings,
+        "providers": resolved_providers,
     }
 
 
@@ -337,6 +410,19 @@ def _required_string_list(recipe: dict[str, Any], field: str, index: int) -> lis
     value = recipe.get(field)
     if not isinstance(value, list) or not value or not all(isinstance(item, str) for item in value):
         raise ValueError(f"providers[{index}].{field} must be a non-empty list of strings")
+    return list(value)
+
+
+def _optional_string_list(
+    recipe: dict[str, Any],
+    field: str,
+    index: int,
+    errors: list[str],
+) -> list[str]:
+    value = recipe.get(field, [])
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        errors.append(f"providers[{index}].{field} must be a list of strings")
+        return []
     return list(value)
 
 
