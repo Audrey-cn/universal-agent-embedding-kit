@@ -58,7 +58,9 @@
 | Excellence tests | `.venv/bin/python -m pytest tests/unit/test_excellence.py -q` | strict live artifact validation、excellence evaluator、benchmark/CLI 覆盖通过 | pass |
 | Live matrix tests | `.venv/bin/python -m pytest tests/unit/test_live_matrix.py -q` | 3/4 partial matrix、4/4 full matrix、benchmark/CLI 覆盖通过 | pass |
 | Config/Logging tests | `.venv/bin/python -m pytest tests/unit/test_config_logging.py -q` | `load_config`、`uaek run --config`、`--log-file` 覆盖通过 | pass |
-| CI workflow | `.github/workflows/ci.yml` | 已配置 capability manifest dry-run、ruff/mypy/pytest/coverage 门禁；远端 Actions 尚未运行 | configured |
+| CI workflow | `.github/workflows/ci.yml` | Quality gates (lint/typecheck/test/coverage) + release-gate (wheel build/clean install/smoke/benchmark/audit) 全绿；远端 Actions 2026-06-20 首次通过 | pass |
+| Release gate (wheel) | `pip install dist/uaek-0.1.0-py3-none-any.whl` | Clean venv install + `uaek --version` + quick/adversarial benchmarks + manifest dry-run + audit 全部通过 | pass |
+| Release gate (CI) | GitHub Actions release-gate job | Build wheel → clean venv install → CLI smoke → quick/adversarial/manifest/audit 全绿；evidence uploaded as artifact | pass |
 | Baseline schema | `benchmarks/baselines/fable5.example.json` | 示例 schema 存在，明确不是 Fable 5 实测证据 | configured |
 | README 旧入口 | `.venv/bin/python -m uae --help` | No module named uae；文档已改为 `uaek` | resolved |
 
