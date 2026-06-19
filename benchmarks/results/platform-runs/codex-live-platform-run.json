@@ -1,0 +1,48 @@
+{
+  "adapter_result": {
+    "artifacts": {
+      "last_message_path": "/var/folders/kt/gt71c52x5bn9swyy9wqs8pg00000gn/T/tmpul0_jrdo"
+    },
+    "duration_ms": 8552.0164,
+    "error": null,
+    "metrics": {
+      "return_code": 0,
+      "stderr_chars": 4611,
+      "stdout_chars": 18
+    },
+    "output": "UAEK_LIVE_TASK_OK",
+    "provider": "codex",
+    "request": {
+      "context": {},
+      "metadata": {
+        "trace_id": "4a31dc52-d4ee-4d0a-bd19-875e6e5ce0f5"
+      },
+      "task": "codex live excellence task"
+    },
+    "return_code": 0,
+    "stderr": "",
+    "stdout": "{\"success\": true, \"output\": \"UAEK_LIVE_TASK_OK\", \"artifacts\": {\"last_message_path\": \"/var/folders/kt/gt71c52x5bn9swyy9wqs8pg00000gn/T/tmpul0_jrdo\"}, \"metrics\": {\"return_code\": 0, \"stdout_chars\": 18, \"stderr_chars\": 4611}, \"error\": null}\n",
+    "success": true,
+    "task": "codex live excellence task",
+    "trace_id": "4a31dc52-d4ee-4d0a-bd19-875e6e5ce0f5"
+  },
+  "evidence_level": "live_external",
+  "provenance": {
+    "adapter_result_path": "benchmarks/results/platform-runs/codex-live-adapter-result.json",
+    "command": [
+      "/Applications/Codex.app/Contents/Resources/codex",
+      "exec",
+      "--skip-git-repo-check",
+      "--sandbox",
+      "read-only",
+      "External platform smoke test for UAEK"
+    ],
+    "source": "codex exec live external task"
+  },
+  "provider": "codex",
+  "recorded_at": "2026-06-18T13:35:52.664475+00:00",
+  "run_id": "platform-c1d0eb13-add9-4d09-8182-6d98156d5070",
+  "schema": "platform_run_v1",
+  "status": "completed",
+  "task": "codex live excellence task"
+}

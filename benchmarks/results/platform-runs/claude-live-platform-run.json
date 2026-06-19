@@ -1,0 +1,44 @@
+{
+  "adapter_result": {
+    "artifacts": {
+      "command": "/Applications/Claude.app/Contents/MacOS/Claude --help"
+    },
+    "duration_ms": 12071.9027,
+    "error": "Claude App headless invocation timed out; Electron/IndexedDB lock prevents noninteractive live task",
+    "metrics": {
+      "return_code": null,
+      "stderr_chars": 3408,
+      "stdout_chars": 0
+    },
+    "output": "",
+    "provider": "claude_code",
+    "request": {
+      "context": {},
+      "metadata": {
+        "trace_id": "1e5a0483-bd54-4f71-8dfa-5bad62962644"
+      },
+      "task": "claude live matrix task"
+    },
+    "return_code": 0,
+    "stderr": "",
+    "stdout": "{\"success\": false, \"output\": \"\", \"artifacts\": {\"command\": \"/Applications/Claude.app/Contents/MacOS/Claude --help\"}, \"metrics\": {\"return_code\": null, \"stdout_chars\": 0, \"stderr_chars\": 3408}, \"error\": \"Claude App headless invocation timed out; Electron/IndexedDB lock prevents noninteractive live task\"}\n",
+    "success": false,
+    "task": "claude live matrix task",
+    "trace_id": "1e5a0483-bd54-4f71-8dfa-5bad62962644"
+  },
+  "evidence_level": "live_external",
+  "provenance": {
+    "adapter_result_path": "benchmarks/results/platform-runs/claude-live-adapter-result.json",
+    "command": [
+      "/Applications/Claude.app/Contents/MacOS/Claude",
+      "--help"
+    ],
+    "source": "claude app blocked live external attempt"
+  },
+  "provider": "claude_code",
+  "recorded_at": "2026-06-18T13:52:20.638304+00:00",
+  "run_id": "platform-7ef54523-b4e1-4bf0-8d23-07312679caa6",
+  "schema": "platform_run_v1",
+  "status": "failed",
+  "task": "claude live matrix task"
+}

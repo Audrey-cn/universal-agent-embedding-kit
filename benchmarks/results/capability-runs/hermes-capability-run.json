@@ -1,0 +1,391 @@
+{
+  "error": null,
+  "evidence_level": "live_external",
+  "metrics": {
+    "capability_score": 0.8947,
+    "case_pass_rate": 0.8298,
+    "cases_passed": 39,
+    "cases_total": 47,
+    "hardest_tier_passed": "hard",
+    "suite_pass_rate": 0.8,
+    "tasks_attempted": 10,
+    "tasks_passed": 8,
+    "tasks_passed_by_tier": {
+      "easy": 2,
+      "hard": 3,
+      "medium": 3
+    },
+    "tasks_total_by_tier": {
+      "easy": 4,
+      "hard": 3,
+      "medium": 3
+    }
+  },
+  "provenance": {
+    "command": [
+      "/Users/USER/.local/bin/hermes",
+      "--safe-mode",
+      "--ignore-user-config",
+      "--ignore-rules",
+      "-z"
+    ],
+    "output_mode": "plain",
+    "source": "uaek capability run"
+  },
+  "provider": "hermes",
+  "recorded_at": "2026-06-18T19:02:47.271217+00:00",
+  "run_id": "capability-2a8f2151-f4d1-42b4-977f-852a7145312f",
+  "schema": "capability_run_v1",
+  "status": "completed",
+  "suite": {
+    "task_count": 10,
+    "task_ids": [
+      "two_sum",
+      "is_palindrome",
+      "fizzbuzz",
+      "max_subarray",
+      "roman_to_int",
+      "valid_parentheses",
+      "longest_unique_substring",
+      "edit_distance",
+      "lru_cache_sim",
+      "calculator"
+    ]
+  },
+  "task": "hermes capability suite (10 code tasks)",
+  "task_results": [
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        }
+      ],
+      "code": "def two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in seen:\n            return [seen[complement], i]\n        seen[num] = i",
+      "difficulty": "easy",
+      "duration_ms": 7033.3749,
+      "entrypoint": "two_sum",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 3,
+      "status": "pass",
+      "task_id": "two_sum",
+      "total": 3
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        }
+      ],
+      "code": "def is_palindrome(s: str) -> bool:\n    filtered = [c.lower() for c in s if c.isalnum()]\n    return filtered == filtered[::-1]",
+      "difficulty": "easy",
+      "duration_ms": 4311.6042,
+      "entrypoint": "is_palindrome",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 3,
+      "status": "pass",
+      "task_id": "is_palindrome",
+      "total": 3
+    },
+    {
+      "cases": [],
+      "code": "Written to /Users/USER/fizzbuzz.py. Passes lint cleanly.",
+      "difficulty": "easy",
+      "duration_ms": 7611.2496,
+      "entrypoint": "fizzbuzz",
+      "error": "SyntaxError: invalid syntax (candidate.py, line 1)",
+      "pass_rate": 0.0,
+      "passed": 0,
+      "status": "fail",
+      "task_id": "fizzbuzz",
+      "total": 4
+    },
+    {
+      "cases": [],
+      "code": "Written to /Users/USER/项目/fable-research/max_subarray.py — Kadane's algorithm, O(n) time, O(1) space.",
+      "difficulty": "easy",
+      "duration_ms": 6954.5157,
+      "entrypoint": "max_subarray",
+      "error": "SyntaxError: invalid character '—' (U+2014) (candidate.py, line 1)",
+      "pass_rate": 0.0,
+      "passed": 0,
+      "status": "fail",
+      "task_id": "max_subarray",
+      "total": 4
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 3,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 4,
+          "ok": true
+        }
+      ],
+      "code": "def roman_to_int(s):\n    values = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}\n    total = 0\n    for i in range(len(s)):\n        if i + 1 < len(s) and values[s[i]] < values[s[i + 1]]:\n            total -= values[s[i]]\n        else:\n            total += values[s[i]]\n    return total",
+      "difficulty": "medium",
+      "duration_ms": 5159.2793,
+      "entrypoint": "roman_to_int",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 5,
+      "status": "pass",
+      "task_id": "roman_to_int",
+      "total": 5
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 3,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 4,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 5,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 6,
+          "ok": true
+        }
+      ],
+      "code": "def valid_parentheses(s):\n    stack = []\n    pairs = {')': '(', ']': '[', '}': '{'}\n    for c in s:\n        if c in pairs.values():\n            stack.append(c)\n        elif c in pairs:\n            if not stack or stack[-1] != pairs[c]:\n                return False\n            stack.pop()\n    return len(stack) == 0",
+      "difficulty": "medium",
+      "duration_ms": 3556.5369,
+      "entrypoint": "valid_parentheses",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 7,
+      "status": "pass",
+      "task_id": "valid_parentheses",
+      "total": 7
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 3,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 4,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 5,
+          "ok": true
+        }
+      ],
+      "code": "def longest_unique_substring(s: str) -> int:\n    seen = {}\n    start = 0\n    max_len = 0\n    for i, ch in enumerate(s):\n        if ch in seen and seen[ch] >= start:\n            start = seen[ch] + 1\n        seen[ch] = i\n        max_len = max(max_len, i - start + 1)\n    return max_len",
+      "difficulty": "medium",
+      "duration_ms": 3821.9961,
+      "entrypoint": "longest_unique_substring",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 6,
+      "status": "pass",
+      "task_id": "longest_unique_substring",
+      "total": 6
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 3,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 4,
+          "ok": true
+        }
+      ],
+      "code": "def edit_distance(a: str, b: str) -> int:\n    m, n = len(a), len(b)\n    dp = list(range(n + 1))\n    for i in range(1, m + 1):\n        prev = dp[0]\n        dp[0] = i\n        for j in range(1, n + 1):\n            temp = dp[j]\n            if a[i - 1] == b[j - 1]:\n                dp[j] = prev\n            else:\n                dp[j] = 1 + min(prev, dp[j], dp[j - 1])\n            prev = temp\n    return dp[n]",
+      "difficulty": "hard",
+      "duration_ms": 4447.4965,
+      "entrypoint": "edit_distance",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 5,
+      "status": "pass",
+      "task_id": "edit_distance",
+      "total": 5
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        }
+      ],
+      "code": "def lru_cache_sim(capacity, ops):\n    from collections import OrderedDict\n    cache = OrderedDict()\n    result = []\n    for op in ops:\n        if op[0] == 'put':\n            key, value = op[1], op[2]\n            if key in cache:\n                cache.move_to_end(key)\n            cache[key] = value\n            if len(cache) > capacity:\n                cache.popitem(last=False)\n        elif op[0] == 'get':\n            key = op[1]\n            if key in cache:\n                cache.move_to_end(key)\n                result.append(cache[key])\n            else:\n                result.append(-1)\n    return result",
+      "difficulty": "hard",
+      "duration_ms": 10104.0723,
+      "entrypoint": "lru_cache_sim",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 3,
+      "status": "pass",
+      "task_id": "lru_cache_sim",
+      "total": 3
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "index": 0,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 1,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 2,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 3,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 4,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 5,
+          "ok": true
+        },
+        {
+          "error": null,
+          "index": 6,
+          "ok": true
+        }
+      ],
+      "code": "def calculator(expr):\n    tokens = []\n    i = 0\n    s = expr.replace(\" \", \"\")\n    while i < len(s):\n        if s[i].isdigit():\n            j = i\n            while j < len(s) and s[j].isdigit():\n                j += 1\n            tokens.append(int(s[i:j]))\n            i = j\n        else:\n            tokens.append(s[i])\n            i += 1\n\n    # first pass: resolve *\n    resolved = [tokens[0]]\n    i = 1\n    while i < len(tokens):\n        op = tokens[i]\n        rhs = tokens[i + 1]\n        if op == '*':\n            resolved[-1] = resolved[-1] * rhs\n        else:\n            resolved.append(op)\n            resolved.append(rhs)\n        i += 2\n\n    # second pass: resolve + and -\n    result = resolved[0]\n    i = 1\n    while i < len(resolved):\n        op = resolved[i]\n        rhs = resolved[i + 1]\n        if op == '+':\n            result += rhs\n        else:\n            result -= rhs\n        i += 2\n\n    return result",
+      "difficulty": "hard",
+      "duration_ms": 19538.4932,
+      "entrypoint": "calculator",
+      "error": null,
+      "pass_rate": 1.0,
+      "passed": 7,
+      "status": "pass",
+      "task_id": "calculator",
+      "total": 7
+    }
+  ]
+}

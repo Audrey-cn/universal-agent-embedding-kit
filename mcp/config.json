@@ -1,0 +1,9 @@
+{
+  "name": "uaek",
+  "version": "1.0.0",
+  "description": "Universal Agent Enhancement Kit MCP Server",
+  "type": "stdio",
+  "command": "python",
+  "args": ["-m", "mcp.server"],
+  "env": {}
+}

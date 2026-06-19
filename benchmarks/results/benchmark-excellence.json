@@ -1,0 +1,160 @@
+{
+  "excellence_readiness": {
+    "adversarial_checks": [
+      {
+        "errors": [
+          "live_external artifacts must be completed successful runs"
+        ],
+        "id": "failed_live_not_counted",
+        "is_live_external": false,
+        "status": "pass",
+        "valid": false
+      },
+      {
+        "errors": [
+          "live_external artifacts require nonempty adapter output"
+        ],
+        "id": "empty_live_output_rejected",
+        "is_live_external": false,
+        "status": "pass",
+        "valid": false
+      },
+      {
+        "errors": [],
+        "id": "local_command_not_live",
+        "is_live_external": false,
+        "status": "pass",
+        "valid": true
+      }
+    ],
+    "artifact_dir": "benchmarks/results/platform-runs",
+    "checks": [
+      {
+        "evidence": "1 valid live external task artifacts",
+        "id": "live_external_task_artifact",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "4/4 providers represented; 3 providers have successful artifacts",
+        "id": "cross_platform_artifact_matrix",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "3/3 adversarial artifact checks passed",
+        "id": "adversarial_live_validation",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "LIVE_EXTERNAL_PLATFORM_RUNS, FULL_CROSS_PLATFORM_MATRIX, ADVERSARIAL_SELF_IMPROVEMENT_SUITE",
+        "id": "self_improvement_score_loop",
+        "required": true,
+        "status": "pass"
+      }
+    ],
+    "expected_providers": [
+      "claude_code",
+      "codex",
+      "hermes",
+      "mimo_code"
+    ],
+    "limitations": [
+      "Excellence readiness is not a retired Fable 5 rerun.",
+      "A single live_external artifact does not prove every platform completed a live task.",
+      "Remote CI and release publication remain separate evidence tracks."
+    ],
+    "metrics": {
+      "adversarial_checks": 3,
+      "adversarial_checks_passed": 3,
+      "excellence_pass_rate": 1.0,
+      "expected_platforms": 4,
+      "live_external_artifacts": 1,
+      "passed_required_checks": 4,
+      "platform_artifacts": 5,
+      "represented_platforms": 4,
+      "required_checks": 4,
+      "successful_platforms": 3,
+      "valid_artifacts": 5
+    },
+    "previous_score": 91,
+    "recommended_score": 96,
+    "remaining_findings": [
+      "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_LIVE_PER_PLATFORM_MATRIX"
+    ],
+    "resolved_findings": [
+      "F018_PLATFORM_RUN_ARTIFACTS",
+      "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+      "F019_CROSS_PLATFORM_ARTIFACT_MATRIX",
+      "F020_ADVERSARIAL_LIVE_VALIDATION",
+      "F021_SELF_IMPROVEMENT_SCORE_LOOP"
+    ],
+    "score_delta": 5,
+    "self_improvement": {
+      "after_score": 96,
+      "before_score": 91,
+      "open_findings_before": [
+        "LIVE_EXTERNAL_PLATFORM_RUNS",
+        "FULL_CROSS_PLATFORM_MATRIX",
+        "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+      ],
+      "remaining_findings": [],
+      "resolved_findings": [
+        "LIVE_EXTERNAL_PLATFORM_RUNS",
+        "FULL_CROSS_PLATFORM_MATRIX",
+        "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+      ],
+      "status": "completed"
+    },
+    "status": "completed"
+  },
+  "external_baseline": {
+    "generated_at": null,
+    "metrics": {},
+    "name": "fable5",
+    "notes": [
+      "This file is not benchmark evidence.",
+      "Use it to document the expected shape for external baseline ingestion.",
+      "Do not convert status to completed until the underlying run artifact is available."
+    ],
+    "path": "benchmarks/baselines/fable5.example.json",
+    "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-18T13:44:07.644958+00:00",
+  "iterations": 2,
+  "metrics": {
+    "effort_latency_ms": 0.1963,
+    "harness_latency_ms": 0.8006,
+    "workflow_latency_ms": 0.0132
+  },
+  "scorecard": {
+    "basis": [
+      "at least one valid live_external platform task artifact is required for 95+",
+      "cross-platform artifact matrix covers Codex, Claude Code/App, Mimo Code and Hermes",
+      "adversarial validation rejects failed or forged live artifacts",
+      "self-improvement score loop resolves findings only when evidence exists",
+      "excellence readiness does not claim a retired Fable 5 rerun"
+    ],
+    "current_score": 96,
+    "previous_score": 91,
+    "remaining_findings": [
+      "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_LIVE_PER_PLATFORM_MATRIX"
+    ],
+    "resolved_findings": [
+      "F018_PLATFORM_RUN_ARTIFACTS",
+      "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+      "F019_CROSS_PLATFORM_ARTIFACT_MATRIX",
+      "F020_ADVERSARIAL_LIVE_VALIDATION",
+      "F021_SELF_IMPROVEMENT_SCORE_LOOP"
+    ],
+    "score_delta": 5
+  },
+  "status": "completed",
+  "suite": "excellence"
+}

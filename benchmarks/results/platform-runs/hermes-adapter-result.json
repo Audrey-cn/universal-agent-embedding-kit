@@ -1,0 +1,28 @@
+{
+  "artifacts": {
+    "command": [
+      "/Users/USER/.local/bin/hermes",
+      "--version"
+    ]
+  },
+  "duration_ms": 275.2018,
+  "error": null,
+  "metrics": {
+    "return_code": 0
+  },
+  "output": "Hermes Agent v0.16.0 (2026.6.5) · upstream ef4b897a\nProject: /Users/USER/.hermes/hermes-agent\nPython: 3.11.15\nOpenAI SDK: 2.24.0\nUp to date",
+  "provider": "hermes",
+  "request": {
+    "context": {},
+    "metadata": {
+      "trace_id": "ee1633e3-5764-4ae5-bf3d-b1b0fb768878"
+    },
+    "task": "probe hermes platform"
+  },
+  "return_code": 0,
+  "stderr": "",
+  "stdout": "{\"success\": true, \"output\": \"Hermes Agent v0.16.0 (2026.6.5) \\u00b7 upstream ef4b897a\\nProject: /Users/USER/.hermes/hermes-agent\\nPython: 3.11.15\\nOpenAI SDK: 2.24.0\\nUp to date\", \"artifacts\": {\"command\": [\"/Users/USER/.local/bin/hermes\", \"--version\"]}, \"metrics\": {\"return_code\": 0}}\n",
+  "success": true,
+  "task": "probe hermes platform",
+  "trace_id": "ee1633e3-5764-4ae5-bf3d-b1b0fb768878"
+}

@@ -1,0 +1,27 @@
+{
+  "artifacts": {
+    "command": "/Users/USER/.local/bin/hermes --safe-mode --ignore-user-config --ignore-rules -z Do not use tools. Reply exactly: UAEK_LIVE_TASK_OK"
+  },
+  "duration_ms": 2970.5769,
+  "error": null,
+  "metrics": {
+    "return_code": 0,
+    "stderr_chars": 0,
+    "stdout_chars": 18
+  },
+  "output": "UAEK_LIVE_TASK_OK",
+  "provider": "hermes",
+  "request": {
+    "context": {},
+    "metadata": {
+      "trace_id": "6f21b73b-221d-48a9-9818-9d2b3fb5f4ae"
+    },
+    "task": "hermes live matrix task"
+  },
+  "return_code": 0,
+  "stderr": "",
+  "stdout": "{\"success\": true, \"output\": \"UAEK_LIVE_TASK_OK\", \"artifacts\": {\"command\": \"/Users/USER/.local/bin/hermes --safe-mode --ignore-user-config --ignore-rules -z Do not use tools. Reply exactly: UAEK_LIVE_TASK_OK\"}, \"metrics\": {\"return_code\": 0, \"stdout_chars\": 18, \"stderr_chars\": 0}, \"error\": null}\n",
+  "success": true,
+  "task": "hermes live matrix task",
+  "trace_id": "6f21b73b-221d-48a9-9818-9d2b3fb5f4ae"
+}

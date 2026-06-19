@@ -1,0 +1,38 @@
+{
+  "adapter_result": {
+    "artifacts": {},
+    "duration_ms": 10064.0689,
+    "error": "Invalid JSON from adapter stdout: Expecting value",
+    "metrics": {},
+    "output": "",
+    "provider": "claude_code",
+    "request": {
+      "context": {},
+      "metadata": {
+        "trace_id": "714adcd8-5b3e-4e58-a0f1-48791370e05b"
+      },
+      "task": "probe claude platform"
+    },
+    "return_code": 1,
+    "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/USER/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/subprocess.py\", line 550, in run\n    stdout, stderr = process.communicate(input, timeout=timeout)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/USER/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/subprocess.py\", line 1209, in communicate\n    stdout, stderr = self._communicate(input, endtime, timeout)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/USER/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/subprocess.py\", line 2116, in _communicate\n    self._check_timeout(endtime, orig_timeout, stdout, stderr)\n  File \"/Users/USER/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/subprocess.py\", line 1253, in _check_timeout\n    raise TimeoutExpired(\nsubprocess.TimeoutExpired: Command '['/Applications/Claude.app/Contents/MacOS/Claude', '--version']' timed out after 10 seconds\n",
+    "stdout": "",
+    "success": false,
+    "task": "probe claude platform",
+    "trace_id": "714adcd8-5b3e-4e58-a0f1-48791370e05b"
+  },
+  "evidence_level": "local_command",
+  "provenance": {
+    "adapter_result_path": "benchmarks/results/platform-runs/claude-adapter-result.json",
+    "command": [
+      "/Applications/Claude.app/Contents/MacOS/Claude",
+      "--version"
+    ],
+    "source": "claude app version probe via uaek adapter; timed out"
+  },
+  "provider": "claude_code",
+  "recorded_at": "2026-06-18T13:18:50.164714+00:00",
+  "run_id": "platform-fbdd2472-bc3b-4fb6-9e4e-bd3602fb7570",
+  "schema": "platform_run_v1",
+  "status": "failed",
+  "task": "probe claude platform"
+}

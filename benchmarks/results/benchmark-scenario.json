@@ -1,0 +1,155 @@
+{
+  "external_baseline": {
+    "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-19T04:40:18.307019+00:00",
+  "iterations": 1,
+  "metrics": {
+    "effort_latency_ms": 0.2782,
+    "harness_latency_ms": 0.7734,
+    "workflow_latency_ms": 0.0145
+  },
+  "scenario_readiness": {
+    "catches_nonreuse": true,
+    "categories": [
+      "feature-add-with-regression-risk",
+      "multi-step-dependency"
+    ],
+    "checks": [
+      {
+        "evidence": "reference solutions score 100% overall",
+        "id": "reference_full_marks",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "feature-complete but regressing solution scores correctness 100% but completeness 0% (overall 67%)",
+        "id": "multidimensional_discrimination",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "a solution that passes all black-box output checks but reimplements the dependency inline is caught by the reuse probe (context_retention 0%)",
+        "id": "context_retention_requires_real_reuse",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "rung-3: 2 real agent solutions scored multi-dimensionally (reuse probe verified on live code: True)",
+        "id": "real_agent_solutions_scored_live",
+        "required": false,
+        "status": "pass"
+      }
+    ],
+    "dimension": "4_real_scenario_benchmark",
+    "dimensions_covered": [
+      "completeness",
+      "context_retention",
+      "correctness",
+      "robustness"
+    ],
+    "flags_hidden_regression": true,
+    "flawed_overall": 0.6667,
+    "flawed_report": {
+      "category": "feature-add-with-regression-risk",
+      "checks_passed": 4,
+      "checks_total": 6,
+      "dimensions": {
+        "completeness": 0.0,
+        "correctness": 1.0,
+        "robustness": 1.0
+      },
+      "load_error": null,
+      "overall": 0.6667,
+      "scenario_id": "discount_feature"
+    },
+    "flawed_solution_count": 2,
+    "limitations": [
+      "Seed of scenarios with a deterministic auto-grader — the framework for real-scenario evaluation, not yet the proposal's 100+ live multi-hour sessions.",
+      "Red-team hardened: context_retention now uses a dependency-SWAP reuse probe (proven to catch an inline reimplementation that passes every black-box check); each scenario has its own flawed solution so discrimination is no longer a single circular foil.",
+      "Ambiguity is still encoded as a documented assumption per scenario; it does not yet test an agent's clarifying-question behavior on UNdocumented ambiguity.",
+      "Framework is ready to drive live providers via the capability adapter; expanding to a real 100+ scenario corpus is open work."
+    ],
+    "live_measurement": {
+      "context_retention_verified_on_real_code": true,
+      "evidence_rung": 3,
+      "provider": "mimo_code (mimo-v2.5-pro)",
+      "red_team_caveats": [
+        "Real agent solutions, single model, only the 2 seed scenarios.",
+        "running_total real solution genuinely calls parse_amounts (reuse probe = 1.0), confirming the probe works on live code and the agent reused the dependency.",
+        "Still not the proposal 100+ live multi-hour ambiguous sessions; this is real solutions to seed scenarios, one rung above constructed reference/flawed pairs."
+      ],
+      "runs": [
+        {
+          "dimensions": {
+            "completeness": 1.0,
+            "correctness": 1.0,
+            "robustness": 1.0
+          },
+          "overall": 1.0,
+          "scenario_id": "discount_feature"
+        },
+        {
+          "dimensions": {
+            "completeness": 1.0,
+            "context_retention": 1.0,
+            "correctness": 1.0,
+            "robustness": 1.0
+          },
+          "overall": 1.0,
+          "scenario_id": "running_total"
+        }
+      ],
+      "schema": "scenario_live_measurement_v1",
+      "source": "real mimo solutions scored by the multi-dimensional scenario rubric (incl. genuine reuse probe)"
+    },
+    "nonreuse_report": {
+      "category": "multi-step-dependency",
+      "checks_passed": 4,
+      "checks_total": 5,
+      "dimensions": {
+        "completeness": 1.0,
+        "context_retention": 0.0,
+        "correctness": 1.0,
+        "robustness": 1.0
+      },
+      "load_error": null,
+      "overall": 0.8,
+      "scenario_id": "running_total"
+    },
+    "reference_overall": 1.0,
+    "resolved_findings": [
+      "W2.3_BENCHMARK_REALISM",
+      "F030_MULTIDIMENSIONAL_SCENARIO_BENCHMARK"
+    ],
+    "scenario_count": 2,
+    "status": "completed"
+  },
+  "scorecard": {
+    "basis": [
+      "research proposition 4: multi-dimensional real-scenario benchmark",
+      "scores correctness + completeness/no-regression + context retention + robustness",
+      "flags a feature-complete solution that regresses an existing case, which a correctness-only gate would pass",
+      "seed + framework; a 100+ live multi-hour corpus remains open work"
+    ],
+    "current_score": null,
+    "dimension": "4_real_scenario_benchmark",
+    "flags_hidden_regression": true,
+    "flawed_overall": 0.6667,
+    "previous_score": null,
+    "reference_overall": 1.0,
+    "remaining_findings": [
+      "REAL_SCENARIO_CORPUS_100PLUS",
+      "LIVE_MULTI_HOUR_SESSIONS"
+    ],
+    "resolved_findings": [
+      "W2.3_BENCHMARK_REALISM",
+      "F030_MULTIDIMENSIONAL_SCENARIO_BENCHMARK"
+    ],
+    "scenario_count": 2,
+    "score_delta": 0
+  },
+  "status": "completed",
+  "suite": "scenario"
+}

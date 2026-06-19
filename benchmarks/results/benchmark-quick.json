@@ -1,0 +1,51 @@
+{
+  "external_baseline": {
+    "generated_at": null,
+    "metrics": {},
+    "name": "fable5",
+    "notes": [
+      "This file is not benchmark evidence.",
+      "Use it to document the expected shape for external baseline ingestion.",
+      "Do not convert status to completed until the underlying run artifact is available."
+    ],
+    "path": "benchmarks/baselines/fable5.example.json",
+    "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-18T12:27:08.095422+00:00",
+  "iterations": 2,
+  "metrics": {
+    "effort_latency_ms": 0.167,
+    "harness_latency_ms": 0.9502,
+    "workflow_latency_ms": 0.0136
+  },
+  "scorecard": {
+    "basis": [
+      "benchmark CLI writes reproducible JSON results",
+      "minimal local Agent Harness is implemented and tested",
+      "uaek run exposes the harness as a reusable local entrypoint",
+      "CI workflow and external baseline schema are configured",
+      "configuration management is implemented and tested",
+      "structured JSONL run logging is implemented and tested",
+      "external Fable 5 baseline result remains unconfigured"
+    ],
+    "current_score": 82,
+    "previous_score": 68,
+    "remaining_findings": [
+      "F007",
+      "CI_REMOTE_UNVERIFIED",
+      "CROSS_PLATFORM",
+      "EXTERNAL_ADAPTER"
+    ],
+    "resolved_findings": [
+      "F008",
+      "F009",
+      "F010",
+      "F013",
+      "F014"
+    ],
+    "score_delta": 14
+  },
+  "status": "completed",
+  "suite": "quick"
+}

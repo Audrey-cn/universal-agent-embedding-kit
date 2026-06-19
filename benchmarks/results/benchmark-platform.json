@@ -1,0 +1,124 @@
+{
+  "external_baseline": {
+    "generated_at": null,
+    "metrics": {},
+    "name": "fable5",
+    "notes": [
+      "This file is not benchmark evidence.",
+      "Use it to document the expected shape for external baseline ingestion.",
+      "Do not convert status to completed until the underlying run artifact is available."
+    ],
+    "path": "benchmarks/baselines/fable5.example.json",
+    "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-18T13:26:52.603132+00:00",
+  "iterations": 2,
+  "metrics": {
+    "effort_latency_ms": 0.1891,
+    "harness_latency_ms": 0.7093,
+    "workflow_latency_ms": 0.0141
+  },
+  "platform_run_readiness": {
+    "artifact_schema": "platform_run_v1",
+    "checks": [
+      {
+        "evidence": "4 known platform definitions declared",
+        "id": "known_platforms_declared",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "2/2 platform artifacts recorded",
+        "id": "platform_artifact_recording",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "recorded artifacts validate against platform_run_v1",
+        "id": "platform_artifact_validation",
+        "required": true,
+        "status": "pass"
+      }
+    ],
+    "limitations": [
+      "Platform artifact readiness verifies evidence ingestion.",
+      "Live external platform runs still require provider-specific task artifacts."
+    ],
+    "metrics": {
+      "available_platforms": 4,
+      "known_platforms": 4,
+      "live_external_artifacts": 0,
+      "passed_required_checks": 3,
+      "platform_artifact_pass_rate": 1.0,
+      "required_checks": 3
+    },
+    "platforms": [
+      {
+        "available": true,
+        "command_path": "/Applications/Codex.app/Contents/Resources/codex",
+        "display_name": "Codex",
+        "interactive": false,
+        "matched_candidate": "codex",
+        "provider": "codex",
+        "run_hint": "codex exec"
+      },
+      {
+        "available": true,
+        "command_path": "/Applications/Claude.app/Contents/MacOS/Claude",
+        "display_name": "Claude Code",
+        "interactive": true,
+        "matched_candidate": "/Applications/Claude.app/Contents/MacOS/Claude",
+        "provider": "claude_code",
+        "run_hint": "claude command or Claude desktop app"
+      },
+      {
+        "available": true,
+        "command_path": "/Users/USER/.mimocode/bin/mimo",
+        "display_name": "Mimo Code",
+        "interactive": false,
+        "matched_candidate": "mimo",
+        "provider": "mimo_code",
+        "run_hint": "mimo run"
+      },
+      {
+        "available": true,
+        "command_path": "/Users/USER/.local/bin/hermes",
+        "display_name": "Hermes",
+        "interactive": false,
+        "matched_candidate": "hermes",
+        "provider": "hermes",
+        "run_hint": "hermes chat or hermes send"
+      }
+    ],
+    "previous_score": 90,
+    "recommended_score": 91,
+    "score_delta": 1,
+    "status": "completed"
+  },
+  "scorecard": {
+    "basis": [
+      "platform_run_v1 artifact schema is implemented",
+      "platform record and validate commands are available",
+      "Codex, Claude Code, Mimo Code and Hermes are declared for discovery",
+      "platform readiness does not claim a live external benchmark"
+    ],
+    "current_score": 91,
+    "previous_score": 90,
+    "remaining_findings": [
+      "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+      "LIVE_EXTERNAL_PLATFORM_RUNS",
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_CROSS_PLATFORM_MATRIX",
+      "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+    ],
+    "resolved_findings": [
+      "F007_PROXY_VALIDATED",
+      "F016_EXTERNAL_ADAPTER_CONTRACT",
+      "F018_PLATFORM_RUN_ARTIFACTS"
+    ],
+    "score_delta": 1
+  },
+  "status": "completed",
+  "suite": "platform"
+}

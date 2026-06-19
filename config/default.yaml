@@ -1,0 +1,24 @@
+uaek:
+  version: "0.1.0-alpha"
+  memory:
+    storage_path: ".uaek/memory"
+    default_layer: "l2"
+  workflow:
+    default_type: "sequential"
+    safe_actions:
+      - noop
+      - echo
+      - concat
+      - sum
+      - effort
+      - fail
+  skills:
+    search_paths:
+      - "skills"
+  logging:
+    enabled: true
+    file_path: ".uaek/uaek.jsonl"
+  verification:
+    lint_command: ".venv/bin/python -m ruff check src api mcp tests"
+    typecheck_command: ".venv/bin/python -m mypy src api mcp"
+    test_command: ".venv/bin/python -m pytest"

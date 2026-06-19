@@ -1,0 +1,33 @@
+{
+  "schema": "scenario_live_measurement_v1",
+  "evidence_rung": 3,
+  "source": "real mimo solutions scored by the multi-dimensional scenario rubric (incl. genuine reuse probe)",
+  "provider": "mimo_code (mimo-v2.5-pro)",
+  "runs": [
+    {
+      "scenario_id": "discount_feature",
+      "dimensions": {
+        "correctness": 1.0,
+        "completeness": 1.0,
+        "robustness": 1.0
+      },
+      "overall": 1.0
+    },
+    {
+      "scenario_id": "running_total",
+      "dimensions": {
+        "correctness": 1.0,
+        "completeness": 1.0,
+        "robustness": 1.0,
+        "context_retention": 1.0
+      },
+      "overall": 1.0
+    }
+  ],
+  "context_retention_verified_on_real_code": true,
+  "red_team_caveats": [
+    "Real agent solutions, single model, only the 2 seed scenarios.",
+    "running_total real solution genuinely calls parse_amounts (reuse probe = 1.0), confirming the probe works on live code and the agent reused the dependency.",
+    "Still not the proposal 100+ live multi-hour ambiguous sessions; this is real solutions to seed scenarios, one rung above constructed reference/flawed pairs."
+  ]
+}

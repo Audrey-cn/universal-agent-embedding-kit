@@ -1,0 +1,43 @@
+# --- Third-party research inputs (cloned repos analyzed during research; NOT part of UAEK) ---
+Claude-Fable-5-Analysis/
+ClaudeCode_GodMode-On/
+architect-loop/
+awesome-claude-fable-5/
+claw-agent-guide/
+deo-harness/
+fable-mode/
+fablize/
+fusion-fable/
+jailbreak-fable/
+modelharness/
+system_prompts_leaks/
+
+# --- Local-only working ledgers and archived analysis (kept private) ---
+archive/
+task_plan.md
+progress.md
+findings.md
+.agent-workflow/
+.uaek/
+progress/
+
+# --- Python build / cache / env ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.coverage.*
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# --- OS / editor ---
+.DS_Store
+
+# Local Claude Code project config (machine-specific permissions)
+.claude/
+
+# Stray candidate solutions from live runs
+/two_sum.py
+/max_subarray.py

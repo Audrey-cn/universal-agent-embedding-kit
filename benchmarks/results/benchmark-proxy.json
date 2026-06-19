@@ -1,0 +1,178 @@
+{
+  "external_baseline": {
+    "generated_at": null,
+    "metrics": {},
+    "name": "fable5",
+    "notes": [
+      "This file is not benchmark evidence.",
+      "Use it to document the expected shape for external baseline ingestion.",
+      "Do not convert status to completed until the underlying run artifact is available."
+    ],
+    "path": "benchmarks/baselines/fable5.example.json",
+    "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-18T12:52:42.259702+00:00",
+  "iterations": 2,
+  "metrics": {
+    "effort_latency_ms": 0.1768,
+    "harness_latency_ms": 0.782,
+    "workflow_latency_ms": 0.0139
+  },
+  "proxy_validation": {
+    "checks": [
+      {
+        "evidence": "2/2 local harness runs completed with score 1.0",
+        "id": "local_harness_pipeline",
+        "required": true,
+        "source_practices": [
+          "SWE-bench",
+          "HAL harness",
+          "MLAgentBench"
+        ],
+        "status": "pass"
+      },
+      {
+        "evidence": "JSONL trace event written and parsed",
+        "id": "structured_trace_logging",
+        "required": true,
+        "source_practices": [
+          "HAL harness",
+          "Inspect AI"
+        ],
+        "status": "pass"
+      },
+      {
+        "evidence": "CI workflow defines lint, typecheck, tests and coverage gates",
+        "id": "local_ci_gate_contract",
+        "required": true,
+        "source_practices": [
+          "SWE-bench",
+          "HAL harness"
+        ],
+        "status": "pass"
+      },
+      {
+        "evidence": "workflow safe_actions exclude shell/eval style execution",
+        "id": "safe_action_surface",
+        "required": true,
+        "source_practices": [
+          "AppWorld",
+          "ImpossibleBench",
+          "AgentSafety"
+        ],
+        "status": "pass"
+      }
+    ],
+    "direct_baseline": {
+      "reason": "The reference model is not currently available for direct reruns.",
+      "status": "retired_unavailable"
+    },
+    "matrix": {
+      "dimensions": [
+        "reproducible_artifacts",
+        "isolated_execution",
+        "tool_interaction_state",
+        "trace_and_cost_observability",
+        "objective_scoring",
+        "safety_and_cheat_resistance",
+        "cross_environment_readiness"
+      ],
+      "limitations": [
+        "This is not a direct run against the retired reference model.",
+        "Remote CI and live external agent adapters still require separate evidence."
+      ],
+      "sources": [
+        {
+          "name": "SWE-bench",
+          "practice": "real GitHub issues, reproducible Docker evaluation, logs/results",
+          "url": "https://github.com/swe-bench/SWE-bench"
+        },
+        {
+          "name": "HAL harness",
+          "practice": "unified benchmark CLI, agent-agnostic adapters, trace/cost tracking",
+          "url": "https://github.com/princeton-pli/hal-harness"
+        },
+        {
+          "name": "tau-bench",
+          "practice": "tool-agent-user interaction with domain APIs and repeated pass metrics",
+          "url": "https://github.com/sierra-research/tau-bench"
+        },
+        {
+          "name": "AppWorld",
+          "practice": "sandboxed app world, local APIs, task state reset and outputs",
+          "url": "https://github.com/StonyBrookNLP/appworld"
+        },
+        {
+          "name": "OSWorld",
+          "practice": "real computer environments and verified task repair process",
+          "url": "https://github.com/xlang-ai/OSWorld"
+        },
+        {
+          "name": "Inspect AI",
+          "practice": "general eval framework for tool use, multi-turn dialog and scoring",
+          "url": "https://github.com/UKGovernmentBEIS/inspect_ai"
+        },
+        {
+          "name": "ImpossibleBench",
+          "practice": "impossible variants for cheating and shortcut detection",
+          "url": "https://github.com/safety-research/impossiblebench"
+        },
+        {
+          "name": "AgentSafety",
+          "practice": "agent safety, attack and defense benchmark taxonomy",
+          "url": "https://github.com/OSU-NLP-Group/AgentSafety"
+        },
+        {
+          "name": "MLE-bench",
+          "practice": "objective grading scripts for ML engineering submissions",
+          "url": "https://github.com/openai/mle-bench"
+        },
+        {
+          "name": "MLAgentBench",
+          "practice": "sandboxed ML experimentation tasks and repeatable reports",
+          "url": "https://github.com/snap-stanford/mlagentbench"
+        }
+      ],
+      "strategy": "proxy_validation_for_retired_direct_baseline"
+    },
+    "metrics": {
+      "github_source_count": 10,
+      "passed_required_checks": 4,
+      "proxy_pass_rate": 1.0,
+      "required_checks": 4,
+      "validation_dimension_count": 7
+    },
+    "previous_score": 82,
+    "recommended_score": 88,
+    "score_delta": 6,
+    "status": "completed"
+  },
+  "scorecard": {
+    "basis": [
+      "direct reference model is unavailable for rerun",
+      "GitHub-derived proxy validation matrix is documented",
+      "local harness, config/logging, CI gate and safe-action checks pass",
+      "proxy validation does not claim direct Fable 5 superiority"
+    ],
+    "current_score": 88,
+    "previous_score": 82,
+    "remaining_findings": [
+      "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+      "CI_REMOTE_UNVERIFIED",
+      "LIVE_EXTERNAL_ADAPTER",
+      "FULL_CROSS_PLATFORM_MATRIX"
+    ],
+    "resolved_findings": [
+      "F007_PROXY_VALIDATED",
+      "F008",
+      "F009",
+      "F010",
+      "F013",
+      "F014"
+    ],
+    "score_delta": 6
+  },
+  "status": "completed",
+  "suite": "proxy"
+}

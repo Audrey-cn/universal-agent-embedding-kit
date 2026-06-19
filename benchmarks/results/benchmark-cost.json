@@ -1,0 +1,194 @@
+{
+  "cost_readiness": {
+    "baseline": {
+      "cache_hit_rate": 0.0,
+      "cache_read_tokens": 0,
+      "input_cost": 74000.0,
+      "output_cost": 22500.0,
+      "total_cost": 96500.0,
+      "total_input_tokens": 74000
+    },
+    "cache_hit_rate": 0.9662,
+    "checks": [
+      {
+        "evidence": "fresh-cache reduction 63% >= proposal target 50%",
+        "id": "best_case_beats_proposal_target",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "reduction ranges -22% (100% miss) to 63% (fresh) across the TTL sweep",
+        "id": "ttl_sensitivity_disclosed",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "1-hour stable-prefix tier at 20% TTL miss: reduction 49% (vs 43% on 5-min tier) target 50%",
+        "id": "improved_robust_to_realistic_ttl_misses",
+        "required": true,
+        "status": "fail"
+      },
+      {
+        "evidence": "rung-4 live mimo session: MEASURED cache hit 92%, cost reduction 82% (warm session — real analog of best case)",
+        "id": "live_measurement_validates_model",
+        "required": false,
+        "status": "pass"
+      }
+    ],
+    "cost_reduction": 0.4923,
+    "cost_reduction_5min_tier": 0.4281,
+    "cost_reduction_best_case": 0.6319,
+    "cost_reduction_cache_only": 0.3465,
+    "dimension": "4_cost",
+    "effort_routing_contribution": 0.0816,
+    "limitations": [
+      "Modeled cost under documented Anthropic-style cache multipliers, not a billed invoice; absolute savings depend on workload shape.",
+      "Headline is the IMPROVED number: the stable system+tools prefix is put on the 1-hour cache tier (2x write premium) so it survives the gaps that expire the 5-min rolling history. This makes the 20%-miss reduction robust; the 5-min-only number (cost_reduction_5min_tier) and the full TTL sweep are reported for comparison. A session gap beyond 1 hour still expires even the stable prefix.",
+      "The baseline caches nothing; a baseline that already caches the static system+tools prefix would narrow the delta. Cache-only vs +effort are reported separately so the unverified 'simple turns are cheaper without quality loss' assumption is auditable.",
+      "Anthropic allows only ~4 cache breakpoints; perfect per-turn incremental caching is an upper bound, so the modeled hit rate is optimistic."
+    ],
+    "live_measurement": {
+      "command": "mimo run --pure --format json -s <session> (4 turns)",
+      "evidence_rung": 4,
+      "measured": {
+        "cached_cost": 15583.4,
+        "real_cache_hit_rate": 0.9159,
+        "real_cost_reduction": 0.8222,
+        "totals": {
+          "cache_read": 80064,
+          "cache_write": 0,
+          "input": 7352,
+          "output": 45
+        },
+        "turns": [
+          {
+            "cache_read": 20480,
+            "cache_write": 0,
+            "input": 1122,
+            "output": 4,
+            "turn": 1
+          },
+          {
+            "cache_read": 21568,
+            "cache_write": 0,
+            "input": 93,
+            "output": 4,
+            "turn": 2
+          },
+          {
+            "cache_read": 21632,
+            "cache_write": 0,
+            "input": 409,
+            "output": 24,
+            "turn": 3
+          },
+          {
+            "cache_read": 16384,
+            "cache_write": 0,
+            "input": 5728,
+            "output": 13,
+            "turn": 4
+          }
+        ],
+        "uncached_cost": 87641.0
+      },
+      "pricing": {
+        "cache_read": 0.1,
+        "cache_write": 1.25,
+        "input": 1.0,
+        "output": 5.0
+      },
+      "provider": "mimo_code (mimo-v2.5-pro)",
+      "red_team_caveats": [
+        "WARM session: turns were back-to-back with no gaps, so no 5-min TTL expiry occurred — this is the real analog of the BEST case, not the realistic-miss scenario. Gappy human-paced sessions still degrade per the modeled TTL sweep.",
+        "cache_write was 0 across all turns (server-side session persistence), so no 1.25x write premium was incurred in this measurement; other providers/setups may charge writes.",
+        "Single provider (mimo-v2.5-pro), single 4-turn session, small outputs — not a distribution over workloads.",
+        "Price multipliers are still documented constants; only the token counts + cache hit rate are now MEASURED (rung 4), which is the key upgrade over the modeled estimate."
+      ],
+      "schema": "cost_live_measurement_v1",
+      "source": "live mimo multi-turn session (real token accounting)"
+    },
+    "pricing": {
+      "cache_read": 0.1,
+      "cache_write": 1.25,
+      "input": 1.0,
+      "output": 5.0
+    },
+    "proposal_target": 0.5,
+    "realistic_miss_rate": 0.2,
+    "resolved_findings": [],
+    "status": "partial",
+    "stretch_target": 0.7,
+    "ttl_improvement": 0.0642,
+    "ttl_sweep": [
+      {
+        "cache_miss_rate": 0.0,
+        "cost_reduction": 0.6319
+      },
+      {
+        "cache_miss_rate": 0.1,
+        "cost_reduction": 0.6319
+      },
+      {
+        "cache_miss_rate": 0.2,
+        "cost_reduction": 0.4281
+      },
+      {
+        "cache_miss_rate": 0.3,
+        "cost_reduction": 0.4615
+      },
+      {
+        "cache_miss_rate": 0.5,
+        "cost_reduction": 0.185
+      },
+      {
+        "cache_miss_rate": 1.0,
+        "cost_reduction": -0.2202
+      }
+    ],
+    "uaek": {
+      "cache_hit_rate": 0.8432,
+      "cache_miss_rate": 0.2,
+      "cache_miss_tokens": 9100,
+      "cache_read_tokens": 62400,
+      "input_cost": 17615.0,
+      "output_cost": 14625.0,
+      "total_cost": 48990.0,
+      "total_input_tokens": 74000,
+      "write_cost": 16750.0
+    }
+  },
+  "external_baseline": {
+    "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-19T04:40:18.115696+00:00",
+  "iterations": 1,
+  "metrics": {
+    "effort_latency_ms": 0.396,
+    "harness_latency_ms": 0.9037,
+    "workflow_latency_ms": 0.0202
+  },
+  "scorecard": {
+    "basis": [
+      "research proposition 3: cache-aware cost model",
+      "prompt/KV cache hit rate 97% on a stable-prefix agent session",
+      "total cost reduction 49% (proposal target 50%, stretch 70%)",
+      "modeled under documented cache multipliers, not a billed invoice"
+    ],
+    "cache_hit_rate": 0.9662,
+    "cost_reduction": 0.4923,
+    "current_score": null,
+    "dimension": "4_cost",
+    "previous_score": null,
+    "proposal_target": 0.5,
+    "remaining_findings": [
+      "REAL_SCENARIO_BENCHMARK"
+    ],
+    "resolved_findings": [],
+    "score_delta": 0,
+    "stretch_target": 0.7
+  },
+  "status": "completed",
+  "suite": "cost"
+}

@@ -1,0 +1,139 @@
+{
+  "external_baseline": {
+    "generated_at": null,
+    "metrics": {},
+    "name": "fable5",
+    "notes": [
+      "This file is not benchmark evidence.",
+      "Use it to document the expected shape for external baseline ingestion.",
+      "Do not convert status to completed until the underlying run artifact is available."
+    ],
+    "path": "benchmarks/baselines/fable5.example.json",
+    "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-18T13:59:28.267564+00:00",
+  "iterations": 2,
+  "live_matrix_readiness": {
+    "artifact_dir": "benchmarks/results/platform-runs",
+    "checks": [
+      {
+        "evidence": "3/4 providers have valid live_external artifacts",
+        "id": "full_live_per_platform_matrix",
+        "required": true,
+        "status": "fail"
+      },
+      {
+        "evidence": "1 blocked providers; 0 providers missing live diagnostics",
+        "id": "blocked_attempt_diagnostics",
+        "required": true,
+        "status": "pass"
+      }
+    ],
+    "expected_providers": [
+      "claude_code",
+      "codex",
+      "hermes",
+      "mimo_code"
+    ],
+    "limitations": [
+      "Live matrix readiness does not claim a retired Fable 5 rerun.",
+      "A blocked provider is diagnostic evidence, not live success evidence.",
+      "Remote CI and release publication remain separate evidence tracks."
+    ],
+    "metrics": {
+      "blocked_provider_count": 1,
+      "expected_provider_count": 4,
+      "live_matrix_pass_rate": 0.75,
+      "live_provider_count": 3,
+      "missing_provider_count": 0,
+      "platform_artifacts": 8
+    },
+    "previous_score": 96,
+    "provider_statuses": [
+      {
+        "attempted_live_artifacts": 1,
+        "errors": [
+          "live_external artifacts must be completed successful runs",
+          "live_external artifacts require nonempty adapter output",
+          "Claude App headless invocation timed out; Electron/IndexedDB lock prevents noninteractive live task"
+        ],
+        "evidence_paths": [
+          "benchmarks/results/platform-runs/claude-live-platform-run.json"
+        ],
+        "live_artifacts": 0,
+        "provider": "claude_code",
+        "status": "blocked"
+      },
+      {
+        "attempted_live_artifacts": 1,
+        "errors": [],
+        "evidence_paths": [
+          "benchmarks/results/platform-runs/codex-live-platform-run.json"
+        ],
+        "live_artifacts": 1,
+        "provider": "codex",
+        "status": "live"
+      },
+      {
+        "attempted_live_artifacts": 1,
+        "errors": [],
+        "evidence_paths": [
+          "benchmarks/results/platform-runs/hermes-live-platform-run.json"
+        ],
+        "live_artifacts": 1,
+        "provider": "hermes",
+        "status": "live"
+      },
+      {
+        "attempted_live_artifacts": 1,
+        "errors": [],
+        "evidence_paths": [
+          "benchmarks/results/platform-runs/mimo-live-platform-run.json"
+        ],
+        "live_artifacts": 1,
+        "provider": "mimo_code",
+        "status": "live"
+      }
+    ],
+    "recommended_score": 97,
+    "remaining_findings": [
+      "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_LIVE_PER_PLATFORM_MATRIX"
+    ],
+    "resolved_findings": [
+      "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+      "F022_LIVE_MATRIX_PARTIAL"
+    ],
+    "score_delta": 1,
+    "status": "partial"
+  },
+  "metrics": {
+    "effort_latency_ms": 0.1905,
+    "harness_latency_ms": 0.7869,
+    "workflow_latency_ms": 0.0165
+  },
+  "scorecard": {
+    "basis": [
+      "live_matrix evaluates valid live_external artifacts per provider",
+      "blocked provider attempts are diagnostics and do not count as live success",
+      "three live providers with blocked diagnostics can support 97/100",
+      "four live providers are required to close the full live matrix finding"
+    ],
+    "current_score": 97,
+    "previous_score": 96,
+    "remaining_findings": [
+      "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_LIVE_PER_PLATFORM_MATRIX"
+    ],
+    "resolved_findings": [
+      "F017_LIVE_EXTERNAL_TASK_ARTIFACT",
+      "F022_LIVE_MATRIX_PARTIAL"
+    ],
+    "score_delta": 1
+  },
+  "status": "completed",
+  "suite": "live_matrix"
+}

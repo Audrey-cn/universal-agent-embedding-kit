@@ -1,0 +1,151 @@
+{
+  "context_rot_readiness": {
+    "accuracy_gap_at_target": 0.2783,
+    "adaptive": {
+      "accuracy_at_target": 0.8497,
+      "accuracy_at_target_adversarial": 0.8497,
+      "accuracy_at_target_band": [
+        0.7143,
+        0.9643
+      ]
+    },
+    "checks": [
+      {
+        "evidence": "at 70% util adaptive 85% (band 71%-96%) vs naive 57% (+28%)",
+        "id": "adaptive_beats_naive_at_target",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "adaptive accuracy 85% < 100%: lossy compression (recall 90%) + relevance error (5%) are modeled, not assumed away",
+        "id": "models_compression_and_relevance_loss",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "needles clustered past the dumb zone: adaptive 85% vs naive 46%",
+        "id": "robust_under_adversarial_placement",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "rung-3 real mimo needle-in-haystack: recall 100% (6/6) over 30977 tokens — validates retrieval is tractable, not the adaptive advantage",
+        "id": "live_retrieval_probe",
+        "required": false,
+        "status": "pass"
+      }
+    ],
+    "dimension": "3_context_utilization",
+    "fidelity_recall": 0.9,
+    "limitations": [
+      "Deterministic information-retention benchmark of the context layer, not a live-LLM comprehension run.",
+      "The ~40% naive reliable fraction is the documented Fable-5/LLM dumb-zone, a stated baseline rather than re-measured.",
+      "Compression loss (recall) and relevance-misclassification rates are modeled parameters; the headline is expected accuracy at the 70% target with a seed band, not a single deterministic ceiling (which the red-team showed is a threshold knife-edge)."
+    ],
+    "live_measurement": {
+      "by_depth": [
+        {
+          "depth_fraction": 0.0,
+          "label": "ZEBRA",
+          "recalled": true
+        },
+        {
+          "depth_fraction": 0.2,
+          "label": "MANGO",
+          "recalled": true
+        },
+        {
+          "depth_fraction": 0.4,
+          "label": "PIANO",
+          "recalled": true
+        },
+        {
+          "depth_fraction": 0.6,
+          "label": "RIVER",
+          "recalled": true
+        },
+        {
+          "depth_fraction": 0.8,
+          "label": "COMET",
+          "recalled": true
+        },
+        {
+          "depth_fraction": 1.0,
+          "label": "TIGER",
+          "recalled": true
+        }
+      ],
+      "context_tokens": 30977,
+      "evidence_rung": 3,
+      "needles": 6,
+      "provider": "mimo_code (mimo-v2.5-pro)",
+      "recall_rate": 1.0,
+      "recalled": 6,
+      "red_team_caveats": [
+        "Single model, single prompt, 6 needles — a real but small retrieval probe, not a naive-vs-adaptive strategy comparison (that lives inside the model's own context mgmt).",
+        "Modern models often retrieve well; high recall here validates that the rot PREMISE is not catastrophic for this model/length, it does not by itself prove the adaptive layer's advantage — that remains the deterministic benchmark's claim.",
+        "Token-level utilization is not precisely controlled; the filler length is fixed."
+      ],
+      "schema": "context_live_measurement_v1",
+      "source": "real mimo needle-in-haystack retrieval over a long filler context"
+    },
+    "naive": {
+      "accuracy_at_target": 0.5714,
+      "accuracy_at_target_adversarial": 0.4643
+    },
+    "relevance_recall": 0.95,
+    "resolved_findings": [
+      "W4.1_CONTEXT_ROT",
+      "F028_ADAPTIVE_CONTEXT_MANAGEMENT"
+    ],
+    "status": "completed",
+    "target_utilization": 0.7,
+    "usable_ceilings_by_threshold": {
+      "threshold_80": {
+        "adaptive": 0.9,
+        "naive": 0.5
+      },
+      "threshold_90": {
+        "adaptive": 0.0,
+        "naive": 0.4
+      }
+    },
+    "window_tokens": 2000
+  },
+  "external_baseline": {
+    "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-19T04:40:18.259359+00:00",
+  "iterations": 1,
+  "metrics": {
+    "effort_latency_ms": 0.2803,
+    "harness_latency_ms": 0.8249,
+    "workflow_latency_ms": 0.0153
+  },
+  "scorecard": {
+    "accuracy_gap_at_target": 0.2783,
+    "adaptive_accuracy_at_target": 0.8497,
+    "basis": [
+      "research proposition 1: adaptive context management vs context rot",
+      "at 70% utilization, naive accuracy 57% (documented ~40% dumb zone)",
+      "adaptive (lossy compression + relevance filtering) 85% expected accuracy with a seed band",
+      "red-teamed: compression loss is modeled, not assumed away; deterministic retention benchmark, not a live-LLM run"
+    ],
+    "current_score": null,
+    "dimension": "3_context_utilization",
+    "naive_accuracy_at_target": 0.5714,
+    "previous_score": null,
+    "remaining_findings": [
+      "REAL_SCENARIO_BENCHMARK"
+    ],
+    "resolved_findings": [
+      "W4.1_CONTEXT_ROT",
+      "F028_ADAPTIVE_CONTEXT_MANAGEMENT"
+    ],
+    "score_delta": 0,
+    "target_utilization": 0.7
+  },
+  "status": "completed",
+  "suite": "context"
+}

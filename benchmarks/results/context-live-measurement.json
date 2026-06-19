@@ -1,0 +1,47 @@
+{
+  "schema": "context_live_measurement_v1",
+  "evidence_rung": 3,
+  "source": "real mimo needle-in-haystack retrieval over a long filler context",
+  "provider": "mimo_code (mimo-v2.5-pro)",
+  "needles": 6,
+  "recalled": 6,
+  "recall_rate": 1.0,
+  "by_depth": [
+    {
+      "label": "ZEBRA",
+      "depth_fraction": 0.0,
+      "recalled": true
+    },
+    {
+      "label": "MANGO",
+      "depth_fraction": 0.2,
+      "recalled": true
+    },
+    {
+      "label": "PIANO",
+      "depth_fraction": 0.4,
+      "recalled": true
+    },
+    {
+      "label": "RIVER",
+      "depth_fraction": 0.6,
+      "recalled": true
+    },
+    {
+      "label": "COMET",
+      "depth_fraction": 0.8,
+      "recalled": true
+    },
+    {
+      "label": "TIGER",
+      "depth_fraction": 1.0,
+      "recalled": true
+    }
+  ],
+  "context_tokens": 30977,
+  "red_team_caveats": [
+    "Single model, single prompt, 6 needles \u2014 a real but small retrieval probe, not a naive-vs-adaptive strategy comparison (that lives inside the model's own context mgmt).",
+    "Modern models often retrieve well; high recall here validates that the rot PREMISE is not catastrophic for this model/length, it does not by itself prove the adaptive layer's advantage \u2014 that remains the deterministic benchmark's claim.",
+    "Token-level utilization is not precisely controlled; the filler length is fixed."
+  ]
+}

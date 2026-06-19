@@ -1,0 +1,45 @@
+{
+  "adapter_result": {
+    "artifacts": {
+      "command": [
+        "/Applications/Codex.app/Contents/Resources/codex",
+        "--version"
+      ]
+    },
+    "duration_ms": 40.4226,
+    "error": null,
+    "metrics": {
+      "return_code": 0
+    },
+    "output": "codex-cli 0.140.0-alpha.19",
+    "provider": "codex",
+    "request": {
+      "context": {},
+      "metadata": {
+        "trace_id": "e8661472-366f-4f43-9697-687850874bcc"
+      },
+      "task": "probe codex platform"
+    },
+    "return_code": 0,
+    "stderr": "",
+    "stdout": "{\"success\": true, \"output\": \"codex-cli 0.140.0-alpha.19\", \"artifacts\": {\"command\": [\"/Applications/Codex.app/Contents/Resources/codex\", \"--version\"]}, \"metrics\": {\"return_code\": 0}}\n",
+    "success": true,
+    "task": "probe codex platform",
+    "trace_id": "e8661472-366f-4f43-9697-687850874bcc"
+  },
+  "evidence_level": "local_command",
+  "provenance": {
+    "adapter_result_path": "benchmarks/results/platform-runs/codex-adapter-result.json",
+    "command": [
+      "/Applications/Codex.app/Contents/Resources/codex",
+      "--version"
+    ],
+    "source": "codex cli version probe via uaek adapter"
+  },
+  "provider": "codex",
+  "recorded_at": "2026-06-18T13:18:01.022769+00:00",
+  "run_id": "platform-fdd16211-c7ee-4e79-a0ed-3aec5ca658b7",
+  "schema": "platform_run_v1",
+  "status": "completed",
+  "task": "probe codex platform"
+}

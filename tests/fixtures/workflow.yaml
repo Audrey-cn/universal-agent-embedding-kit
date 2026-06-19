@@ -1,0 +1,25 @@
+id: fixture-workflow
+type: sequential
+tasks:
+  - id: collect
+    name: Collect task signal
+    action: echo
+    args:
+      - "implement auth module"
+  - id: classify
+    name: Classify effort
+    action: effort
+    args:
+      - "implement auth module"
+    dependencies:
+      - collect
+  - id: summarize
+    name: Summarize result
+    action: concat
+    args:
+      - "workflow:"
+      - "fixture"
+    kwargs:
+      separator: " "
+    dependencies:
+      - classify

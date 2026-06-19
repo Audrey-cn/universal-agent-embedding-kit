@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "name": "fable5",
+  "status": "not_configured",
+  "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+  "generated_at": null,
+  "metrics": {},
+  "notes": [
+    "This file is not benchmark evidence.",
+    "Use it to document the expected shape for external baseline ingestion.",
+    "Do not convert status to completed until the underlying run artifact is available."
+  ]
+}

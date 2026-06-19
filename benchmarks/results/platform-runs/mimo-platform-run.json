@@ -1,0 +1,45 @@
+{
+  "adapter_result": {
+    "artifacts": {
+      "command": [
+        "/Users/USER/.mimocode/bin/mimo",
+        "--version"
+      ]
+    },
+    "duration_ms": 1036.9636,
+    "error": null,
+    "metrics": {
+      "return_code": 0
+    },
+    "output": "0.1.0",
+    "provider": "mimo_code",
+    "request": {
+      "context": {},
+      "metadata": {
+        "trace_id": "80b20ae7-7595-4e4c-b34e-4541e6c1ceb6"
+      },
+      "task": "probe mimo platform"
+    },
+    "return_code": 0,
+    "stderr": "",
+    "stdout": "{\"success\": true, \"output\": \"0.1.0\", \"artifacts\": {\"command\": [\"/Users/USER/.mimocode/bin/mimo\", \"--version\"]}, \"metrics\": {\"return_code\": 0}}\n",
+    "success": true,
+    "task": "probe mimo platform",
+    "trace_id": "80b20ae7-7595-4e4c-b34e-4541e6c1ceb6"
+  },
+  "evidence_level": "local_command",
+  "provenance": {
+    "adapter_result_path": "benchmarks/results/platform-runs/mimo-adapter-result.json",
+    "command": [
+      "/Users/USER/.mimocode/bin/mimo",
+      "--version"
+    ],
+    "source": "mimo version probe via uaek adapter"
+  },
+  "provider": "mimo_code",
+  "recorded_at": "2026-06-18T13:18:50.164819+00:00",
+  "run_id": "platform-de512be1-fb9a-41a6-a953-b2eab95984aa",
+  "schema": "platform_run_v1",
+  "status": "completed",
+  "task": "probe mimo platform"
+}

@@ -1,0 +1,82 @@
+{
+  "adapter_readiness": {
+    "checks": [
+      {
+        "evidence": "2/2 command adapter runs returned valid JSON",
+        "id": "command_adapter_contract",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "invalid stdout is returned as structured adapter failure",
+        "id": "failure_diagnostics",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "evidence": "adapter run writes JSONL trace with provider and trace_id",
+        "id": "trace_logging",
+        "required": true,
+        "status": "pass"
+      }
+    ],
+    "limitations": [
+      "Command adapter readiness is local and deterministic.",
+      "Live external platform runs require separate credentials and run records."
+    ],
+    "metrics": {
+      "adapter_pass_rate": 1.0,
+      "passed_required_checks": 3,
+      "required_checks": 3
+    },
+    "previous_score": 88,
+    "protocol": "stdin_stdout_json_v1",
+    "recommended_score": 90,
+    "score_delta": 2,
+    "status": "completed"
+  },
+  "external_baseline": {
+    "generated_at": null,
+    "metrics": {},
+    "name": "fable5",
+    "notes": [
+      "This file is not benchmark evidence.",
+      "Use it to document the expected shape for external baseline ingestion.",
+      "Do not convert status to completed until the underlying run artifact is available."
+    ],
+    "path": "benchmarks/baselines/fable5.example.json",
+    "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+    "status": "not_configured"
+  },
+  "generated_at": "2026-06-18T13:07:34.580480+00:00",
+  "iterations": 2,
+  "metrics": {
+    "effort_latency_ms": 0.2018,
+    "harness_latency_ms": 0.7796,
+    "workflow_latency_ms": 0.0159
+  },
+  "scorecard": {
+    "basis": [
+      "command adapter stdin/stdout JSON protocol is implemented",
+      "adapter failures preserve stdout, stderr, return code and timeout errors",
+      "adapter runs can write JSONL traces",
+      "adapter readiness does not claim live external platform superiority"
+    ],
+    "current_score": 90,
+    "previous_score": 88,
+    "remaining_findings": [
+      "DIRECT_RETIRED_MODEL_UNAVAILABLE",
+      "LIVE_EXTERNAL_PLATFORM_RUNS",
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_CROSS_PLATFORM_MATRIX",
+      "ADVERSARIAL_SELF_IMPROVEMENT_SUITE"
+    ],
+    "resolved_findings": [
+      "F007_PROXY_VALIDATED",
+      "F016_EXTERNAL_ADAPTER_CONTRACT"
+    ],
+    "score_delta": 2
+  },
+  "status": "completed",
+  "suite": "adapter"
+}
