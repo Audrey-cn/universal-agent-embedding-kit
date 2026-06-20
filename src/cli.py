@@ -797,16 +797,20 @@ def audit(iterations: int, output: str, baseline: str | None):
         baseline_path=Path(baseline) if baseline else None,
     )
 
+    payload = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if output == "-":
+        # "-" means stdout (machine / pipe use): emit pure JSON, skip the human
+        # table. Previously this fell through to ``Path("-") / "audit.json"`` and
+        # created a stray directory literally named "-".
+        click.echo(payload, nl=False)
+        return
     output_path = Path(output)
     if output_path.suffix.lower() == ".json":
         audit_path = output_path
     else:
         audit_path = output_path / "audit.json"
     audit_path.parent.mkdir(parents=True, exist_ok=True)
-    audit_path.write_text(
-        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    audit_path.write_text(payload, encoding="utf-8")
 
     # Print summary table
     table = Table(title="UAEK Audit Report")

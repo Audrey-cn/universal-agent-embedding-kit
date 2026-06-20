@@ -14,10 +14,15 @@ system_prompts_leaks/
 
 # --- Local-only working ledgers and archived analysis (kept private) ---
 archive/
+task_plan.md
 progress.md
+findings.md
+PROJECT_AUDIT_REPORT.md
 .agent-workflow/
 .uaek/
 progress/
+# stray audit output dir (from `audit --output -`, now fixed)
+-/
 
 # --- Python build / cache / env ---
 .venv/
