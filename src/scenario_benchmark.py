@@ -698,3 +698,27 @@ def run_scenario_readiness() -> dict[str, Any]:
             "to a real 100+ scenario corpus is open work.",
         ],
     }
+
+# ── Import and merge scenario pack 2 (20 additional scenarios) ──
+try:
+    from src.scenario_pack_2 import SCENARIO_PACK_2, REFERENCE_PACK_2, FLAWED_PACK_2
+
+    # Merge scenarios
+    merged_scenarios = list(SCENARIOS)
+    for s in SCENARIO_PACK_2:
+        merged_scenarios.append(s)
+    SCENARIOS = tuple(merged_scenarios)
+
+    # Merge solutions
+    REFERENCE_SOLUTIONS.update(REFERENCE_PACK_2)
+    FLAWED_SOLUTIONS.update(FLAWED_PACK_2)
+
+    # Update by-id cache
+    for s in SCENARIO_PACK_2:
+        _SCENARIOS_BY_ID[s.scenario_id] = s
+
+    _pack2_loaded = True
+except ImportError:
+    _pack2_loaded = False
+except Exception:
+    _pack2_loaded = False

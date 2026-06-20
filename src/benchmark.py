@@ -691,7 +691,7 @@ def _build_limitations() -> list[str]:
             "Adversarial cheating 0% claim is scoped to THIS corpus+generator, "
             "NOT a proof of impossibility"
         ),
-        "Scenario corpus is seed-set (2 scenarios); 100+ live multi-hour corpus is open work",
+        "Scenario corpus covers 20 scenarios across 12 categories; a 100+ live multi-hour corpus remains open work",
         "Claude Code CLI routes to mimo-v2.5-pro — model backend is ≤3 distinct, not 4",
         (
             "Cross-platform matrix is 4/4 graded-live but requires "
