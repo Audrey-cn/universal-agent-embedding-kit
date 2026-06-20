@@ -1,3 +1,5 @@
+![CI](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml/badge.svg)
+
 # UAEK — Universal Agent Embedding Kit
 
 A model-agnostic, embeddable kit that gives any agent platform stronger
@@ -15,7 +17,7 @@ pip install -e '.[dev]'
 uaek --help
 uaek benchmark --suite adversarial   # cheating-rate evidence
 uaek capability matrix               # cross-platform graded task matrix
-python -m pytest -q                  # 378 passing
+python -m pytest -q                  # 385 tests passing
 ```
 
 ## What's inside
@@ -47,7 +49,7 @@ tagged with its rung on the evidence ladder (see `docs/methodology.md`).
 | Real-scenario benchmark | multi-dimensional; flags a feature-complete-but-regressing solution a pass/fail accepts | 3 (real agent solutions) | seed + framework, not yet 100+ live multi-hour sessions |
 | Cross-platform matrix | **4/4** providers pass objectively-graded live code tasks | 4 (live) | one CLI is configured to route to a shared model backend; measures platform-runtime embeddability, not 4 independent models |
 
-Gates: **378 tests pass**, ruff + mypy clean. Full breakdown and provenance in
+Gates: **385 tests pass**, ruff + mypy clean. Full breakdown and provenance in
 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 
 ## The methodology is the product
@@ -74,3 +76,6 @@ See [`docs/methodology.md`](docs/methodology.md), the research framing in
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+</div>
