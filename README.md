@@ -17,7 +17,7 @@ pip install -e '.[dev]'
 uaek --help
 uaek benchmark --suite adversarial   # cheating-rate evidence
 uaek capability matrix               # cross-platform graded task matrix
-python -m pytest -q                  # 385 tests passing
+python -m pytest -q                  # 389 tests passing
 ```
 
 ## What's inside
@@ -49,7 +49,7 @@ tagged with its rung on the evidence ladder (see `docs/methodology.md`).
 | Real-scenario benchmark | multi-dimensional; flags a feature-complete-but-regressing solution a pass/fail accepts | 3 (real agent solutions) | seed + framework, not yet 100+ live multi-hour sessions |
 | Cross-platform matrix | **4/4** providers pass objectively-graded live code tasks | 4 (live) | one CLI is configured to route to a shared model backend; measures platform-runtime embeddability, not 4 independent models |
 
-Gates: **385 tests pass**, ruff + mypy clean. Full breakdown and provenance in
+Gates: **389 tests pass**, ruff + mypy clean. Full breakdown and provenance in
 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 
 ## The methodology is the product

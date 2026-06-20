@@ -19,6 +19,7 @@ retention" is checked via cross-call consistency rather than introspection.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -42,8 +43,14 @@ def load_live_scenario_measurement(
 class ScenarioCheck:
     dimension: str
     entrypoint: str
-    args: tuple[Any, ...]
+    # Accept any sequence of positional args (list or tuple literals are both
+    # natural at call sites); normalized to a tuple so the frozen dataclass stays
+    # hashable.
+    args: Sequence[Any]
     expected: Any
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "args", tuple(self.args))
 
 
 class ReuseProbe:
@@ -701,7 +708,7 @@ def run_scenario_readiness() -> dict[str, Any]:
 
 # ── Import and merge scenario pack 2 (20 additional scenarios) ──
 try:
-    from src.scenario_pack_2 import SCENARIO_PACK_2, REFERENCE_PACK_2, FLAWED_PACK_2
+    from src.scenario_pack_2 import FLAWED_PACK_2, REFERENCE_PACK_2, SCENARIO_PACK_2
 
     # Merge scenarios
     merged_scenarios = list(SCENARIOS)

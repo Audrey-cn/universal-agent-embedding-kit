@@ -13,6 +13,7 @@ SCENARIO_PACK_2 = (
             ScenarioCheck("correctness", "query_users", [[{'name': 'A', 'age': 25}, {'name': 'B', 'age': 30}], 28], [{'name': 'B', 'age': 30}]),
             ScenarioCheck("completeness", "query_users", [[{'name': 'A', 'age': 25}], 30], []),
             ScenarioCheck("robustness", "query_users", [[], 20], []),
+            ScenarioCheck("robustness", "query_users", [[{'name': 'C', 'age': 20}], 20], []),
         ),
     ),
 
@@ -80,6 +81,7 @@ SCENARIO_PACK_2 = (
             ScenarioCheck("correctness", "run_lru", [3, ['set(a,1)', 'set(b,2)', 'set(c,3)', 'get(b)']], [2]),
             ScenarioCheck("completeness", "run_lru", [2, ['set(a,1)', 'set(b,2)', 'set(c,3)', 'get(a)', 'get(b)']], [None, 2]),
             ScenarioCheck("robustness", "run_lru", [1, ['set(a,1)', 'set(b,2)', 'get(a)', 'get(b)']], [None, 2]),
+            ScenarioCheck("robustness", "run_lru", [2, ['set(a,1)', 'set(b,2)', 'get(a)', 'set(c,3)', 'get(a)']], [1, 1]),
         ),
     ),
 
@@ -94,6 +96,7 @@ SCENARIO_PACK_2 = (
             ScenarioCheck("completeness", "parse_logs", [['INFO:20260601:a', 'WARN:20260602:b'], 'WARN'], ['b']),
             ScenarioCheck("robustness", "parse_logs", [[], 'INFO'], []),
             ScenarioCheck("robustness", "parse_logs", [['DEBUG:2026-06:dbg'], 'INFO'], []),
+            ScenarioCheck("robustness", "parse_logs", [['info:2026:hi'], 'info'], []),
         ),
     ),
 
@@ -120,6 +123,7 @@ SCENARIO_PACK_2 = (
             ScenarioCheck("correctness", "shortest_path", [{'A': ['B'], 'B': ['A']}, 'A', 'A'], 0),
             ScenarioCheck("completeness", "shortest_path", [{'A': ['B'], 'B': ['A']}, 'A', 'C'], -1),
             ScenarioCheck("robustness", "shortest_path", [{}, 'A', 'B'], -1),
+            ScenarioCheck("robustness", "shortest_path", [{'B': ['D', 'A'], 'A': ['E'], 'E': ['C'], 'D': ['C'], 'C': []}, 'B', 'C'], 2),
         ),
     ),
 
@@ -199,6 +203,7 @@ SCENARIO_PACK_2 = (
             ScenarioCheck("completeness", "render", ['{{a}} and {{b}}', {'a': '1'}], '1 and {{b}}'),
             ScenarioCheck("robustness", "render", ['no braces', {'x': 'y'}], 'no braces'),
             ScenarioCheck("robustness", "render", ['', {}], ''),
+            ScenarioCheck("robustness", "render", ['{{a}}', {'a': '{{b}}', 'b': 'X'}], '{{b}}'),
         ),
     ),
 
@@ -225,6 +230,7 @@ SCENARIO_PACK_2 = (
             ScenarioCheck("correctness", "paginate_all", ['', 5], [0, 1, 2]),
             ScenarioCheck("completeness", "paginate_all", ['', 10], [0, 1, 2]),
             ScenarioCheck("robustness", "paginate_all", [None, 2], []),
+            ScenarioCheck("robustness", "paginate_all", ['1', 2], [1, 2]),
         ),
     ),
 
@@ -415,7 +421,7 @@ FLAWED_PACK_2 = {
     ),
 
     "validation_chain": (
-        "def validate(rules, value):\n    if not rules:\n        return None\n    for rule in rules:\n        if rule == 'has_digit':\n            if not any(c.isdigit() for c in value):\n                return 'missing_digit'\n        elif rule.startswith('min_len:'):\n            n = int(rule.split(':')[1])\n            if len(value) < n:\n                return f'too_short: min {n}'\n    return None\n"
+        "def validate(rules, value):\n    if not rules:\n        return None\n    for rule in rules:\n        if rule == 'has_digit':\n            if not any(c.isdigit() for c in value):\n                return 'missing_digit'\n        elif rule.startswith('min_len:'):\n            n = int(rule.split(':')[1])\n            if len(value) <= n:\n                return f'too_short: min {n}'\n    return None\n"
     ),
 
     "cursor_pagination": (

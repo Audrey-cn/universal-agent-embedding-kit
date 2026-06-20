@@ -72,6 +72,11 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+# Scenario corpora are data, not logic: long inline dict/list literals read more
+# clearly unwrapped than force-wrapped under the line-length limit.
+"src/scenario_pack_2.py" = ["E501"]
+
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true
