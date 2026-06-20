@@ -505,13 +505,8 @@ def run_audit(
         except Exception as exc:
             errors.append({"suite": suite, "error": str(exc)})
 
-    # Proposition-level evidence summary
     propositions = _build_proposition_summary(suite_results)
-
-    # Gate status
-    gates = _build_gate_summary(suite_results)
-
-    # Limitations
+    gates = _build_gate_summary(suite_results, errors, propositions)
     limitations = _build_limitations()
 
     return {
@@ -532,6 +527,19 @@ def _build_proposition_summary(
 ) -> dict[str, Any]:
     """Build a proposition-level evidence summary from suite results."""
 
+    def _status(suite: str, readiness_key: str, required_values: list[Any]) -> str:
+        if suite not in suite_results:
+            return "incomplete"
+        if any(value is None for value in required_values):
+            return "incomplete"
+        readiness = suite_results.get(suite, {}).get(readiness_key, {})
+        readiness_status = readiness.get("status")
+        if readiness_status == "completed":
+            return "complete"
+        if readiness_status == "partial":
+            return "partial"
+        return "incomplete"
+
     def _get(suite: str, *keys: str, default: Any = None) -> Any:
         result = suite_results.get(suite, {})
         for key in keys:
@@ -549,91 +557,137 @@ def _build_proposition_summary(
     # Proposition 1: Context Utilization
     ctx = suite_results.get("context", {})
     ctx_readiness = ctx.get("context_rot_readiness", {})
+    p1_key_result = {
+        "naive_accuracy": ctx_readiness.get("naive", {}).get("accuracy_at_target"),
+        "adaptive_accuracy": ctx_readiness.get("adaptive", {}).get("accuracy_at_target"),
+        "target_utilization": ctx_readiness.get("target_utilization"),
+        "live_needle_recall": _get(
+            "context", "context_rot_readiness",
+            "live_measurement", "needle_recall"
+        ),
+    }
     p1 = {
         "title": "命题1: 上下文利用率",
-        "status": "complete",
+        "status": _status(
+            "context",
+            "context_rot_readiness",
+            [
+                p1_key_result["naive_accuracy"],
+                p1_key_result["adaptive_accuracy"],
+                p1_key_result["target_utilization"],
+            ],
+        ),
         "evidence_rung": 3,
-        "key_result": {
-            "naive_accuracy": ctx_readiness.get("naive", {}).get("accuracy_at_target"),
-            "adaptive_accuracy": ctx_readiness.get("adaptive", {}).get("accuracy_at_target"),
-            "target_utilization": ctx_readiness.get("target_utilization"),
-            "live_needle_recall": _get(
-                "context", "context_rot_readiness",
-                "live_measurement", "needle_recall"
-            ),
-        },
+        "key_result": p1_key_result,
     }
 
     # Proposition 2: Self-grading Cheating
     adv = suite_results.get("adversarial", {})
     adv_readiness = adv.get("adversarial_readiness", {})
+    p2_key_result = {
+        "naive_cheating_rate": adv_readiness.get("naive", {}).get("cheating_rate"),
+        "adversarial_cheating_rate": adv_readiness.get("adversarial", {}).get("cheating_rate"),
+        "live_subtle_bug_naive": _get(
+            "adversarial", "adversarial_readiness",
+            "live_measurement", "naive_cheating_rate"
+        ),
+        "live_subtle_bug_adversarial": _get(
+            "adversarial", "adversarial_readiness",
+            "live_measurement", "adversarial_cheating_rate"
+        ),
+    }
     p2 = {
         "title": "命题2: 自评分作弊率",
-        "status": "complete",
+        "status": _status(
+            "adversarial",
+            "adversarial_readiness",
+            [
+                p2_key_result["naive_cheating_rate"],
+                p2_key_result["adversarial_cheating_rate"],
+            ],
+        ),
         "evidence_rung": 3,
-        "key_result": {
-            "naive_cheating_rate": adv_readiness.get("naive", {}).get("cheating_rate"),
-            "adversarial_cheating_rate": adv_readiness.get("adversarial", {}).get("cheating_rate"),
-            "live_subtle_bug_naive": _get(
-                "adversarial", "adversarial_readiness",
-                "live_measurement", "naive_cheating_rate"
-            ),
-            "live_subtle_bug_adversarial": _get(
-                "adversarial", "adversarial_readiness",
-                "live_measurement", "adversarial_cheating_rate"
-            ),
-        },
+        "key_result": p2_key_result,
     }
 
     # Proposition 3: Cost
     cst = suite_results.get("cost", {})
     cst_readiness = cst.get("cost_readiness", {})
+    p3_key_result = {
+        "model_cost_reduction": cst_readiness.get("cost_reduction"),
+        "model_cache_hit": cst_readiness.get("cache_hit_rate"),
+        "live_measured_reduction": _get(
+            "cost", "cost_readiness", "live_measurement",
+            "cost_reduction"
+        ),
+        "live_cache_hit": _get("cost", "cost_readiness", "live_measurement", "cache_hit_rate"),
+        "live_warm_session_caveat": True if "cost" in suite_results else None,
+    }
     p3 = {
         "title": "命题3: 成本优化",
-        "status": "complete",
+        "status": _status(
+            "cost",
+            "cost_readiness",
+            [p3_key_result["model_cost_reduction"], p3_key_result["model_cache_hit"]],
+        ),
         "evidence_rung": 4,
-        "key_result": {
-            "model_cost_reduction": cst_readiness.get("cost_reduction"),
-            "model_cache_hit": cst_readiness.get("cache_hit_rate"),
-            "live_measured_reduction": _get(
-                "cost", "cost_readiness", "live_measurement",
-                "cost_reduction"
-            ),
-            "live_cache_hit": _get("cost", "cost_readiness", "live_measurement", "cache_hit_rate"),
-            "live_warm_session_caveat": True,
-        },
+        "key_result": p3_key_result,
     }
 
     # Proposition 4: Real Scenario Benchmark
     scn = suite_results.get("scenario", {})
     scn_readiness = scn.get("scenario_readiness", {})
+    p4_key_result = {
+        "scenario_count": scn_readiness.get("scenario_count"),
+        "reference_overall": scn_readiness.get("reference_overall"),
+        "flawed_overall": scn_readiness.get("flawed_overall"),
+        "flags_hidden_regression": scn_readiness.get("flags_hidden_regression"),
+        "live_both_100": _get(
+            "scenario", "scenario_readiness",
+            "live_measurement", "both_correct"
+        ),
+    }
     p4 = {
         "title": "命题4: 真实场景基准",
-        "status": "complete",
+        "status": _status(
+            "scenario",
+            "scenario_readiness",
+            [
+                p4_key_result["scenario_count"],
+                p4_key_result["reference_overall"],
+                p4_key_result["flawed_overall"],
+                p4_key_result["flags_hidden_regression"],
+            ],
+        ),
         "evidence_rung": 3,
-        "key_result": {
-            "scenario_count": scn_readiness.get("scenario_count"),
-            "reference_overall": scn_readiness.get("reference_overall"),
-            "flawed_overall": scn_readiness.get("flawed_overall"),
-            "flags_hidden_regression": scn_readiness.get("flags_hidden_regression"),
-            "live_both_100": _get(
-                "scenario", "scenario_readiness",
-                "live_measurement", "both_correct"
-            ),
-        },
+        "key_result": p4_key_result,
     }
 
     # Proposition 5: Cross-platform Verification
+    cap = suite_results.get("capability", {})
+    cap_readiness = cap.get("capability_readiness", {})
+    cap_metrics = cap_readiness.get("metrics", {}) if isinstance(cap_readiness, dict) else {}
+    difficulty_tiers = cap_metrics.get("suite_difficulty_tiers")
+    p5_key_result = {
+        "graded_live_count": cap_metrics.get("graded_live_provider_count"),
+        "expected_provider_count": cap_metrics.get("expected_provider_count"),
+        "difficulty_levels": len(difficulty_tiers) if isinstance(difficulty_tiers, dict) else None,
+        "capability_spread": cap_metrics.get("capability_score_spread"),
+    }
     p5 = {
         "title": "命题5: 跨平台验证",
-        "status": "complete",
+        "status": _status(
+            "capability",
+            "capability_readiness",
+            [
+                p5_key_result["graded_live_count"],
+                p5_key_result["expected_provider_count"],
+                p5_key_result["difficulty_levels"],
+                p5_key_result["capability_spread"],
+            ],
+        ),
         "evidence_rung": 4,
-        "key_result": {
-            "graded_live_count": _get("capability", "capability_readiness", "graded_live_count"),
-            "total_tasks": _get("capability", "capability_readiness", "total_tasks"),
-            "difficulty_levels": _get("capability", "capability_readiness", "difficulty_levels"),
-            "capability_spread": _get("capability", "capability_readiness", "capability_spread"),
-        },
+        "key_result": p5_key_result,
     }
 
     return {
@@ -650,6 +704,8 @@ def _build_proposition_summary(
 
 def _build_gate_summary(
     suite_results: dict[str, dict[str, Any]],
+    errors: list[dict[str, str]] | None = None,
+    propositions: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a quality-gate summary.
 
@@ -665,7 +721,18 @@ def _build_gate_summary(
         run_id = os.environ.get("GITHUB_RUN_ID", "")
         if repo and run_id:
             ci_run_url = f"{server}/{repo}/actions/runs/{run_id}"
+    proposition_items = []
+    if isinstance(propositions, dict):
+        proposition_items = [
+            value for key, value in propositions.items()
+            if key != "all_propositions_complete" and isinstance(value, dict)
+        ]
+    has_incomplete_proposition = any(
+        item.get("status") == "incomplete" for item in proposition_items
+    )
+    audit_passed = not errors and not has_incomplete_proposition
     return {
+        "audit_passed": audit_passed,
         "tests_passing": True,  # validated by caller
         "ruff_clean": True,
         "mypy_clean": True,

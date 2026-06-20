@@ -185,7 +185,8 @@ def _check_ci_gate_contract() -> dict[str, Any]:
 
 
 def _check_safe_workflow_actions() -> dict[str, Any]:
-    config = load_config(Path("config/default.yaml"))
+    config_path = Path("config/default.yaml")
+    config = load_config(config_path if config_path.exists() else None)
     risky_actions = {"exec", "shell", "python", "subprocess", "eval"}
     configured_actions = set(config.workflow.safe_actions)
     passed = configured_actions.isdisjoint(risky_actions) and {"echo", "effort"}.issubset(

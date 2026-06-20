@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-389%20passing-brightgreen.svg)](#status)
+[![Tests](https://img.shields.io/badge/tests-396%20passing-brightgreen.svg)](#status)
 [![Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -56,7 +56,7 @@ uaek --help
 uaek benchmark --suite adversarial   # self-grading cheating-rate evidence
 uaek capability matrix               # cross-platform graded task matrix
 uaek audit --output -                # full audit report as JSON on stdout
-python -m pytest -q                  # 389 tests
+python -m pytest -q                  # 396 tests
 ```
 
 ## 🧩 What's inside
@@ -81,11 +81,11 @@ Every number below is the result of a deliberate **red-team round** (independent
 |-----------|--------|:----:|---------------|
 | Self-grading cheating rate | naive ~60–71% → **adversarial 0%** (target <10%) | ③ | scoped to this corpus + generator, **not** a proof of impossibility |
 | Context utilization | adaptive **0.85** expected acc. @70% util vs naive 0.57 | ③ | live needle test recalled 6/6 @31K tokens — validates retrieval, not the adaptive advantage live |
-| Cost reduction | modeled −43% (−49% w/ 1h tier); **real warm-session −82%, 92% hit** | ④ | TTL-conditional; a fully-cold session costs *more* than baseline |
+| Cost reduction | modeled −43% (−49% w/ 1h tier); warm live spot-check **−82%, 92% hit** | ④ partial | warm-only best case; a fully-cold session is modeled **22% more expensive** than baseline |
 | Real-scenario benchmark | multi-dimensional; flags a feature-complete-but-**regressing** solution | ③ | 30 scenarios / 28 categories — not yet 100+ live multi-hour sessions |
-| Cross-platform matrix | **4/4** providers pass objectively-graded live code tasks | ④ | one CLI routes to a shared backend; measures platform embeddability, not 4 models |
+| Cross-platform matrix | **2/4** providers pass the full graded live suite; partial Mimo/Hermes artifacts retained | ④ partial | full-suite means 10/10 tasks; partial 8/10 or 9/10 evidence is not counted as graded-live success |
 
-<a id="status"></a>**Gates:** 389 tests pass · ruff + mypy clean · CI green. Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
+<a id="status"></a>**Gates:** 396 tests pass · ruff + mypy clean · audit semantics pass locally. Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 
 ## 🪜 The methodology is the product
 
@@ -105,7 +105,7 @@ Climbing the evidence ladder is the roadmap:
 - [ ] **Cost, cold-path** — measure TTL-miss-heavy real sessions, not just warm ones
 - [ ] **External baseline** — a reproducible substitute for the retired reference model
 - [x] **Red-team hardening pass** — every headline metric attacked and hardened
-- [x] **Published, CI-gated, evidence-archived** release
+- [x] **Source release packaging, CI gate, evidence archive** path
 
 ## 🤝 Contributing
 

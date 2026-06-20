@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -52,10 +52,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -73,6 +73,32 @@ jobs:
         run: |
           /tmp/release-venv/bin/uaek --version
           /tmp/release-venv/bin/uaek --help
+
+      - name: API and MCP smoke test
+        run: |
+          /tmp/release-venv/bin/python - <<'PY'
+          import api.server
+          import mcp.server
+          PY
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            '{"jsonrpc":"2.0","id":3,"method":"shutdown","params":{}}' \
+            | /tmp/release-venv/bin/python -m mcp.server \
+            > /tmp/release-mcp-responses.jsonl
+          /tmp/release-venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+
+          responses = [
+              json.loads(line)
+              for line in Path("/tmp/release-mcp-responses.jsonl").read_text().splitlines()
+              if line.strip()
+          ]
+          assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
+          tools = {tool["name"] for tool in responses[1]["result"]["tools"]}
+          assert {"uaek_verify", "uaek_effort", "uaek_memory_query"}.issubset(tools)
+          PY
 
       - name: Benchmark quick (from wheel)
         run: |
@@ -95,6 +121,21 @@ jobs:
         run: |
           /tmp/release-venv/bin/uaek audit --iterations 1 \
             --output /tmp/release-benchmarks
+
+      - name: Validate audit semantics
+        run: |
+          /tmp/release-venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+
+          audit = json.loads(Path("/tmp/release-benchmarks/audit.json").read_text())
+          assert audit["errors"] == [], audit["errors"]
+          assert audit["gates"]["audit_passed"] is True, audit["gates"]
+          for key, proposition in audit["propositions"].items():
+              if key == "all_propositions_complete":
+                  continue
+              assert proposition["status"] != "incomplete", (key, proposition)
+          PY
 
       - name: Upload release evidence
         if: always()

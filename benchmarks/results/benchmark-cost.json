@@ -29,12 +29,13 @@
         "status": "fail"
       },
       {
-        "evidence": "rung-4 live mimo session: MEASURED cache hit 92%, cost reduction 82% (warm session — real analog of best case)",
+        "evidence": "rung-4 live mimo warm-session best case: MEASURED cache hit 92%, cost reduction 82%",
         "id": "live_measurement_validates_model",
         "required": false,
         "status": "pass"
       }
     ],
+    "cold_path_cost_increase": 0.2202,
     "cost_reduction": 0.4923,
     "cost_reduction_5min_tier": 0.4281,
     "cost_reduction_best_case": 0.6319,
@@ -43,6 +44,7 @@
     "effort_routing_contribution": 0.0816,
     "limitations": [
       "Modeled cost under documented Anthropic-style cache multipliers, not a billed invoice; absolute savings depend on workload shape.",
+      "The live -82% artifact is warm-only best-case evidence from one provider and one short back-to-back session; it is not the general headline. At 100% TTL miss, the modeled cold path is 22% more expensive than the uncached baseline.",
       "Headline is the IMPROVED number: the stable system+tools prefix is put on the 1-hour cache tier (2x write premium) so it survives the gaps that expire the 5-min rolling history. This makes the 20%-miss reduction robust; the 5-min-only number (cost_reduction_5min_tier) and the full TTL sweep are reported for comparison. A session gap beyond 1 hour still expires even the stable prefix.",
       "The baseline caches nothing; a baseline that already caches the static system+tools prefix would narrow the delta. Cache-only vs +effort are reported separately so the unverified 'simple turns are cheaper without quality loss' assumption is auditable.",
       "Anthropic allows only ~4 cache breakpoints; perfect per-turn incremental caching is an upper bound, so the modeled hit rate is optimistic."
@@ -108,6 +110,7 @@
       "schema": "cost_live_measurement_v1",
       "source": "live mimo multi-turn session (real token accounting)"
     },
+    "live_measurement_scope": "warm_best_case",
     "pricing": {
       "cache_read": 0.1,
       "cache_write": 1.25,
@@ -162,12 +165,12 @@
     "reason": "No authorized external Fable 5 baseline run is available in this repo.",
     "status": "not_configured"
   },
-  "generated_at": "2026-06-19T04:40:18.115696+00:00",
+  "generated_at": "2026-06-20T08:28:44.122754+00:00",
   "iterations": 1,
   "metrics": {
-    "effort_latency_ms": 0.396,
-    "harness_latency_ms": 0.9037,
-    "workflow_latency_ms": 0.0202
+    "effort_latency_ms": 0.3598,
+    "harness_latency_ms": 1.2415,
+    "workflow_latency_ms": 0.0366
   },
   "scorecard": {
     "basis": [

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import subprocess
+import sys
+import tomllib
 from pathlib import Path
 
 import yaml
@@ -16,6 +19,58 @@ from src.cli import main
 from src.memory.service import MemoryService
 from src.skills.service import SkillService
 from src.workflow.runtime import execute_workflow_config, load_workflow_config
+
+
+def test_packaging_includes_documented_api_and_mcp_packages():
+    """Wheel package discovery should include every documented runtime entrypoint."""
+    data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    include = set(data["tool"]["setuptools"]["packages"]["find"]["include"])
+
+    assert "src*" in include
+    assert "api*" in include
+    assert "mcp*" in include
+
+
+def test_packaging_uses_non_deprecated_license_metadata():
+    """Build metadata should avoid setuptools license deprecation warnings."""
+    data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+
+    assert data["project"]["license"] == "MIT"
+    assert not any(
+        classifier.startswith("License ::")
+        for classifier in data["project"].get("classifiers", [])
+    )
+
+
+def test_mcp_module_runs_stdio_initialize_and_tools_list():
+    """`python -m mcp.server` should be a real stdio JSON-RPC MCP server."""
+    requests = "\n".join(
+        [
+            json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+            json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+            json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
+        ]
+    ) + "\n"
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "mcp.server"],
+        input=requests,
+        text=True,
+        capture_output=True,
+        timeout=5,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    responses = [
+        json.loads(line)
+        for line in completed.stdout.splitlines()
+        if line.strip()
+    ]
+    assert [response["id"] for response in responses[:2]] == [1, 2]
+    assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
+    tool_names = {tool["name"] for tool in responses[1]["result"]["tools"]}
+    assert {"uaek_verify", "uaek_effort", "uaek_memory_query"}.issubset(tool_names)
 
 
 def test_workflow_config_executes_builtin_actions(tmp_path: Path):

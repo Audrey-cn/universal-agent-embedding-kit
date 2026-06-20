@@ -798,12 +798,13 @@ def audit(iterations: int, output: str, baseline: str | None):
     )
 
     payload = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    exit_code = 0 if result.get("gates", {}).get("audit_passed") else 1
     if output == "-":
         # "-" means stdout (machine / pipe use): emit pure JSON, skip the human
         # table. Previously this fell through to ``Path("-") / "audit.json"`` and
         # created a stray directory literally named "-".
         click.echo(payload, nl=False)
-        return
+        sys.exit(exit_code)
     output_path = Path(output)
     if output_path.suffix.lower() == ".json":
         audit_path = output_path
@@ -834,8 +835,9 @@ def audit(iterations: int, output: str, baseline: str | None):
     table.add_row(
         "P1 上下文利用率",
         props["p1_context_utilization"]["status"],
-        f"adaptive {_fmt_pct(p1['adaptive_accuracy'])} @ {_fmt_pct(p1['target_utilization'])} util"
-        if p1["adaptive_accuracy"] is not None
+        f"adaptive {_fmt_pct(p1.get('adaptive_accuracy'))} @ "
+        f"{_fmt_pct(p1.get('target_utilization'))} util"
+        if p1.get("adaptive_accuracy") is not None
         else "—",
     )
     p2 = props["p2_self_grading_cheating"]["key_result"]
@@ -843,10 +845,10 @@ def audit(iterations: int, output: str, baseline: str | None):
         "P2 自评分作弊率",
         props["p2_self_grading_cheating"]["status"],
         (
-            f"naive {_fmt_pct(p2['naive_cheating_rate'])} "
-            f"→ adv {_fmt_pct(p2['adversarial_cheating_rate'])}"
+            f"naive {_fmt_pct(p2.get('naive_cheating_rate'))} "
+            f"→ adv {_fmt_pct(p2.get('adversarial_cheating_rate'))}"
         )
-        if p2["adversarial_cheating_rate"] is not None
+        if p2.get("adversarial_cheating_rate") is not None
         else "—",
     )
     p3 = props["p3_cost_optimization"]["key_result"]
@@ -854,25 +856,27 @@ def audit(iterations: int, output: str, baseline: str | None):
         "P3 成本优化",
         props["p3_cost_optimization"]["status"],
         (
-            f"model {_fmt_neg_pct(p3['model_cost_reduction'])}, "
-            f"live {_fmt_neg_pct(p3['live_measured_reduction'])}"
+            f"model {_fmt_neg_pct(p3.get('model_cost_reduction'))}, "
+            f"live {_fmt_neg_pct(p3.get('live_measured_reduction'))}"
         )
-        if p3["model_cost_reduction"] is not None
+        if p3.get("model_cost_reduction") is not None
         else "—",
     )
     p4 = props["p4_real_scenario_benchmark"]["key_result"]
     table.add_row(
         "P4 真实场景基准",
         props["p4_real_scenario_benchmark"]["status"],
-        f"{p4['scenario_count'] or '—'} scenarios, ref {_fmt_pct(p4['reference_overall'])}"
-        if p4["reference_overall"] is not None
+        f"{p4.get('scenario_count') or '—'} scenarios, ref "
+        f"{_fmt_pct(p4.get('reference_overall'))}"
+        if p4.get("reference_overall") is not None
         else "—",
     )
     cap_key = props["p5_cross_platform_verification"]["key_result"]
     table.add_row(
         "P5 跨平台验证",
         props["p5_cross_platform_verification"]["status"],
-        f"{cap_key.get('graded_live_count', '—')}/{cap_key.get('total_tasks', '—')} graded-live"
+        f"{cap_key.get('graded_live_count', '—')}/"
+        f"{cap_key.get('expected_provider_count', '—')} full-suite providers"
         if cap_key.get("graded_live_count") is not None
         else "—",
     )
@@ -906,6 +910,7 @@ def audit(iterations: int, output: str, baseline: str | None):
     )
     console.print(table)
     console.print(f"[green]written[/green] {audit_path}")
+    sys.exit(exit_code)
 
 
 def _list_skills(skills_dir: str):

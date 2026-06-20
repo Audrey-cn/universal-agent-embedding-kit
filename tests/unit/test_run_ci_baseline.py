@@ -78,3 +78,21 @@ def test_ci_workflow_defines_quality_gates():
     assert "mypy src api mcp" in workflow_text
     assert "pytest" in workflow_text
     assert "--cov=src" in workflow_text
+    assert "audit_passed" in workflow_text
+    assert "errors" in workflow_text
+
+
+def test_ci_workflow_uses_current_node24_actions():
+    """CI should avoid action majors that emit GitHub's Node 20 deprecation warning."""
+    data = yaml.safe_load(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    uses = [
+        step["uses"]
+        for job in data["jobs"].values()
+        for step in job["steps"]
+        if "uses" in step
+    ]
+
+    assert "actions/checkout@v7" in uses
+    assert "actions/setup-python@v6" in uses
+    assert "actions/checkout@v4" not in uses
+    assert "actions/setup-python@v5" not in uses

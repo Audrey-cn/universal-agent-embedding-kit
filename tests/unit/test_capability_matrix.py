@@ -91,6 +91,19 @@ def test_capability_artifact_validation_accepts_graded_live():
     assert validation["tasks_passed"] == 4
 
 
+def test_capability_artifact_validation_requires_full_suite_pass_for_graded_live():
+    """A provider that passes one or most tasks is evidence, but not full graded-live."""
+    from src.capability_matrix import validate_capability_run_artifact
+
+    artifact = _capability_artifact("mimo_code", tasks_passed=3, suite_pass_rate=0.75)
+    validation = validate_capability_run_artifact(artifact)
+
+    assert validation["valid"] is True
+    assert validation["is_graded_live"] is False
+    assert validation["tasks_passed"] == 3
+    assert validation["tasks_total"] == 4
+
+
 def test_capability_matrix_scores_98_with_two_graded_and_two_blocked(tmp_path: Path):
     from src.capability_matrix import run_capability_readiness
 
@@ -459,7 +472,8 @@ def test_run_capability_suite_live_grades_fake_provider(tmp_path: Path):
     assert artifact["metrics"]["suite_pass_rate"] > 0
     assert 0.0 < artifact["metrics"]["capability_score"] <= 1.0
     validation = validate_capability_run_artifact(artifact)
-    assert validation["is_graded_live"] is True
+    assert validation["valid"] is True
+    assert validation["is_graded_live"] is False
 
 
 def test_run_capability_suite_live_marks_failure_for_silent_provider(tmp_path: Path):
@@ -926,11 +940,11 @@ def test_capability_matrix_ranks_providers_and_reports_spread(tmp_path: Path):
     )
     _write_json(
         tmp_path / "hermes-capability-run.json",
-        _capability_artifact("hermes", tasks_passed=3, suite_pass_rate=0.75, capability_score=0.7),
+        _capability_artifact("hermes", tasks_passed=4, suite_pass_rate=1.0, capability_score=0.7),
     )
     _write_json(
         tmp_path / "codex-capability-run.json",
-        _capability_artifact("codex", tasks_passed=2, suite_pass_rate=0.5, capability_score=0.4),
+        _capability_artifact("codex", tasks_passed=4, suite_pass_rate=1.0, capability_score=0.4),
     )
     _write_json(
         tmp_path / "claude_code-capability-run.json",

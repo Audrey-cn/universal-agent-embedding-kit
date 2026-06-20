@@ -100,6 +100,8 @@ def test_run_cost_readiness_reports_honest_improved_number():
     # Honest: a genuine +6pt improvement, but still just under target on the default
     # workload — status stays partial rather than gaming a constant to cross the line.
     assert result["status"] == "partial"
+    assert result["live_measurement_scope"] == "warm_best_case"
+    assert result["cold_path_cost_increase"] > 0
     assert _check_status(result, "best_case_beats_proposal_target") == "pass"
     assert result["effort_routing_contribution"] > 0
 

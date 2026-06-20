@@ -469,6 +469,7 @@ def validate_capability_run_artifact(
     metrics = data.get("metrics")
     metrics = metrics if isinstance(metrics, dict) else {}
     tasks_passed = int(metrics.get("tasks_passed", 0) or 0)
+    tasks_attempted = int(metrics.get("tasks_attempted", 0) or 0)
     suite_pass_rate = float(metrics.get("suite_pass_rate", 0.0) or 0.0)
 
     provenance = data.get("provenance")
@@ -505,7 +506,8 @@ def validate_capability_run_artifact(
         evidence_level == "live_external"
         and valid
         and data.get("status") == "completed"
-        and tasks_passed >= 1
+        and tasks_passed == (tasks_attempted or len(task_results))
+        and suite_pass_rate == 1.0
     )
     return {
         "valid": valid,
@@ -515,7 +517,7 @@ def validate_capability_run_artifact(
         "status": data.get("status"),
         "evidence_level": evidence_level,
         "tasks_passed": tasks_passed,
-        "tasks_total": int(metrics.get("tasks_attempted", len(task_results)) or len(task_results)),
+        "tasks_total": tasks_attempted or len(task_results),
         "suite_pass_rate": suite_pass_rate,
         "is_graded_live": is_graded_live,
     }
@@ -563,9 +565,7 @@ def run_capability_readiness(
             "id": "graded_live_capability_matrix",
             "required": True,
             "status": "pass" if full_matrix else "fail",
-            "evidence": (
-                f"{graded_live_count}/4 providers passed objectively graded live code tasks"
-            ),
+            "evidence": f"{graded_live_count}/4 providers passed the full graded live suite",
         },
         {
             "id": "blocked_attempt_diagnostics",
@@ -632,6 +632,9 @@ def run_capability_readiness(
             "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
             "A blocked provider (usage limit or headless lock) is a diagnostic, not graded "
             "success.",
+            "A provider must pass every task in the graded suite to count as graded-live; "
+            "partial 8/10 or 9/10 artifacts remain evidence but do not satisfy the full-pass "
+            "matrix.",
             "A zero capability_score_spread means the suite did not separate the providers at "
             "this difficulty, not that they are proven equivalent.",
             "Remote CI and release publication remain separate evidence tracks.",

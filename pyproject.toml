@@ -7,7 +7,7 @@ name = "uaek"
 version = "0.1.0"
 description = "Universal Agent Embedding Kit — model-agnostic, embeddable agent enhancement layer with red-teamed benchmarks"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.11"
 authors = [
     {name = "UAEK Team"}
@@ -16,7 +16,6 @@ keywords = ["agent", "llm", "verification", "effort", "workflow", "benchmark", "
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -58,7 +57,7 @@ Changelog = "https://github.com/Audrey-cn/universal-agent-embedding-kit/blob/mai
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "api*", "mcp*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

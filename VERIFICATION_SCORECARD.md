@@ -2,20 +2,20 @@
 
 > 每个阶段的评分标准和当前分数
 > 总分 100 分，每 Phase 25 分
-> 当前口径：以 2026-06-18 本地实测为准
+> 当前口径：以 2026-06-20 本地重审与最新 benchmark JSON 为准
 
 ---
 
-## 当前实测状态（2026-06-18 capability matrix 推进后）
+## 当前实测状态（2026-06-20 红队复审后）
 
 | 验证项 | 命令 | 结果 | 门禁状态 |
 |--------|------|------|----------|
 | 依赖安装 | `.venv/bin/python -m pip install -e '.[dev]'` | 通过，含 `types-PyYAML` | pass |
-| 全量测试 | `.venv/bin/python -m pytest` | 325 passed | pass |
+| 全量测试 | `.venv/bin/python -m pytest -q` | 396 passed | pass |
 | 核心库覆盖率 | `.venv/bin/python -m pytest --cov=src --cov-report=term` | 88% total | pass（当前核心库口径） |
 | 产品接口覆盖率 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing` | 86% total | pass（API/MCP 已补 P2 覆盖） |
 | Ruff | `.venv/bin/python -m ruff check src api mcp tests` | All checks passed | pass |
-| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 69 source files | pass（渐进类型门禁） |
+| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 74 source files | pass（渐进类型门禁） |
 | CLI 入口 | `.venv/bin/uaek --help` | 可运行 | pass |
 | Workflow CLI | `.venv/bin/uaek workflow --config tests/fixtures/workflow.yaml` | fixture workflow 执行成功 | pass |
 | Memory CLI | `uaek memory add/query/compress/restore` | 持久化 roundtrip 成功 | pass |
@@ -41,9 +41,9 @@
 | Mimo graded capability run（难套件） | `.venv/bin/uaek capability run --provider mimo_code ... --output-mode mimo_jsonl --provider-home /tmp/uaek-provider-homes/mimo` | 9/10 graded，capability_score 0.9474；唯一失败=is_palindrome（120s 超时）| pass |
 | Hermes graded capability run（难套件） | `.venv/bin/uaek capability run --provider hermes ... -z --provider-home /tmp/uaek-provider-homes/hermes-seeded --provider-home-seed config.yaml --provider-home-seed .env` | 最佳加权 artifact 8/10，`capability_score 0.8947`；seeded 复跑 9/10，`capability_score 0.8421`（唯一失败=edit_distance 输出含非代码字符）| pass |
 | Capability batch CLI | `.venv/bin/uaek capability batch <manifest.json> --matrix-output ... --output ...` | 可从 JSON manifest 批量复跑 provider recipe、写 capability artifacts、聚合 matrix；支持隔离 HOME、显式 seed 和 `--dry-run` CI 校验 | pass |
-| Capability matrix CLI（区分度） | `.venv/bin/uaek capability matrix` | 4/4 graded-live（claude_code 1.0 = codex 1.0 > mimo_code 0.9474 > hermes 0.8947）；**capability_score_spread 0.1053**，推荐 100 | completed |
-| Capability benchmark CLI | `.venv/bin/uaek benchmark --suite capability --iterations 1 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results` | 生成 `benchmark-capability.json`，score 100，4 graded-live，难套件有区分度 | completed |
-| Capability tests | `.venv/bin/python -m pytest tests/unit/test_capability_matrix.py -q` | grade_code/extract_code、artifact 校验、live driver、环境隔离+显式 seed、seed 缺 provider_home 防误用、batch manifest、dry-run 校验、难度分层评分、矩阵排名+spread、benchmark/CLI 覆盖通过（35 passed） | pass |
+| Capability matrix CLI（全套通过口径） | `.venv/bin/uaek capability matrix` | 2/4 full-suite graded-live（claude_code 10/10、codex 10/10）；Mimo 9/10、Hermes 8/10/seeded 9/10 作为 partial evidence 保留但不计入 graded-live；推荐 98，状态 partial | partial |
+| Capability benchmark CLI | `.venv/bin/uaek benchmark --suite capability --iterations 1 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results` | 生成 `benchmark-capability.json`，scorecard current_score 98，2/4 full-suite graded-live | partial |
+| Capability tests | `.venv/bin/python -m pytest tests/unit/test_capability_matrix.py -q` | grade_code/extract_code、artifact 校验、live driver、环境隔离+显式 seed、seed 缺 provider_home 防误用、batch manifest、dry-run 校验、难度分层评分、full-suite graded-live 口径、benchmark/CLI 覆盖通过 | pass |
 | 对抗验证（命题2/P0） | `.venv/bin/uaek benchmark --suite adversarial` | `benchmark-adversarial.json`：naive 作弊率 60% → 对抗 0%（<10% 目标），误拒 0%；填补维度2 | pass |
 | 对抗验证 tests | `.venv/bin/python -m pytest tests/unit/test_adversarial_verification.py -q` | 参考 oracle 正确性、对抗 accept/reject+反例、naive 漏边界 bug、作弊率测量、readiness<10%、benchmark/CLI 覆盖通过（9 passed） | pass |
 | 上下文管理（命题1/P0） | `.venv/bin/uaek benchmark --suite context` | `benchmark-context.json`：可用利用率 naive 40% → 自适应 90%（≥70% 目标）；填补维度3 | pass |
@@ -58,14 +58,14 @@
 | Excellence tests | `.venv/bin/python -m pytest tests/unit/test_excellence.py -q` | strict live artifact validation、excellence evaluator、benchmark/CLI 覆盖通过 | pass |
 | Live matrix tests | `.venv/bin/python -m pytest tests/unit/test_live_matrix.py -q` | 3/4 partial matrix、4/4 full matrix、benchmark/CLI 覆盖通过 | pass |
 | Config/Logging tests | `.venv/bin/python -m pytest tests/unit/test_config_logging.py -q` | `load_config`、`uaek run --config`、`--log-file` 覆盖通过 | pass |
-| CI workflow | `.github/workflows/ci.yml` | Quality gates (lint/typecheck/test/coverage) + release-gate (wheel build/clean install/smoke/benchmark/audit) 全绿；远端 Actions 2026-06-20 首次通过 | pass |
-| Release gate (wheel) | `pip install dist/uaek-0.1.0-py3-none-any.whl` | Clean venv install + `uaek --version` + quick/adversarial benchmarks + manifest dry-run + audit 全部通过 | pass |
-| Release gate (CI) | GitHub Actions release-gate job | Build wheel → clean venv install → CLI smoke → quick/adversarial/manifest/audit 全绿；evidence uploaded as artifact | pass |
+| CI workflow | `.github/workflows/ci.yml` | Quality gates (lint/typecheck/test/coverage) + release-gate (wheel build/clean install/API+MCP smoke/benchmark/audit semantic validation) 已配置；最新本地修改仍需远端 Actions 复跑绑定 URL | configured |
+| Release gate (wheel) | `pip install dist/uaek-0.1.0-py3-none-any.whl` | Clean venv install + `uaek --version` + API/MCP import + MCP stdio + benchmark/audit 语义门禁；license metadata 已改为 SPDX 字符串口径，build 无 setuptools license 弃用警告 | pass（本地） |
+| Release gate (CI) | GitHub Actions release-gate job | Build wheel → clean venv install → CLI/API/MCP smoke → quick/adversarial/manifest/audit；最新 workflow 已加 audit semantic validation，远端运行记录待复跑 | configured |
 | Baseline schema | `benchmarks/baselines/fable5.example.json` | 示例 schema 存在，明确不是 Fable 5 实测证据 | configured |
 | README 旧入口 | `.venv/bin/python -m uae --help` | No module named uae；文档已改为 `uaek` | resolved |
 
 结论：核心库测试、ruff、渐进 mypy 门禁已通过；P2/P3 已打通 workflow/memory/skill 的 CLI/API/MCP 最小产品路径和最小文档样例；P4/P5 已补 `uaek benchmark` quick runner、本地 Agent Harness、统一 `uaek run`、配置管理、结构化日志、CI workflow、baseline schema、GitHub-derived proxy validation、命令式外部 Agent Adapter、platform run artifact、excellence evidence suite、live matrix suite 和 capability matrix suite。把 live 证据从"平台可跑通"（echo `UAEK_LIVE_TASK_OK`）升级为"任务能力对比"，并进一步把 4 题 easy 套件升级为 **10 题 3 难度层（easy×4/medium×3/hard×3）的区分度套件**，按难度加权出 capability_score。  
-在难套件上 capability matrix 保持区分度：codex 1.0 = claude_code 1.0 > mimo_code 0.9474 > hermes 0.8947，**capability_score_spread 0.1053**。当前 4/4 graded-live，benchmark `capability` score 100（capability-matrix-discriminative 本地口径）。本轮新增 provider HOME 隔离与显式 seed 后，Codex/Claude seeded 均 10/10，Mimo 从 7/10 提升到 9/10，Hermes seeded 复跑为 9/10（但最佳加权 artifact 仍为 8/10，因 hard 题权重更高）。**必须如实声明的边界**：(1) Codex/Claude/Hermes 需要显式 seed 本地配置/凭证才能在隔离 HOME 中复跑；(2) Mimo 唯一失败是 is_palindrome 120s 超时，Hermes seeded 唯一失败是 edit_distance 输出含非代码字符；(3) Claude Code CLI（2.1.181）经 settings.json 配置 `ANTHROPIC_MODEL=mimo-v2.5-pro`，模型层路由到 mimo-v2.5-pro，故 graded provider 是平台运行时、模型后端最多 3 个互异（claude_code 与 mimo_code 可能同源）；(4) 该分数仍是本地 capability 口径，**不等于正式发布级"全面超越 Fable 5"**——后者仍需远端 CI 记录、发布流程和真实外部 Fable 5 baseline，本仓库始终无直接 Fable 5 复跑证据。
+红队复审后，capability matrix 改为更严格的 **full-suite graded-live** 口径：只有 10/10 通过的 provider 才计入成功。当前 `claude_code` 与 `codex` 为 10/10，Mimo 9/10、Hermes best weighted 8/10 / seeded 9/10 作为 partial evidence 保留但不再计作 graded-live 成功。因此当前是 **2/4 full-suite graded-live，scorecard current_score 98，status partial**。**必须如实声明的边界**：(1) Codex/Claude/Hermes 需要显式 seed 本地配置/凭证才能在隔离 HOME 中复跑；(2) Mimo 唯一失败是 is_palindrome 120s 超时，Hermes seeded 唯一失败是 edit_distance 输出含非代码字符；(3) Claude Code CLI（2.1.181）经 settings.json 配置 `ANTHROPIC_MODEL=mimo-v2.5-pro`，模型层路由到 mimo-v2.5-pro，故 graded provider 是平台运行时、模型后端最多 3 个互异（claude_code 与 mimo_code 可能同源）；(4) 该分数仍是本地 capability 口径，**不等于正式发布级"全面超越 Fable 5"**——后者仍需最新远端 CI 记录、发布流程和真实外部 Fable 5 baseline，本仓库始终无直接 Fable 5 复跑证据。
 
 ## 评分维度
 
@@ -276,7 +276,7 @@
 - [ ] 功能正确性 ≥ 8/10（两个组件）
 - [ ] UAEK 在 3 个 Agent 平台上完整运行
 - [ ] 在 5 个指标上持平或超越 Fable 5
-- [x] 成本降低 30%+（命题3：代表性 -63%，大会话 -75%，缓存命中 93-98%）
+- [x] 成本降低 30%+（命题3：fresh-cache best case -63%，1h stable-prefix/20% miss -49%；100% TTL miss 冷路径 +22% 成本）
 - [ ] 所有测试通过
 - [ ] 文档完整
 - [ ] 开源发布
@@ -290,17 +290,17 @@
 | Phase 1 | 22/25（暂估） | 核心库完成，本地质量门禁通过 | 2026-06-18 |
 | Phase 2 | 21/25（暂估） | workflow/skill 库层和最小产品入口完成；跨平台发布验证未完成 | 2026-06-18 |
 | Phase 3 | 20/25（暂估） | memory 库层和最小产品入口完成；长期多会话验证仍需扩展 | 2026-06-18 |
-| Phase 4 | 25/25 +12 readiness bonus | 本地 Agent Harness、`uaek run`、配置管理、结构化日志、quick/proxy/adapter/platform/excellence/live_matrix/capability benchmark、CI workflow、baseline schema、命令式外部 Agent Adapter、platform artifact、Codex/Mimo/Hermes live task artifacts 和 Codex/Claude/Hermes/Mimo **4/4 graded capability artifacts** 完成；provider HOME 隔离和显式 seed 已补；直接撤回模型复跑不可用 | 2026-06-19 |
-| **总分** | **100/100（capability-matrix-discriminative 本地口径）** | live 证据升级为**有区分度**的任务能力对比：10 题 3 难度层，capability_score_spread 0.1053，codex/claude_code 1.0 > mimo_code 0.9474 > hermes 0.8947。当前 4/4 graded-live；边界（必读）：① 这是本地 capability 口径，非正式发布级"全面超越 Fable 5"（仍需远端 CI/发布/真实 baseline）；② Claude CLI 路由 mimo-v2.5-pro，模型后端 ≤3 互异；③ Codex/Claude/Hermes 隔离 HOME 需要显式 seed，Mimo/Hermes 剩余失败分别来自超时/输出格式 | |
+| Phase 4 | 24/25 + readiness evidence | 本地 Agent Harness、`uaek run`、配置管理、结构化日志、quick/proxy/adapter/platform/excellence/live_matrix/capability benchmark、CI workflow、baseline schema、命令式外部 Agent Adapter、platform artifact、Codex/Mimo/Hermes live task artifacts 完成；Codex/Claude 为 **2/4 full-suite graded-live**，Mimo/Hermes partial evidence 保留但不计入 full-suite success；provider HOME 隔离和显式 seed 已补；直接撤回模型复跑不可用 | 2026-06-20 |
+| **总分** | **98/100（本地 capability 口径，partial）** | live 证据升级为任务能力对比：10 题 3 难度层，Codex/Claude 10/10；Mimo 9/10、Hermes 8/10/seeded 9/10 作为 partial evidence。当前 2/4 full-suite graded-live；边界（必读）：① 这是本地 capability 口径，非正式发布级"全面超越 Fable 5"（仍需最新远端 CI/发布/真实 baseline）；② Claude CLI 路由 mimo-v2.5-pro，模型后端 ≤3 互异；③ Codex/Claude/Hermes 隔离 HOME 需要显式 seed，Mimo/Hermes 剩余失败分别来自超时/输出格式 | |
 
 ### 总分等级
 
 | 等级 | 分数 | 含义 |
 |------|------|------|
-| S | 90-100 | 全面超越 Fable 5 |
-| A | 80-89 | 大部分超越 Fable 5 |
-| B | 70-79 | 基本持平 Fable 5 |
-| C | 60-69 | 部分持平 Fable 5 |
+| S | 90-100 | 本地证据链强；正式超越结论仍需外部 baseline/远端复现 |
+| A | 80-89 | 大部分指标有可用本地证据 |
+| B | 70-79 | 基本指标有本地证据 |
+| C | 60-69 | 部分指标有本地证据 |
 | D | <60 | 需要继续优化 |
 
 ---
@@ -313,8 +313,8 @@
 |------|---------|------|----------|
 | Codex | — | ✅ | 难套件 **graded capability 10/10**（capability_score 1.0，hardest=hard，隔离 harness 客观评分） |
 | Claude Code/App | ✅ | ✅ | 桌面 Electron platform-run blocked by IndexedDB lock；Claude Code CLI 2.1.181（剥离继承 ANTHROPIC_* 用 settings.json token）难套件 **graded 10/10**（capability_score 1.0）。注：settings.json `ANTHROPIC_MODEL=mimo-v2.5-pro`，模型层路由到 mimo-v2.5-pro |
-| Mimo Code | ❌ | ✅ | 难套件隔离 HOME 复跑 **graded 9/10**（capability_score 0.9474；唯一失败=is_palindrome 120s 超时） |
-| Hermes | ❌ | ✅ | 难套件最佳加权 artifact 8/10（`capability_score 0.8947`）；隔离 HOME + config/.env seed 复跑 9/10（`capability_score 0.8421`） |
+| Mimo Code | ❌ | partial | 难套件隔离 HOME 复跑 **9/10**（capability_score 0.9474；唯一失败=is_palindrome 120s 超时）；保留为 partial evidence，不计入 full-suite graded-live |
+| Hermes | ❌ | partial | 难套件最佳加权 artifact 8/10（`capability_score 0.8947`）；隔离 HOME + config/.env seed 复跑 9/10（`capability_score 0.8421`）；保留为 partial evidence，不计入 full-suite graded-live |
 | 其他开源/商用 Agent | ❌ | — | pending |
 
 ### 维度 2：自评分作弊率（研究命题 2，P0）
@@ -346,15 +346,15 @@
 
 | 指标 | Fable 5 | UAEK 目标 | 当前（红队后诚实值） | 验证状态 |
 |------|---------|-----------|------|----------|
-| 成本降低 | 基准 | -50%（提案） | 建模(1h 层,20% miss) -49%；**rung-4 实测(live mimo 会话) -82%** | 达标（实测,warm 口径） |
-| 缓存命中率 | — | 70-90%+ | 建模 96.6%；**rung-4 实测 91.6%**（真 token 账单） | 达标（实测验证） |
+| 成本降低 | 基准 | -50%（提案） | 建模(1h 层,20% miss) -49%；warm-only rung-4 抽检 -82%；100% TTL miss 冷路径 +22% 成本 | partial（warm 实测不能当通用 headline） |
+| 缓存命中率 | — | 70-90%+ | 建模 96.6%；warm-only rung-4 抽检 91.6%（真 token 账单） | 达标但仅覆盖 warm best case |
 
 - 命令：`.venv/bin/uaek benchmark --suite cost`（`benchmarks/results/benchmark-cost.json`）
 - 方法：`src/cost_model.py`——Anthropic 式定价 + 稳定前缀缓存复用 + effort 路由 + TTL 失效模型。
 - 红队修正：旧版假设缓存永不过期 → 虚报 -63%。真相：5min 层现实 20% TTL miss 下仅 **-43%**,100% miss **+22%(更贵)**。
 - **真改进（沿证据阶梯）**：把稳定前缀放 **1 小时缓存层**（2x 写溢价,扛过 5min TTL miss）→ 现实降幅 43%→**49%（+6.4 点,真改进）**。默认负载仍差 0.8 点,**status 没调旋钮硬推**。
-- **rung-4 真实账单（爬到证据阶梯第 4 层）**：`benchmarks/results/cost-live-measurement.json`——用 live mimo 跑**真实 4 轮会话**,读真 token 账单:input 7352 / cache_read 80064 / cache_write 0 / output 45 → **实测缓存命中 91.6%、成本降 82%**（用相同记载价格倍率算）。实测**反过来证明我的建模偏保守**。
-- 红队我自己这个实测（技能要求）：① **warm 会话**(轮次背靠背、无间隔→无 TTL miss),是真实版 best-case 而非 realistic-miss 场景;② cache_write=0(会话服务端持久化,无写溢价),其它 provider 可能收写费;③ 单 provider、单会话、输出极小。结论:**实测证明缓存热时真实省钱 ~82% 且命中 91.6% 是实测的**;TTL-miss 退化对有间隔会话仍适用。
+- **rung-4 真实账单（爬到证据阶梯第 4 层）**：`benchmarks/results/cost-live-measurement.json`——用 live mimo 跑**真实 4 轮 warm 会话**,读真 token 账单:input 7352 / cache_read 80064 / cache_write 0 / output 45 → **实测缓存命中 91.6%、成本降 82%**（用相同记载价格倍率算）。这是 warm-session best case 的真实证据，不是通用成本 headline。
+- 红队我自己这个实测（技能要求）：① **warm 会话**(轮次背靠背、无间隔→无 TTL miss),是真实版 best-case 而非 realistic-miss 场景;② cache_write=0(会话服务端持久化,无写溢价),其它 provider 可能收写费;③ 单 provider、单会话、输出极小。结论:**实测证明缓存热时真实省钱 ~82% 且命中 91.6% 是实测的**；但有间隔会话仍必须按 TTL sweep 报告，100% miss 冷路径建模为 +22% 成本。
 
 ### 命题 4：基准真实性（W2.3，框架+种子）
 

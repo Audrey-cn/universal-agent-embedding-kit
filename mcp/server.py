@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import sys
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, TextIO
 
 # MCP 服务端实现（简化版，实际使用需要 mcp 库）
 # 这里提供的是接口定义和工具注册逻辑
@@ -46,6 +48,8 @@ class MCPServer:
             return self._handle_list_tools(request_id)
         elif method == "tools/call":
             return await self._handle_call_tool(request_id, params)
+        elif method == "shutdown":
+            return {"jsonrpc": "2.0", "id": request_id, "result": {}}
         else:
             return self._error_response(request_id, -32601, f"Method not found: {method}")
 
@@ -130,3 +134,47 @@ def create_server() -> MCPServer:
     register_memory_tool(server)
 
     return server
+
+
+async def run_stdio(
+    input_stream: TextIO | None = None,
+    output_stream: TextIO | None = None,
+    server: MCPServer | None = None,
+) -> None:
+    """Run a newline-delimited JSON-RPC loop for stdio MCP hosts."""
+    input_stream = input_stream or sys.stdin
+    output_stream = output_stream or sys.stdout
+    server = server or create_server()
+
+    for line in input_stream:
+        if not line.strip():
+            continue
+        request_id = None
+        method = None
+        try:
+            request = json.loads(line)
+            if not isinstance(request, dict):
+                raise ValueError("JSON-RPC request must be an object")
+            request_id = request.get("id")
+            method = request.get("method")
+            response = await server.handle_request(request)
+        except json.JSONDecodeError as exc:
+            response = server._error_response(request_id, -32700, f"Parse error: {exc.msg}")
+        except Exception as exc:
+            response = server._error_response(request_id, -32600, str(exc))
+
+        output_stream.write(json.dumps(response, ensure_ascii=False) + "\n")
+        output_stream.flush()
+
+        if isinstance(request_id, int | str) and response.get("id") == request_id:
+            if method == "shutdown":
+                break
+
+
+def main() -> None:
+    """Console entrypoint for `python -m mcp.server`."""
+    asyncio.run(run_stdio())
+
+
+if __name__ == "__main__":
+    main()

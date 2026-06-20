@@ -240,6 +240,8 @@ def run_cost_readiness() -> dict[str, Any]:
         }
         for miss in (0.0, 0.1, 0.2, 0.3, 0.5, 1.0)
     ]
+    cold_path_reduction = ttl_sweep[-1]["cost_reduction"]
+    cold_path_cost_increase = round(max(0.0, -cold_path_reduction), 4)
 
     checks = [
         {
@@ -280,8 +282,8 @@ def run_cost_readiness() -> dict[str, Any]:
                 "required": False,
                 "status": "pass" if real_hit >= 0.70 else "fail",
                 "evidence": (
-                    f"rung-4 live mimo session: MEASURED cache hit {real_hit:.0%}, "
-                    f"cost reduction {real_red:.0%} (warm session — real analog of best case)"
+                    f"rung-4 live mimo warm-session best case: MEASURED cache hit "
+                    f"{real_hit:.0%}, cost reduction {real_red:.0%}"
                 ),
             }
         )
@@ -299,6 +301,8 @@ def run_cost_readiness() -> dict[str, Any]:
         "cost_reduction_5min_tier": realistic_reduction,
         "cost_reduction_best_case": best_case_reduction,
         "cost_reduction_cache_only": cache_only_reduction,
+        "live_measurement_scope": "warm_best_case",
+        "cold_path_cost_increase": cold_path_cost_increase,
         "ttl_improvement": round(improved_reduction - realistic_reduction, 4),
         "effort_routing_contribution": effort_contribution,
         "cache_hit_rate": best_case["cache_hit_rate"],
@@ -319,6 +323,12 @@ def run_cost_readiness() -> dict[str, Any]:
         "limitations": [
             "Modeled cost under documented Anthropic-style cache multipliers, not a billed "
             "invoice; absolute savings depend on workload shape.",
+            (
+                "The live -82% artifact is warm-only best-case evidence from one provider and "
+                "one short back-to-back session; it is not the general headline. At 100% TTL "
+                f"miss, the modeled cold path is {cold_path_cost_increase:.0%} more expensive "
+                "than the uncached baseline."
+            ),
             "Headline is the IMPROVED number: the stable system+tools prefix is put on the "
             "1-hour cache tier (2x write premium) so it survives the gaps that expire the 5-min "
             "rolling history. This makes the 20%-miss reduction robust; the 5-min-only number "

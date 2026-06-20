@@ -3,13 +3,13 @@
     "artifact_dir": "benchmarks/results/capability-runs",
     "checks": [
       {
-        "evidence": "4/4 providers passed objectively graded live code tasks",
+        "evidence": "2/4 providers passed the full graded live suite",
         "id": "graded_live_capability_matrix",
         "required": true,
-        "status": "pass"
+        "status": "fail"
       },
       {
-        "evidence": "0 blocked providers; 0 providers missing diagnostics",
+        "evidence": "2 blocked providers; 0 providers missing diagnostics",
         "id": "blocked_attempt_diagnostics",
         "required": true,
         "status": "pass"
@@ -21,7 +21,7 @@
         "status": "pass"
       },
       {
-        "evidence": "suite spans 3 difficulty tiers ({'easy': 4, 'medium': 3, 'hard': 3}); observed capability_score spread 0.1053",
+        "evidence": "suite spans 3 difficulty tiers ({'easy': 4, 'medium': 3, 'hard': 3}); observed capability_score spread 0.0",
         "id": "discriminative_task_suite",
         "required": false,
         "status": "pass"
@@ -36,18 +36,19 @@
     "limitations": [
       "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
       "A blocked provider (usage limit or headless lock) is a diagnostic, not graded success.",
+      "A provider must pass every task in the graded suite to count as graded-live; partial 8/10 or 9/10 artifacts remain evidence but do not satisfy the full-pass matrix.",
       "A zero capability_score_spread means the suite did not separate the providers at this difficulty, not that they are proven equivalent.",
       "Remote CI and release publication remain separate evidence tracks."
     ],
     "metrics": {
-      "blocked_provider_count": 0,
+      "blocked_provider_count": 2,
       "capability_artifacts": 5,
       "capability_score_max": 1.0,
-      "capability_score_min": 0.8947,
-      "capability_score_spread": 0.1053,
+      "capability_score_min": 1.0,
+      "capability_score_spread": 0.0,
       "expected_provider_count": 4,
-      "graded_live_pass_rate": 1.0,
-      "graded_live_provider_count": 4,
+      "graded_live_pass_rate": 0.5,
+      "graded_live_provider_count": 2,
       "missing_provider_count": 0,
       "suite_difficulty_tiers": {
         "easy": 4,
@@ -84,30 +85,34 @@
         "tasks_total": 10
       },
       {
-        "capability_score": 0.8947,
-        "errors": [],
+        "capability_score": 0.0,
+        "errors": [
+          "live_external attempt did not produce graded capability evidence"
+        ],
         "evidence_paths": [
           "benchmarks/results/capability-runs/hermes-capability-run.json",
           "benchmarks/results/capability-runs/hermes-seeded-capability-run.json"
         ],
-        "hardest_tier_passed": "hard",
+        "hardest_tier_passed": "",
         "provider": "hermes",
-        "status": "graded_live",
-        "suite_pass_rate": 0.8,
-        "tasks_passed": 8,
+        "status": "blocked",
+        "suite_pass_rate": 0.0,
+        "tasks_passed": 0,
         "tasks_total": 10
       },
       {
-        "capability_score": 0.9474,
-        "errors": [],
+        "capability_score": 0.0,
+        "errors": [
+          "live_external attempt did not produce graded capability evidence"
+        ],
         "evidence_paths": [
           "benchmarks/results/capability-runs/mimo_code-capability-run.json"
         ],
-        "hardest_tier_passed": "hard",
+        "hardest_tier_passed": "",
         "provider": "mimo_code",
-        "status": "graded_live",
-        "suite_pass_rate": 0.9,
-        "tasks_passed": 9,
+        "status": "blocked",
+        "suite_pass_rate": 0.0,
+        "tasks_passed": 0,
         "tasks_total": 10
       }
     ],
@@ -125,46 +130,32 @@
         "provider": "codex",
         "tasks_passed": 10,
         "tasks_total": 10
-      },
-      {
-        "capability_score": 0.9474,
-        "hardest_tier_passed": "hard",
-        "provider": "mimo_code",
-        "tasks_passed": 9,
-        "tasks_total": 10
-      },
-      {
-        "capability_score": 0.8947,
-        "hardest_tier_passed": "hard",
-        "provider": "hermes",
-        "tasks_passed": 8,
-        "tasks_total": 10
       }
     ],
-    "recommended_score": 100,
+    "recommended_score": 98,
     "remaining_findings": [
       "DIRECT_RETIRED_MODEL_UNAVAILABLE",
-      "CI_REMOTE_UNVERIFIED"
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_GRADED_CAPABILITY_MATRIX",
+      "MULTI_PLATFORM_CAPABILITY_MATRIX"
     ],
     "resolved_findings": [
       "F022_LIVE_MATRIX_PARTIAL",
-      "F024_GRADED_CAPABILITY_EVIDENCE",
-      "F025_MULTI_PLATFORM_CAPABILITY_MATRIX",
-      "F026_FULL_GRADED_CAPABILITY_MATRIX"
+      "F024_GRADED_CAPABILITY_EVIDENCE"
     ],
-    "score_delta": 3,
-    "status": "completed"
+    "score_delta": 1,
+    "status": "partial"
   },
   "external_baseline": {
     "reason": "No authorized external Fable 5 baseline run is available in this repo.",
     "status": "not_configured"
   },
-  "generated_at": "2026-06-18T19:49:49.417168+00:00",
+  "generated_at": "2026-06-20T08:28:44.124168+00:00",
   "iterations": 1,
   "metrics": {
-    "effort_latency_ms": 0.29,
-    "harness_latency_ms": 0.8535,
-    "workflow_latency_ms": 0.0176
+    "effort_latency_ms": 0.3203,
+    "harness_latency_ms": 1.2193,
+    "workflow_latency_ms": 0.0342
   },
   "scorecard": {
     "basis": [
@@ -173,19 +164,19 @@
       "two graded-live providers with blocked diagnostics can support 98/100",
       "three graded-live providers can support 99/100; four close the full matrix"
     ],
-    "current_score": 100,
+    "current_score": 98,
     "previous_score": 97,
     "remaining_findings": [
       "DIRECT_RETIRED_MODEL_UNAVAILABLE",
-      "CI_REMOTE_UNVERIFIED"
+      "CI_REMOTE_UNVERIFIED",
+      "FULL_GRADED_CAPABILITY_MATRIX",
+      "MULTI_PLATFORM_CAPABILITY_MATRIX"
     ],
     "resolved_findings": [
       "F022_LIVE_MATRIX_PARTIAL",
-      "F024_GRADED_CAPABILITY_EVIDENCE",
-      "F025_MULTI_PLATFORM_CAPABILITY_MATRIX",
-      "F026_FULL_GRADED_CAPABILITY_MATRIX"
+      "F024_GRADED_CAPABILITY_EVIDENCE"
     ],
-    "score_delta": 3
+    "score_delta": 1
   },
   "status": "completed",
   "suite": "capability"
