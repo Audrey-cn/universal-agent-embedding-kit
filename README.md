@@ -78,4 +78,7 @@ See [`docs/methodology.md`](docs/methodology.md), the research framing in
 MIT — see [`LICENSE`](LICENSE).
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
-</div>
+
+---
+
+[中文版](README.zh.md) | [CHANGELOG](CHANGELOG.md)
