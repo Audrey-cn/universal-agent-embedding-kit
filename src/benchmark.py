@@ -759,7 +759,7 @@ def _build_limitations() -> list[str]:
             "NOT a proof of impossibility"
         ),
         (
-            "Scenario corpus covers 30 scenarios across 28 categories; "
+            "Scenario corpus covers 40 scenarios across 38 categories; "
             "a 100+ live multi-hour corpus remains open work"
         ),
         "Claude Code CLI routes to mimo-v2.5-pro — model backend is ≤3 distinct, not 4",

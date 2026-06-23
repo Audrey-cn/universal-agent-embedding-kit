@@ -9,9 +9,9 @@
   - 命题1 自适应上下文管理（70% 利用率 0.85 期望准确率）
   - 命题2 对抗验证（作弊率 naive 71% → adversarial 0%）
   - 命题3 成本模型（建模 -49%；live warm 抽检 -82% 仅作为 best-case 证据；100% TTL miss 冷路径 +22% 成本）
-  - 命题4 真实场景基准（30 场景 28 类别，多维评分抓回归，每个错误解都有区分用例）
+  - 命题4 真实场景基准（40 场景 38 类别，多维评分抓回归，每个错误解都有区分用例）
   - 命题5 跨平台能力矩阵（2/4 provider full-suite graded-live；Mimo/Hermes partial artifacts 保留）
-- 396 个单元测试，ruff / mypy 全绿
+- 400 个单元测试，ruff / mypy 全绿
 - 14+ benchmark JSON 证据归档
 - `uaek audit` / `benchmark --suite all` 聚合入口
 - CI workflow（quality gates + release-gate）

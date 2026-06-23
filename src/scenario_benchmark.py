@@ -729,3 +729,24 @@ except ImportError:
     _pack2_loaded = False
 except Exception:
     _pack2_loaded = False
+
+# ── Import and merge scenario pack 3 (10 additional scenarios) ──
+try:
+    from src.scenario_pack_3 import FLAWED_PACK_3, REFERENCE_PACK_3, SCENARIO_PACK_3
+
+    merged_scenarios = list(SCENARIOS)
+    for s in SCENARIO_PACK_3:
+        merged_scenarios.append(s)
+    SCENARIOS = tuple(merged_scenarios)
+
+    REFERENCE_SOLUTIONS.update(REFERENCE_PACK_3)
+    FLAWED_SOLUTIONS.update(FLAWED_PACK_3)
+
+    for s in SCENARIO_PACK_3:
+        _SCENARIOS_BY_ID[s.scenario_id] = s
+
+    _pack3_loaded = True
+except ImportError:
+    _pack3_loaded = False
+except Exception:
+    _pack3_loaded = False

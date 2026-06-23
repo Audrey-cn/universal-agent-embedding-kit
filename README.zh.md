@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-396%20passing-brightgreen.svg)](#状态)
+[![Tests](https://img.shields.io/badge/tests-400%20passing-brightgreen.svg)](#状态)
 [![Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -56,7 +56,7 @@ uaek --help
 uaek benchmark --suite adversarial   # 自评分作弊率证据
 uaek capability matrix               # 跨平台真实任务评分矩阵
 uaek audit --output -                # 完整审计报告(JSON 输出到 stdout)
-python -m pytest -q                  # 396 个测试
+python -m pytest -q                  # 400 个测试
 ```
 
 ## 🧩 组件概览
@@ -82,10 +82,10 @@ python -m pytest -q                  # 396 个测试
 | 自评分作弊率 | naive ~60–71% → **对抗 0%**(目标 <10%) | ③ | 限于此语料 + 生成器,**不是**不可能性证明 |
 | 上下文利用率 | 自适应 **0.85** 期望准确率 @70% 利用率 vs naive 0.57 | ③ | live needle 测试 31K tokens 召回 6/6 —— 验证的是检索,不是自适应优势的 live 证明 |
 | 成本降低 | 建模 −43%(1h 档 −49%);warm live 抽检 **−82%,命中 92%** | ④ partial | warm-only best case;全冷会话建模结果比 baseline **贵 22%** |
-| 真实场景基准 | 多维评分;能标出"功能齐全但**有回归**"的解 | ③ | 30 场景 / 28 类别 —— 还不是 100+ live 多小时会话 |
+| 真实场景基准 | 多维评分;能标出"功能齐全但**有回归**"的解 | ③ | 40 场景 / 38 类别 —— 还不是 100+ live 多小时会话 |
 | 跨平台矩阵 | **2/4** 平台通过全套 graded live 任务;Mimo/Hermes partial 证据保留 | ④ partial | 全套通过指 10/10;8/10 或 9/10 证据不再计为 graded-live 成功 |
 
-<a id="状态"></a>**门禁:** 396 测试通过 · ruff + mypy 全绿 · 本地 audit 语义门禁通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
+<a id="状态"></a>**门禁:** 400 测试通过 · ruff + mypy 全绿 · 本地 audit 语义门禁通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
 
 ## 🪜 方法论才是核心
 

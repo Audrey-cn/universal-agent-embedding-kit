@@ -81,6 +81,7 @@ select = ["E", "F", "I", "N", "W", "UP"]
 # Scenario corpora are data, not logic: long inline dict/list literals read more
 # clearly unwrapped than force-wrapped under the line-length limit.
 "src/scenario_pack_2.py" = ["E501"]
+"src/scenario_pack_3.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
