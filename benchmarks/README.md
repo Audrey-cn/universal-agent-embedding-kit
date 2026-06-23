@@ -47,7 +47,7 @@ The excellence-readiness suite is the 95+ product evidence gate:
 .venv/bin/uaek benchmark --suite excellence --iterations 2 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results
 ```
 
-This writes `benchmarks/results/benchmark-excellence.json`. It requires at least one valid `live_external` task artifact, the four-platform artifact matrix, adversarial validation checks and a deterministic self-improvement scoring loop. The current evidence includes one Codex live task artifact returning `UAEK_LIVE_TASK_OK`, so the product score can move to 96/100 under an excellence-readiness口径. This is still not a retired Fable 5 rerun and not a full live run for every platform.
+This writes `benchmarks/results/benchmark-excellence.json`. It requires at least one valid `live_external` task artifact, the four-platform artifact matrix, adversarial validation checks and a deterministic self-improvement scoring loop. The current evidence includes one Codex live task artifact returning `UAEK_LIVE_TASK_OK`. We do not roll this up into a single "/100" readiness score — per-dimension results and their evidence-ladder rungs live in [`../VERIFICATION_SCORECARD.md`](../VERIFICATION_SCORECARD.md). This is still not a retired Fable 5 rerun and not a full live run for every platform.
 
 The live-matrix suite measures the next evidence layer:
 
@@ -55,7 +55,7 @@ The live-matrix suite measures the next evidence layer:
 .venv/bin/uaek benchmark --suite live_matrix --iterations 2 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results
 ```
 
-This writes `benchmarks/results/benchmark-live_matrix.json`. Current evidence has valid `live_external` artifacts for Codex, Mimo Code and Hermes; Claude App has a blocked live attempt caused by headless Electron/IndexedDB lock behavior. The score can move to 97/100 under a live-matrix-partial口径, but the full 4/4 live matrix remains open.
+This writes `benchmarks/results/benchmark-live_matrix.json`. Under the hardened口径, "pass" means the full graded suite (10/10 tasks), and **2/4 providers clear it**; Mimo/Hermes partial artifacts (8–9/10) are retained as evidence but **not** counted as graded-live passes, and Claude App has a blocked live attempt caused by headless Electron/IndexedDB lock behavior. We do not report a rolled-up "/100" score here — see the per-dimension evidence and rungs in [`../VERIFICATION_SCORECARD.md`](../VERIFICATION_SCORECARD.md). The full 4/4 live matrix remains open.
 
 The next benchmark stage should add full comparison data:
 
