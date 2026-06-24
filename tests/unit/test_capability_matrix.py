@@ -50,6 +50,48 @@ def test_grade_code_fails_wrong_solution():
     assert result["pass_rate"] < 1.0
 
 
+def test_held_out_grading_catches_overfit_lookup():
+    """A solution that hardcodes a lookup keyed on the public inputs passes the
+    public cases but fails the held-out cases — the exact red-team #2 attack."""
+    from src.capability_tasks import get_task, grade_code
+
+    overfit = (
+        "def two_sum(nums, target):\n"
+        "    table = {(2, 7, 11, 15, 9): [0, 1], (3, 2, 4, 6): [1, 2], (3, 3, 6): [0, 1]}\n"
+        "    return table.get(tuple(nums) + (target,), [0, 0])\n"
+    )
+
+    overfit_result = grade_code(get_task("two_sum"), overfit)
+    correct_result = grade_code(get_task("two_sum"), CORRECT_TWO_SUM)
+
+    assert overfit_result["status"] == "fail"
+    assert overfit_result["total"] > len(get_task("two_sum").cases)  # held-out added
+    assert correct_result["status"] == "pass"
+    assert correct_result["passed"] == correct_result["total"]
+
+
+def test_held_out_cases_are_deterministic_and_match_public_oracle():
+    """Held-out cases are reproducible per task, and each task's reference oracle
+    reproduces every public expected value (so the oracle is trustworthy)."""
+    from src.capability_tasks import _HELD_OUT_ORACLES, CAPABILITY_TASKS, held_out_cases
+
+    for task in CAPABILITY_TASKS:
+        reference, _ = _HELD_OUT_ORACLES[task.task_id]
+        for case in task.cases:
+            assert reference(*case.args) == case.expected, task.task_id
+        assert held_out_cases(task) == held_out_cases(task)  # deterministic
+        assert len(held_out_cases(task)) == 16
+
+
+def test_grade_code_held_out_zero_uses_public_only():
+    from src.capability_tasks import get_task, grade_code
+
+    result = grade_code(get_task("two_sum"), CORRECT_TWO_SUM, held_out=0)
+
+    assert result["total"] == len(get_task("two_sum").cases)
+    assert result["status"] == "pass"
+
+
 def test_grade_code_reports_runtime_error_without_crashing():
     from src.capability_tasks import grade_code
 
