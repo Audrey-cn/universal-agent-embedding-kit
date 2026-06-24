@@ -17,14 +17,14 @@
     "ruff_clean": true,
     "tests_passing": true
   },
-  "generated_at": "2026-06-20T08:28:48.822506+00:00",
-  "iterations": 1,
+  "generated_at": "2026-06-24T07:01:15.431094+00:00",
+  "iterations": 2,
   "limitations": [
     "No direct Fable 5 baseline — reference model is retired; all comparisons use proxy/side evidence",
     "Live cost measurement is warm-session (91.6% hit); cold-session costs MORE than baseline",
     "Live context needle test validates retrieval tractability, NOT the adaptive advantage",
     "Adversarial cheating 0% claim is scoped to THIS corpus+generator, NOT a proof of impossibility",
-    "Scenario corpus covers 30 scenarios across 28 categories; a 100+ live multi-hour corpus remains open work",
+    "Scenario corpus covers 40 scenarios across 38 categories; a 100+ live multi-hour corpus remains open work",
     "Claude Code CLI routes to mimo-v2.5-pro — model backend is ≤3 distinct, not 4",
     "Cross-platform matrix is 4/4 graded-live but requires seed config/credentials for CI reproducibility",
     "CI workflow runs on GitHub Actions (quality gates + release-gate wheel validation)"
@@ -69,10 +69,10 @@
       "evidence_rung": 3,
       "key_result": {
         "flags_hidden_regression": true,
-        "flawed_overall": 0.6505,
+        "flawed_overall": 0.6558,
         "live_both_100": null,
         "reference_overall": 1.0,
-        "scenario_count": 30
+        "scenario_count": 40
       },
       "status": "complete",
       "title": "命题4: 真实场景基准"
@@ -94,7 +94,7 @@
       "adapter_readiness": {
         "checks": [
           {
-            "evidence": "1/1 command adapter runs returned valid JSON",
+            "evidence": "2/2 command adapter runs returned valid JSON",
             "id": "command_adapter_contract",
             "required": true,
             "status": "pass"
@@ -131,12 +131,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.815794+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.422511+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.026,
-        "harness_latency_ms": 0.4821,
-        "workflow_latency_ms": 0.0113
+        "effort_latency_ms": 0.039,
+        "harness_latency_ms": 0.8527,
+        "workflow_latency_ms": 0.014
       },
       "scorecard": {
         "basis": [
@@ -312,12 +312,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.730292+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.294533+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.2838,
-        "harness_latency_ms": 1.1169,
-        "workflow_latency_ms": 0.0252
+        "effort_latency_ms": 0.2398,
+        "harness_latency_ms": 1.0726,
+        "workflow_latency_ms": 0.0184
       },
       "scorecard": {
         "adversarial_cheating_rate": 0.0,
@@ -356,7 +356,7 @@
             "status": "fail"
           },
           {
-            "evidence": "2 blocked providers; 0 providers missing diagnostics",
+            "evidence": "2 partial (ran, missed a task), 0 blocked (no passing task), 0 missing diagnostics",
             "id": "blocked_attempt_diagnostics",
             "required": true,
             "status": "pass"
@@ -368,7 +368,7 @@
             "status": "pass"
           },
           {
-            "evidence": "suite spans 3 difficulty tiers ({'easy': 4, 'medium': 3, 'hard': 3}); observed capability_score spread 0.0",
+            "evidence": "pass reflects suite structure (hard tier present, 3 tiers {'easy': 4, 'medium': 3, 'hard': 3}); observed capability_score spread among graded providers 0.0 (did not separate them)",
             "id": "discriminative_task_suite",
             "required": false,
             "status": "pass"
@@ -382,13 +382,15 @@
         ],
         "limitations": [
           "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
-          "A blocked provider (usage limit or headless lock) is a diagnostic, not graded success.",
-          "A provider must pass every task in the graded suite to count as graded-live; partial 8/10 or 9/10 artifacts remain evidence but do not satisfy the full-pass matrix.",
+          "A provider must pass every task in the graded suite to count as graded-live; a 'partial' provider ran the live suite and passed some but not all tasks (its real tasks_passed/capability_score are reported, e.g. mimo_code 9/10, hermes 8/10) and is evidence but not graded-live.",
+          "'blocked' is reserved for genuine non-execution (usage limit, headless lock, or no code emitted, i.e. zero passing tasks); it is not used for providers that ran and missed a task.",
+          "The graded suite grades against fixed public unit cases with no held-out or randomized inputs, so a capability_score certifies 'emitted working code on a fixed public set', not overfitting-resistant capability.",
+          "This is a cross-CLI harness comparison, not cross-model-family: claude_code routes to mimo-v2.5-pro, so distinct model backends are at most 3.",
           "A zero capability_score_spread means the suite did not separate the providers at this difficulty, not that they are proven equivalent.",
           "Remote CI and release publication remain separate evidence tracks."
         ],
         "metrics": {
-          "blocked_provider_count": 2,
+          "blocked_provider_count": 0,
           "capability_artifacts": 5,
           "capability_score_max": 1.0,
           "capability_score_min": 1.0,
@@ -397,6 +399,7 @@
           "graded_live_pass_rate": 0.5,
           "graded_live_provider_count": 2,
           "missing_provider_count": 0,
+          "partial_provider_count": 2,
           "suite_difficulty_tiers": {
             "easy": 4,
             "hard": 3,
@@ -432,7 +435,7 @@
             "tasks_total": 10
           },
           {
-            "capability_score": 0.0,
+            "capability_score": 0.8947,
             "errors": [
               "live_external attempt did not produce graded capability evidence"
             ],
@@ -440,26 +443,26 @@
               "benchmarks/results/capability-runs/hermes-capability-run.json",
               "benchmarks/results/capability-runs/hermes-seeded-capability-run.json"
             ],
-            "hardest_tier_passed": "",
+            "hardest_tier_passed": "hard",
             "provider": "hermes",
-            "status": "blocked",
-            "suite_pass_rate": 0.0,
-            "tasks_passed": 0,
+            "status": "partial",
+            "suite_pass_rate": 0.8,
+            "tasks_passed": 8,
             "tasks_total": 10
           },
           {
-            "capability_score": 0.0,
+            "capability_score": 0.9474,
             "errors": [
               "live_external attempt did not produce graded capability evidence"
             ],
             "evidence_paths": [
               "benchmarks/results/capability-runs/mimo_code-capability-run.json"
             ],
-            "hardest_tier_passed": "",
+            "hardest_tier_passed": "hard",
             "provider": "mimo_code",
-            "status": "blocked",
-            "suite_pass_rate": 0.0,
-            "tasks_passed": 0,
+            "status": "partial",
+            "suite_pass_rate": 0.9,
+            "tasks_passed": 9,
             "tasks_total": 10
           }
         ],
@@ -497,12 +500,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.747156+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.317286+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.035,
-        "harness_latency_ms": 0.7048,
-        "workflow_latency_ms": 0.0165
+        "effort_latency_ms": 0.04,
+        "harness_latency_ms": 0.8559,
+        "workflow_latency_ms": 0.0135
       },
       "scorecard": {
         "basis": [
@@ -646,12 +649,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.734409+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.301002+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.0895,
-        "harness_latency_ms": 0.6971,
-        "workflow_latency_ms": 0.0209
+        "effort_latency_ms": 0.0551,
+        "harness_latency_ms": 0.8849,
+        "workflow_latency_ms": 0.018
       },
       "scorecard": {
         "accuracy_gap_at_target": 0.2783,
@@ -846,12 +849,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.735637+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.303641+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.0307,
-        "harness_latency_ms": 0.5745,
-        "workflow_latency_ms": 0.0142
+        "effort_latency_ms": 0.034,
+        "harness_latency_ms": 0.8023,
+        "workflow_latency_ms": 0.0108
       },
       "scorecard": {
         "basis": [
@@ -993,12 +996,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.820019+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.428997+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.0367,
-        "harness_latency_ms": 0.5447,
-        "workflow_latency_ms": 0.023
+        "effort_latency_ms": 0.0429,
+        "harness_latency_ms": 0.7336,
+        "workflow_latency_ms": 0.0149
       },
       "scorecard": {
         "basis": [
@@ -1032,8 +1035,8 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.822482+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.431062+00:00",
+      "iterations": 2,
       "live_matrix_readiness": {
         "artifact_dir": "benchmarks/results/platform-runs",
         "checks": [
@@ -1130,9 +1133,9 @@
         "status": "partial"
       },
       "metrics": {
-        "effort_latency_ms": 0.0299,
-        "harness_latency_ms": 0.5678,
-        "workflow_latency_ms": 0.014
+        "effort_latency_ms": 0.032,
+        "harness_latency_ms": 0.7315,
+        "workflow_latency_ms": 0.0097
       },
       "scorecard": {
         "basis": [
@@ -1162,12 +1165,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.818679+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.426628+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.08,
-        "harness_latency_ms": 0.6386,
-        "workflow_latency_ms": 0.0434
+        "effort_latency_ms": 0.0921,
+        "harness_latency_ms": 0.9919,
+        "workflow_latency_ms": 0.0509
       },
       "platform_run_readiness": {
         "artifact_schema": "platform_run_v1",
@@ -1179,7 +1182,7 @@
             "status": "pass"
           },
           {
-            "evidence": "1/1 platform artifacts recorded",
+            "evidence": "2/2 platform artifacts recorded",
             "id": "platform_artifact_recording",
             "required": true,
             "status": "pass"
@@ -1209,13 +1212,13 @@
             "command_path": "/Applications/Codex.app/Contents/Resources/codex",
             "display_name": "Codex",
             "interactive": false,
-            "matched_candidate": "codex",
+            "matched_candidate": "/Applications/Codex.app/Contents/Resources/codex",
             "provider": "codex",
             "run_hint": "codex exec"
           },
           {
             "available": true,
-            "command_path": "/Users/audrey/.hermes/node/bin/claude",
+            "command_path": "/Users/audrey/.npm-global/bin/claude",
             "display_name": "Claude Code",
             "interactive": true,
             "matched_candidate": "claude",
@@ -1277,17 +1280,17 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.751417+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.323453+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.029,
-        "harness_latency_ms": 0.5332,
-        "workflow_latency_ms": 0.0133
+        "effort_latency_ms": 0.0405,
+        "harness_latency_ms": 0.8495,
+        "workflow_latency_ms": 0.0145
       },
       "proxy_validation": {
         "checks": [
           {
-            "evidence": "1/1 local harness runs completed with score 1.0",
+            "evidence": "2/2 local harness runs completed with score 1.0",
             "id": "local_harness_pipeline",
             "required": true,
             "source_practices": [
@@ -1446,19 +1449,21 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-20T08:28:48.743496+00:00",
-      "iterations": 1,
+      "generated_at": "2026-06-24T07:01:15.312415+00:00",
+      "iterations": 2,
       "metrics": {
-        "effort_latency_ms": 0.0254,
-        "harness_latency_ms": 0.5026,
-        "workflow_latency_ms": 0.0116
+        "effort_latency_ms": 0.0376,
+        "harness_latency_ms": 0.8022,
+        "workflow_latency_ms": 0.0123
       },
       "scenario_readiness": {
         "catches_nonreuse": true,
         "categories": [
           "algorithm-design",
+          "anagram-grouping",
           "api-client",
           "batch-processing",
+          "bracket-matching",
           "caching",
           "config-driven",
           "cron-parser",
@@ -1474,26 +1479,34 @@
           "feature-add-with-regression-risk",
           "filesystem-io",
           "graph-traversal",
+          "integer-encoding",
+          "interval-merge",
+          "ipv4-validation",
           "ml-adjacent",
           "multi-step-dependency",
+          "order-preserving-dedup",
           "pagination",
           "rate-limiter",
+          "recursive-flatten",
           "regex-parsing",
+          "semver-compare",
+          "sliding-window",
           "sorting-ranking",
           "state-machine",
           "template-engine",
+          "text-analysis",
           "text-diff",
           "validation-pipeline"
         ],
         "checks": [
           {
-            "evidence": "all 30 reference solutions score 100% overall",
+            "evidence": "all 40 reference solutions score 100% overall",
             "id": "reference_full_marks",
             "required": true,
             "status": "pass"
           },
           {
-            "evidence": "30/30 flawed solutions detected (avg 65% vs ref 100%); 4 distinct failure dimensions — e.g. discount_feature regression: correctness 100% but completeness 0% (overall 65%)",
+            "evidence": "40/40 flawed solutions detected (avg 66% vs ref 100%); 4 distinct failure dimensions — e.g. discount_feature regression: correctness 100% but completeness 0% (overall 66%)",
             "id": "multidimensional_discrimination",
             "required": true,
             "status": "pass"
@@ -1519,7 +1532,7 @@
           "robustness"
         ],
         "flags_hidden_regression": true,
-        "flawed_overall": 0.6505,
+        "flawed_overall": 0.6558,
         "flawed_report": {
           "category": "feature-add-with-regression-risk",
           "checks_passed": 4,
@@ -1533,7 +1546,7 @@
           "overall": 0.6667,
           "scenario_id": "discount_feature"
         },
-        "flawed_solution_count": 30,
+        "flawed_solution_count": 40,
         "limitations": [
           "Seed of scenarios with a deterministic auto-grader — the framework for real-scenario evaluation, not yet the proposal's 100+ live multi-hour sessions.",
           "Red-team hardened: context_retention now uses a dependency-SWAP reuse probe (proven to catch an inline reimplementation that passes every black-box check); each scenario has its own flawed solution so discrimination is no longer a single circular foil.",
@@ -1592,7 +1605,7 @@
           "W2.3_BENCHMARK_REALISM",
           "F030_MULTIDIMENSIONAL_SCENARIO_BENCHMARK"
         ],
-        "scenario_count": 30,
+        "scenario_count": 40,
         "status": "completed"
       },
       "scorecard": {
@@ -1605,7 +1618,7 @@
         "current_score": null,
         "dimension": "4_real_scenario_benchmark",
         "flags_hidden_regression": true,
-        "flawed_overall": 0.6505,
+        "flawed_overall": 0.6558,
         "previous_score": null,
         "reference_overall": 1.0,
         "remaining_findings": [
@@ -1616,7 +1629,7 @@
           "W2.3_BENCHMARK_REALISM",
           "F030_MULTIDIMENSIONAL_SCENARIO_BENCHMARK"
         ],
-        "scenario_count": 30,
+        "scenario_count": 40,
         "score_delta": 0
       },
       "status": "completed",

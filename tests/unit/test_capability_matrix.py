@@ -50,6 +50,48 @@ def test_grade_code_fails_wrong_solution():
     assert result["pass_rate"] < 1.0
 
 
+def test_held_out_grading_catches_overfit_lookup():
+    """A solution that hardcodes a lookup keyed on the public inputs passes the
+    public cases but fails the held-out cases — the exact red-team #2 attack."""
+    from src.capability_tasks import get_task, grade_code
+
+    overfit = (
+        "def two_sum(nums, target):\n"
+        "    table = {(2, 7, 11, 15, 9): [0, 1], (3, 2, 4, 6): [1, 2], (3, 3, 6): [0, 1]}\n"
+        "    return table.get(tuple(nums) + (target,), [0, 0])\n"
+    )
+
+    overfit_result = grade_code(get_task("two_sum"), overfit)
+    correct_result = grade_code(get_task("two_sum"), CORRECT_TWO_SUM)
+
+    assert overfit_result["status"] == "fail"
+    assert overfit_result["total"] > len(get_task("two_sum").cases)  # held-out added
+    assert correct_result["status"] == "pass"
+    assert correct_result["passed"] == correct_result["total"]
+
+
+def test_held_out_cases_are_deterministic_and_match_public_oracle():
+    """Held-out cases are reproducible per task, and each task's reference oracle
+    reproduces every public expected value (so the oracle is trustworthy)."""
+    from src.capability_tasks import _HELD_OUT_ORACLES, CAPABILITY_TASKS, held_out_cases
+
+    for task in CAPABILITY_TASKS:
+        reference, _ = _HELD_OUT_ORACLES[task.task_id]
+        for case in task.cases:
+            assert reference(*case.args) == case.expected, task.task_id
+        assert held_out_cases(task) == held_out_cases(task)  # deterministic
+        assert len(held_out_cases(task)) == 16
+
+
+def test_grade_code_held_out_zero_uses_public_only():
+    from src.capability_tasks import get_task, grade_code
+
+    result = grade_code(get_task("two_sum"), CORRECT_TWO_SUM, held_out=0)
+
+    assert result["total"] == len(get_task("two_sum").cases)
+    assert result["status"] == "pass"
+
+
 def test_grade_code_reports_runtime_error_without_crashing():
     from src.capability_tasks import grade_code
 
@@ -143,6 +185,49 @@ def test_capability_matrix_scores_98_with_two_graded_and_two_blocked(tmp_path: P
     assert result["metrics"]["missing_provider_count"] == 0
     assert _provider_status(result, "codex")["status"] == "blocked"
     assert _check_status(result, "graded_live_capability_matrix") == "fail"
+    assert _check_status(result, "blocked_attempt_diagnostics") == "pass"
+
+
+def test_partial_run_reports_real_score_not_blocked(tmp_path: Path):
+    """A provider that ran the live suite and missed a task is 'partial' with its real
+    tasks_passed/capability_score — not relabeled 'blocked, 0.0'. Only genuine
+    non-execution (zero passing tasks) is 'blocked'."""
+    from src.capability_matrix import run_capability_readiness
+
+    # mimo ran live and passed 3/4 (real partial); hermes failed to run (0 tasks).
+    _write_json(
+        tmp_path / "mimo_code-capability-run.json",
+        _capability_artifact(
+            "mimo_code", tasks_passed=3, suite_pass_rate=0.75, capability_score=0.6
+        ),
+    )
+    _write_json(
+        tmp_path / "hermes-capability-run.json",
+        _capability_artifact(
+            "hermes",
+            tasks_passed=0,
+            suite_pass_rate=0.0,
+            status="failed",
+            error="hermes backend degraded: no final response",
+        ),
+    )
+    for provider in ["codex", "claude_code"]:
+        _write_json(
+            tmp_path / f"{provider}-capability-run.json",
+            _capability_artifact(provider, tasks_passed=4, suite_pass_rate=1.0),
+        )
+
+    result = run_capability_readiness(tmp_path)
+
+    mimo = _provider_status(result, "mimo_code")
+    assert mimo["status"] == "partial"
+    assert mimo["tasks_passed"] == 3  # real value, not zeroed
+    assert mimo["capability_score"] == 0.6  # real score, not 0.0
+    assert _provider_status(result, "hermes")["status"] == "blocked"
+    assert result["metrics"]["partial_provider_count"] == 1
+    assert result["metrics"]["blocked_provider_count"] == 1
+    assert result["metrics"]["graded_live_provider_count"] == 2
+    # partial providers still count as having produced diagnostics
     assert _check_status(result, "blocked_attempt_diagnostics") == "pass"
 
 

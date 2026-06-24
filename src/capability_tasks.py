@@ -8,9 +8,12 @@ executing it in an isolated subprocess against the cases — no model self-gradi
 from __future__ import annotations
 
 import json
+import random
 import subprocess
 import sys
 import tempfile
+from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -239,6 +242,258 @@ CAPABILITY_TASKS: tuple[CapabilityTask, ...] = (
 
 _TASKS_BY_ID = {task.task_id: task for task in CAPABILITY_TASKS}
 
+
+# --------------------------------------------------------------------------- #
+# Held-out / metamorphic grading
+#
+# The fixed ``cases`` above are a small public set; a solution that hardcodes a
+# lookup keyed on those exact inputs would pass them while being non-general.
+# For each task we keep a trusted reference oracle plus an input sampler. At
+# grade time we draw deterministic-but-prompt-unseen inputs, compute the
+# expected output with the reference (in the trusted parent process), and grade
+# the candidate against them too. A hardcoded lookup fails the held-out inputs.
+# Seeds are fixed per task so the suite stays reproducible; the inputs are never
+# shown to the provider, so they still test generalization beyond the prompt.
+# --------------------------------------------------------------------------- #
+HELD_OUT_COUNT = 16
+
+
+def _int_to_roman(n: int) -> str:
+    table = [
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+        (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    ]
+    out: list[str] = []
+    for value, symbol in table:
+        while n >= value:
+            out.append(symbol)
+            n -= value
+    return "".join(out)
+
+
+def _ref_two_sum(nums: list[int], target: int) -> list[int]:
+    seen: dict[int, int] = {}
+    for i, num in enumerate(nums):
+        if target - num in seen:
+            return [seen[target - num], i]
+        seen[num] = i
+    return []
+
+
+def _ref_is_palindrome(s: str) -> bool:
+    t = [c.lower() for c in s if c.isalnum()]
+    return t == t[::-1]
+
+
+def _ref_fizzbuzz(n: int) -> str:
+    if n % 15 == 0:
+        return "FizzBuzz"
+    if n % 3 == 0:
+        return "Fizz"
+    if n % 5 == 0:
+        return "Buzz"
+    return str(n)
+
+
+def _ref_max_subarray(nums: list[int]) -> int:
+    best = cur = nums[0]
+    for x in nums[1:]:
+        cur = max(x, cur + x)
+        best = max(best, cur)
+    return best
+
+
+def _ref_roman_to_int(s: str) -> int:
+    vals = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
+    total = 0
+    prev = 0
+    for ch in reversed(s):
+        v = vals[ch]
+        if v < prev:
+            total -= v
+        else:
+            total += v
+            prev = v
+    return total
+
+
+def _ref_valid_parentheses(s: str) -> bool:
+    pairs = {")": "(", "]": "[", "}": "{"}
+    stack: list[str] = []
+    for ch in s:
+        if ch in "([{":
+            stack.append(ch)
+        elif ch in pairs:
+            if not stack or stack.pop() != pairs[ch]:
+                return False
+    return not stack
+
+
+def _ref_longest_unique_substring(s: str) -> int:
+    last: dict[str, int] = {}
+    start = 0
+    best = 0
+    for i, ch in enumerate(s):
+        if ch in last and last[ch] >= start:
+            start = last[ch] + 1
+        last[ch] = i
+        best = max(best, i - start + 1)
+    return best
+
+
+def _ref_edit_distance(a: str, b: str) -> int:
+    m, n = len(a), len(b)
+    dp = list(range(n + 1))
+    for i in range(1, m + 1):
+        prev = dp[0]
+        dp[0] = i
+        for j in range(1, n + 1):
+            cur = dp[j]
+            dp[j] = prev if a[i - 1] == b[j - 1] else 1 + min(prev, dp[j], dp[j - 1])
+            prev = cur
+    return dp[n]
+
+
+def _ref_lru_cache_sim(capacity: int, ops: list[list[Any]]) -> list[int]:
+    cache: OrderedDict[Any, Any] = OrderedDict()
+    out: list[int] = []
+    for op in ops:
+        if op[0] == "put":
+            _, key, value = op
+            if key in cache:
+                cache.move_to_end(key)
+            cache[key] = value
+            if len(cache) > capacity:
+                cache.popitem(last=False)
+        else:
+            _, key = op
+            if key in cache:
+                cache.move_to_end(key)
+                out.append(cache[key])
+            else:
+                out.append(-1)
+    return out
+
+
+def _ref_calculator(expr: str) -> int:
+    s = expr.replace(" ", "")
+    stack: list[int] = []
+    num = 0
+    op = "+"
+    for i, ch in enumerate(s):
+        if ch.isdigit():
+            num = num * 10 + int(ch)
+        if ch in "+-*" or i == len(s) - 1:
+            if op == "+":
+                stack.append(num)
+            elif op == "-":
+                stack.append(-num)
+            elif op == "*":
+                stack.append(stack.pop() * num)
+            op = ch
+            num = 0
+    return sum(stack)
+
+
+def _sample_two_sum(rng: random.Random) -> tuple[Any, ...]:
+    # Powers of 3 give every pair a distinct sum, so the target identifies a
+    # unique pair and the candidate's indices must match the reference's.
+    k = rng.randint(4, 8)
+    values = [3**i for i in range(k)]
+    rng.shuffle(values)
+    i, j = sorted(rng.sample(range(k), 2))
+    return (values, values[i] + values[j])
+
+
+def _sample_is_palindrome(rng: random.Random) -> tuple[Any, ...]:
+    alpha = "abcABC123 ,:!"
+    if rng.random() < 0.5:
+        half = [rng.choice(alpha) for _ in range(rng.randint(1, 6))]
+        return ("".join(half + half[::-1]),)
+    return ("".join(rng.choice(alpha) for _ in range(rng.randint(1, 12))),)
+
+
+def _sample_fizzbuzz(rng: random.Random) -> tuple[Any, ...]:
+    return (rng.randint(1, 10000),)
+
+
+def _sample_max_subarray(rng: random.Random) -> tuple[Any, ...]:
+    return ([rng.randint(-20, 20) for _ in range(rng.randint(1, 12))],)
+
+
+def _sample_roman_to_int(rng: random.Random) -> tuple[Any, ...]:
+    return (_int_to_roman(rng.randint(1, 3999)),)
+
+
+def _sample_valid_parentheses(rng: random.Random) -> tuple[Any, ...]:
+    return ("".join(rng.choice("()[]{}") for _ in range(rng.randint(0, 12))),)
+
+
+def _sample_longest_unique_substring(rng: random.Random) -> tuple[Any, ...]:
+    return ("".join(rng.choice("abcd") for _ in range(rng.randint(0, 15))),)
+
+
+def _sample_edit_distance(rng: random.Random) -> tuple[Any, ...]:
+    def word() -> str:
+        return "".join(rng.choice("abc") for _ in range(rng.randint(0, 7)))
+
+    return (word(), word())
+
+
+def _sample_lru_cache_sim(rng: random.Random) -> tuple[Any, ...]:
+    cap = rng.randint(1, 3)
+    ops: list[list[Any]] = []
+    for _ in range(rng.randint(3, 12)):
+        if rng.random() < 0.5:
+            ops.append(["put", rng.randint(0, 4), rng.randint(0, 9)])
+        else:
+            ops.append(["get", rng.randint(0, 4)])
+    return (cap, ops)
+
+
+def _sample_calculator(rng: random.Random) -> tuple[Any, ...]:
+    parts = [str(rng.randint(0, 20))]
+    for _ in range(rng.randint(1, 5)):
+        parts.append(rng.choice("+-*"))
+        parts.append(str(rng.randint(0, 20)))
+    return ("".join(parts),)
+
+
+# task_id -> (reference oracle, input sampler)
+_Reference = Callable[..., Any]
+_Sampler = Callable[[random.Random], tuple[Any, ...]]
+_HELD_OUT_ORACLES: dict[str, tuple[_Reference, _Sampler]] = {
+    "two_sum": (_ref_two_sum, _sample_two_sum),
+    "is_palindrome": (_ref_is_palindrome, _sample_is_palindrome),
+    "fizzbuzz": (_ref_fizzbuzz, _sample_fizzbuzz),
+    "max_subarray": (_ref_max_subarray, _sample_max_subarray),
+    "roman_to_int": (_ref_roman_to_int, _sample_roman_to_int),
+    "valid_parentheses": (_ref_valid_parentheses, _sample_valid_parentheses),
+    "longest_unique_substring": (_ref_longest_unique_substring, _sample_longest_unique_substring),
+    "edit_distance": (_ref_edit_distance, _sample_edit_distance),
+    "lru_cache_sim": (_ref_lru_cache_sim, _sample_lru_cache_sim),
+    "calculator": (_ref_calculator, _sample_calculator),
+}
+
+
+def held_out_cases(task: CapabilityTask, count: int = HELD_OUT_COUNT) -> tuple[CapabilityCase, ...]:
+    """Deterministic prompt-unseen cases drawn from the task's reference oracle.
+
+    Returns an empty tuple for tasks with no registered oracle (e.g. ad-hoc test
+    fixtures). Seeded per task id so the suite is reproducible.
+    """
+    oracle = _HELD_OUT_ORACLES.get(task.task_id)
+    if oracle is None or count <= 0:
+        return ()
+    reference, sampler = oracle
+    rng = random.Random(f"uaek-held-out:{task.task_id}")
+    cases: list[CapabilityCase] = []
+    for _ in range(count):
+        args = sampler(rng)
+        cases.append(CapabilityCase(args=tuple(args), expected=reference(*args)))
+    return tuple(cases)
+
+
 _GRADE_HARNESS = """
 import importlib.util
 import json
@@ -303,9 +558,18 @@ def extract_code(output: str) -> str:
     return text
 
 
-def grade_code(task: CapabilityTask, code: str, timeout: float = 20.0) -> dict[str, Any]:
-    """Execute candidate code against the task cases in an isolated subprocess."""
-    total = len(task.cases)
+def grade_code(
+    task: CapabilityTask, code: str, timeout: float = 20.0, held_out: int = HELD_OUT_COUNT
+) -> dict[str, Any]:
+    """Execute candidate code against public + held-out cases in a subprocess.
+
+    Grading spans the fixed public ``cases`` plus ``held_out`` deterministic
+    prompt-unseen cases from the task's reference oracle, so a solution that
+    overfits a lookup to the public inputs fails. Pass ``held_out=0`` to grade
+    against only the public cases (legacy behaviour).
+    """
+    all_cases = task.cases + held_out_cases(task, held_out)
+    total = len(all_cases)
     if not code.strip():
         return _grade_result(task, passed=0, total=total, error="empty solution", cases=[])
 
@@ -316,7 +580,7 @@ def grade_code(task: CapabilityTask, code: str, timeout: float = 20.0) -> dict[s
         harness_path = tmp_path / "harness.py"
         solution_path.write_text(code, encoding="utf-8")
         cases_payload = [
-            {"args": list(case.args), "expected": case.expected} for case in task.cases
+            {"args": list(case.args), "expected": case.expected} for case in all_cases
         ]
         cases_path.write_text(
             json.dumps(cases_payload),

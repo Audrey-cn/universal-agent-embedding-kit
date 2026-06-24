@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed (red-team hardening 2026-06-24)
+- capability matrix: 新增 `partial` provider 状态。旧 `_provider_status` 把任何未满分的 live 运行一律标 `blocked / 0.0` 并归因 "usage limit/lock"，把真实跑出的 mimo 9/10、hermes 8/10 谎报成"跑不通"。现如实报告真实 tasks_passed/capability_score；`blocked` 仅留给真正零通过的非执行。
+- matrix/benchmark/audit JSON 按新口径重生成：**2 graded_live + 2 partial（blocked 0）**，headline 仍 98/partial（graded-live 门禁未放宽）。
+- 文档补充诚实边界：跨 CLI ≠ 跨模型族（backends ≤3）；两 graded provider 间观测 spread = 0.0。
+
+### Added (red-team hardening 2026-06-24)
+- capability 评分器加 **held-out/变形用例**（封堵红队 #2 过拟合攻击）：`grade_code` 每题除固定公开用例外，再跑 16 个由可信参考实现生成、provider 未见过的确定性随机输入。写死查找表只过公开用例、必挂 held-out（控制实验 overfit lookup 1/19 fail，正确解 19/19 pass）。
+- 重评已捕获 provider 解的证据 `benchmarks/results/capability-heldout-regrade.json`：claude_code/codex 在 held-out 下仍 10/10（证明当前数字非过拟合），mimo 9/10、hermes 8/10 不变，headline 2/4 graded-live / 98 partial 不受影响。
+- 3 个新测试锁定 held-out 行为（抓 overfit、确定性、参考实现匹配公开用例）。
+
 ## 0.1.0 (2026-06-20)
 
 ### Added

@@ -1,0 +1,466 @@
+{
+  "schema": "capability_heldout_regrade_v1",
+  "description": "Re-grade of captured provider solutions with held-out/metamorphic cases added to grade_code. Inputs are deterministic-per-task and never shown to the provider; a solution that overfits the public cases fails. Captured solutions are fixed code, so this is a valid generalization test (a provider cannot retroactively overfit code it already emitted).",
+  "held_out_count_per_task": 16,
+  "public_cases_per_task": {
+    "two_sum": 3,
+    "is_palindrome": 3,
+    "fizzbuzz": 4,
+    "max_subarray": 4,
+    "roman_to_int": 5,
+    "valid_parentheses": 7,
+    "longest_unique_substring": 6,
+    "edit_distance": 5,
+    "lru_cache_sim": 3,
+    "calculator": 7
+  },
+  "overfit_control": {
+    "attack": "hardcoded lookup keyed on public two_sum inputs",
+    "status": "fail",
+    "passed": 1,
+    "total": 19,
+    "note": "passes only the public cases, fails held-out -> caught"
+  },
+  "providers": {
+    "claude_code": {
+      "tasks_passed_held_out": 10,
+      "tasks_total": 10,
+      "capability_score_held_out": 1.0,
+      "task_results": [
+        {
+          "task_id": "two_sum",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "is_palindrome",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "fizzbuzz",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "max_subarray",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "roman_to_int",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "valid_parentheses",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        },
+        {
+          "task_id": "longest_unique_substring",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 6,
+          "passed": 22,
+          "total": 22
+        },
+        {
+          "task_id": "edit_distance",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "lru_cache_sim",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "calculator",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        }
+      ]
+    },
+    "codex": {
+      "tasks_passed_held_out": 10,
+      "tasks_total": 10,
+      "capability_score_held_out": 1.0,
+      "task_results": [
+        {
+          "task_id": "two_sum",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "is_palindrome",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "fizzbuzz",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "max_subarray",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "roman_to_int",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "valid_parentheses",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        },
+        {
+          "task_id": "longest_unique_substring",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 6,
+          "passed": 22,
+          "total": 22
+        },
+        {
+          "task_id": "edit_distance",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "lru_cache_sim",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "calculator",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        }
+      ]
+    },
+    "hermes": {
+      "tasks_passed_held_out": 8,
+      "tasks_total": 10,
+      "capability_score_held_out": 0.8947,
+      "task_results": [
+        {
+          "task_id": "two_sum",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "is_palindrome",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "fizzbuzz",
+          "difficulty": "easy",
+          "status": "fail",
+          "public_passed": 0,
+          "passed": 0,
+          "total": 20
+        },
+        {
+          "task_id": "max_subarray",
+          "difficulty": "easy",
+          "status": "fail",
+          "public_passed": 0,
+          "passed": 0,
+          "total": 20
+        },
+        {
+          "task_id": "roman_to_int",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "valid_parentheses",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        },
+        {
+          "task_id": "longest_unique_substring",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 6,
+          "passed": 22,
+          "total": 22
+        },
+        {
+          "task_id": "edit_distance",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "lru_cache_sim",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "calculator",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        }
+      ]
+    },
+    "hermes-seeded": {
+      "tasks_passed_held_out": 9,
+      "tasks_total": 10,
+      "capability_score_held_out": 0.8421,
+      "task_results": [
+        {
+          "task_id": "two_sum",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "is_palindrome",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "fizzbuzz",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "max_subarray",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "roman_to_int",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "valid_parentheses",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        },
+        {
+          "task_id": "longest_unique_substring",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 6,
+          "passed": 22,
+          "total": 22
+        },
+        {
+          "task_id": "edit_distance",
+          "difficulty": "hard",
+          "status": "fail",
+          "public_passed": 0,
+          "passed": 0,
+          "total": 21
+        },
+        {
+          "task_id": "lru_cache_sim",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "calculator",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        }
+      ]
+    },
+    "mimo_code": {
+      "tasks_passed_held_out": 9,
+      "tasks_total": 10,
+      "capability_score_held_out": 0.9474,
+      "task_results": [
+        {
+          "task_id": "two_sum",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "is_palindrome",
+          "difficulty": "easy",
+          "status": "fail",
+          "public_passed": 0,
+          "passed": 0,
+          "total": 19
+        },
+        {
+          "task_id": "fizzbuzz",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "max_subarray",
+          "difficulty": "easy",
+          "status": "pass",
+          "public_passed": 4,
+          "passed": 20,
+          "total": 20
+        },
+        {
+          "task_id": "roman_to_int",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "valid_parentheses",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        },
+        {
+          "task_id": "longest_unique_substring",
+          "difficulty": "medium",
+          "status": "pass",
+          "public_passed": 6,
+          "passed": 22,
+          "total": 22
+        },
+        {
+          "task_id": "edit_distance",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 5,
+          "passed": 21,
+          "total": 21
+        },
+        {
+          "task_id": "lru_cache_sim",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 3,
+          "passed": 19,
+          "total": 19
+        },
+        {
+          "task_id": "calculator",
+          "difficulty": "hard",
+          "status": "pass",
+          "public_passed": 7,
+          "passed": 23,
+          "total": 23
+        }
+      ]
+    }
+  },
+  "finding": "claude_code and codex captured solutions remain 10/10 under held-out grading (not overfit); mimo 9/10, hermes 8/10 unchanged. Headline 2/4 graded-live / 98 partial is unaffected and now shown overfitting-resistant for the captured runs.",
+  "limitations": [
+    "Held-out inputs are deterministic-seeded for reproducibility, not fresh-random per run; a future white-box adversary could still target them once public. Property-based fresh randomization would be strictly stronger.",
+    "Providers were graded live against public cases only; this re-grades the captured code, which is a valid generalization test but not a fresh live run under the new grader."
+  ]
+}
