@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed (red-team hardening 2026-06-24)
+- capability matrix: 新增 `partial` provider 状态。旧 `_provider_status` 把任何未满分的 live 运行一律标 `blocked / 0.0` 并归因 "usage limit/lock"，把真实跑出的 mimo 9/10、hermes 8/10 谎报成"跑不通"。现如实报告真实 tasks_passed/capability_score；`blocked` 仅留给真正零通过的非执行。
+- matrix/benchmark/audit JSON 按新口径重生成：**2 graded_live + 2 partial（blocked 0）**，headline 仍 98/partial（graded-live 门禁未放宽）。
+- 文档补充诚实边界：跨 CLI ≠ 跨模型族（backends ≤3）；评分套件用固定公开用例、无 held-out → capability_score 非抗过拟合；两 graded provider 间观测 spread = 0.0。
+
 ## 0.1.0 (2026-06-20)
 
 ### Added

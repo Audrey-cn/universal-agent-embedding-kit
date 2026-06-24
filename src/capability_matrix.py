@@ -537,13 +537,17 @@ def run_capability_readiness(
     ]
 
     graded_live_count = sum(1 for item in provider_statuses if item["status"] == "graded_live")
+    partial_count = sum(1 for item in provider_statuses if item["status"] == "partial")
     blocked_count = sum(1 for item in provider_statuses if item["status"] == "blocked")
     missing_count = sum(
         1 for item in provider_statuses if item["status"] in {"missing", "missing_live"}
     )
     full_matrix = graded_live_count == len(EXPECTED_PROVIDERS)
+    # Diagnostics are complete when every expected provider produced a live attempt —
+    # graded-live, partial (ran but missed a task), or genuinely blocked. A missing
+    # provider is the only gap.
     diagnostics_ready = all(
-        item["status"] in {"graded_live", "blocked"} for item in provider_statuses
+        item["status"] in {"graded_live", "partial", "blocked"} for item in provider_statuses
     )
 
     # Discrimination: rank graded providers by difficulty-weighted capability_score
@@ -572,7 +576,8 @@ def run_capability_readiness(
             "required": True,
             "status": "pass" if diagnostics_ready else "fail",
             "evidence": (
-                f"{blocked_count} blocked providers; {missing_count} providers missing diagnostics"
+                f"{partial_count} partial (ran, missed a task), {blocked_count} blocked "
+                f"(no passing task), {missing_count} missing diagnostics"
             ),
         },
         {
@@ -586,8 +591,10 @@ def run_capability_readiness(
             "required": False,
             "status": "pass" if has_hard_tier and len(tier_summary) >= 2 else "fail",
             "evidence": (
-                f"suite spans {len(tier_summary)} difficulty tiers "
-                f"({tier_summary}); observed capability_score spread {score_spread}"
+                f"pass reflects suite structure (hard tier present, "
+                f"{len(tier_summary)} tiers {tier_summary}); observed capability_score "
+                f"spread among graded providers {score_spread} "
+                f"({'did not separate them' if score_spread == 0.0 else 'separated them'})"
             ),
         },
     ]
@@ -613,6 +620,7 @@ def run_capability_readiness(
             "capability_artifacts": len(artifacts),
             "expected_provider_count": len(EXPECTED_PROVIDERS),
             "graded_live_provider_count": graded_live_count,
+            "partial_provider_count": partial_count,
             "blocked_provider_count": blocked_count,
             "missing_provider_count": missing_count,
             "graded_live_pass_rate": round(graded_live_count / len(EXPECTED_PROVIDERS), 4),
@@ -630,11 +638,18 @@ def run_capability_readiness(
         ),
         "limitations": [
             "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
-            "A blocked provider (usage limit or headless lock) is a diagnostic, not graded "
-            "success.",
-            "A provider must pass every task in the graded suite to count as graded-live; "
-            "partial 8/10 or 9/10 artifacts remain evidence but do not satisfy the full-pass "
-            "matrix.",
+            "A provider must pass every task in the graded suite to count as graded-live; a "
+            "'partial' provider ran the live suite and passed some but not all tasks (its real "
+            "tasks_passed/capability_score are reported, e.g. mimo_code 9/10, hermes 8/10) and "
+            "is evidence but not graded-live.",
+            "'blocked' is reserved for genuine non-execution (usage limit, headless lock, or no "
+            "code emitted, i.e. zero passing tasks); it is not used for providers that ran and "
+            "missed a task.",
+            "The graded suite grades against fixed public unit cases with no held-out or "
+            "randomized inputs, so a capability_score certifies 'emitted working code on a fixed "
+            "public set', not overfitting-resistant capability.",
+            "This is a cross-CLI harness comparison, not cross-model-family: claude_code routes "
+            "to mimo-v2.5-pro, so distinct model backends are at most 3.",
             "A zero capability_score_spread means the suite did not separate the providers at "
             "this difficulty, not that they are proven equivalent.",
             "Remote CI and release publication remain separate evidence tracks.",
@@ -671,14 +686,25 @@ def _provider_status(provider: str, artifacts: list[dict[str, Any]]) -> dict[str
             "errors": [],
         }
     if attempts:
+        # A live_external attempt that ran the suite and passed at least one task is
+        # "partial" — report its real tasks_passed/capability_score. Only reserve
+        # "blocked" for genuine non-execution (usage limit, headless lock, or no code
+        # emitted), i.e. the best attempt passed zero tasks. Collapsing a real 8/10 or
+        # 9/10 run into "blocked, score 0.0" understates how many platforms produced
+        # graded evidence and misattributes the cause.
+        best = max(
+            attempts,
+            key=lambda item: (item["capability_score"], item["tasks_passed"]),
+        )
+        ran = best["tasks_passed"] >= 1
         return {
             "provider": provider,
-            "status": "blocked",
-            "tasks_passed": 0,
-            "tasks_total": attempts[0]["tasks_total"],
-            "suite_pass_rate": 0.0,
-            "capability_score": 0.0,
-            "hardest_tier_passed": "",
+            "status": "partial" if ran else "blocked",
+            "tasks_passed": best["tasks_passed"] if ran else 0,
+            "tasks_total": best["tasks_total"],
+            "suite_pass_rate": best["suite_pass_rate"] if ran else 0.0,
+            "capability_score": best["capability_score"] if ran else 0.0,
+            "hardest_tier_passed": best["hardest_tier_passed"] if ran else "",
             "evidence_paths": [item["path"] for item in attempts],
             "errors": _flatten_errors(attempts),
         }

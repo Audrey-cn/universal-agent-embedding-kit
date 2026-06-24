@@ -146,6 +146,49 @@ def test_capability_matrix_scores_98_with_two_graded_and_two_blocked(tmp_path: P
     assert _check_status(result, "blocked_attempt_diagnostics") == "pass"
 
 
+def test_partial_run_reports_real_score_not_blocked(tmp_path: Path):
+    """A provider that ran the live suite and missed a task is 'partial' with its real
+    tasks_passed/capability_score — not relabeled 'blocked, 0.0'. Only genuine
+    non-execution (zero passing tasks) is 'blocked'."""
+    from src.capability_matrix import run_capability_readiness
+
+    # mimo ran live and passed 3/4 (real partial); hermes failed to run (0 tasks).
+    _write_json(
+        tmp_path / "mimo_code-capability-run.json",
+        _capability_artifact(
+            "mimo_code", tasks_passed=3, suite_pass_rate=0.75, capability_score=0.6
+        ),
+    )
+    _write_json(
+        tmp_path / "hermes-capability-run.json",
+        _capability_artifact(
+            "hermes",
+            tasks_passed=0,
+            suite_pass_rate=0.0,
+            status="failed",
+            error="hermes backend degraded: no final response",
+        ),
+    )
+    for provider in ["codex", "claude_code"]:
+        _write_json(
+            tmp_path / f"{provider}-capability-run.json",
+            _capability_artifact(provider, tasks_passed=4, suite_pass_rate=1.0),
+        )
+
+    result = run_capability_readiness(tmp_path)
+
+    mimo = _provider_status(result, "mimo_code")
+    assert mimo["status"] == "partial"
+    assert mimo["tasks_passed"] == 3  # real value, not zeroed
+    assert mimo["capability_score"] == 0.6  # real score, not 0.0
+    assert _provider_status(result, "hermes")["status"] == "blocked"
+    assert result["metrics"]["partial_provider_count"] == 1
+    assert result["metrics"]["blocked_provider_count"] == 1
+    assert result["metrics"]["graded_live_provider_count"] == 2
+    # partial providers still count as having produced diagnostics
+    assert _check_status(result, "blocked_attempt_diagnostics") == "pass"
+
+
 def test_capability_matrix_scores_99_with_three_graded(tmp_path: Path):
     from src.capability_matrix import run_capability_readiness
 
