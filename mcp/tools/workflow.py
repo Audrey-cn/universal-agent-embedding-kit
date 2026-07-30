@@ -7,7 +7,10 @@ from typing import Any
 
 def register_workflow_tool(server) -> None:
     """注册工作流工具"""
+    from src.config import load_config
+
     workflows: dict[str, dict[str, Any]] = {}
+    safe_actions = load_config().workflow.safe_actions
 
     async def workflow_create(
         workflow_id: str,
@@ -40,6 +43,9 @@ def register_workflow_tool(server) -> None:
         """添加任务到工作流"""
         if workflow_id not in workflows:
             raise KeyError(f"Workflow not found: {workflow_id}")
+        if func_name not in safe_actions:
+            allowed = ", ".join(sorted(safe_actions))
+            raise ValueError(f"Workflow action '{func_name}' is not allowed (allowed: {allowed})")
         workflows[workflow_id]["tasks"].append(
             {
                 "id": task_id,
@@ -108,6 +114,7 @@ def register_workflow_tool(server) -> None:
                 },
                 "func_name": {
                     "type": "string",
+                    "enum": safe_actions,
                     "description": "函数名称",
                 },
                 "args": {

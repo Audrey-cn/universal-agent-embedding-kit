@@ -3,6 +3,7 @@
 from .compression import ContextCompressor
 from .extraction import KeyInfoExtractor
 from .interface import ContextManager, MemoryEntry, MemoryLayer, MemoryQuery
+from .knowledge_graph import Entity, EntityType, KnowledgeGraph, Relation, RelationType
 from .layers import L1CurrentContext, L2TaskContext, L3PersistentContext
 from .monitor import UtilizationMonitor
 from .persistence import MemoryPersistence
@@ -23,4 +24,9 @@ __all__ = [
     "MemoryPersistence",
     "MemoryQueryEngine",
     "MemoryService",
+    "KnowledgeGraph",
+    "Entity",
+    "EntityType",
+    "Relation",
+    "RelationType",
 ]

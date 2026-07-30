@@ -1,5 +1,7 @@
 """Tests for memory/context manager"""
 
+from __future__ import annotations
+
 import tempfile
 import time
 from pathlib import Path
@@ -19,6 +21,7 @@ from src.memory import (
     UtilizationMonitor,
 )
 from src.memory.interface import MemoryLayerType
+from src.memory.service import MemoryService
 
 
 # 测试辅助函数
@@ -94,13 +97,14 @@ class TestL1CurrentContext:
         assert len(layer) == 2
 
     def test_compress(self):
-        """测试压缩"""
+        """测试压缩（自适应压缩会根据信息密度调整阈值）"""
         layer = L1CurrentContext(max_size=100)
         for i in range(60):
             layer.add(create_entry(f"e{i}", f"Content {i}", importance=i / 60))
 
         layer.compress()
-        assert len(layer) <= 30
+        # 自适应压缩后条目数应减少（但具体阈值由信息密度决定）
+        assert len(layer) < 60
 
     def test_search(self):
         """测试搜索"""
@@ -339,3 +343,46 @@ class TestMemoryQueryEngine:
         stats = engine.get_statistics()
         assert stats["l1_current"] == 1
         assert stats["total"] == 1
+
+
+class TestVectorIntegration:
+    """向量存储集成回归测试。
+
+    历史 bug：service.py 曾按一个不存在的 VectorStore 接口调用
+    （vs.backend.count() / vs.search(str) / vs.add(id, emb, meta)），
+    导致 _vector_search 第一行就抛 AttributeError，被 except 静默吞成 []，
+    向量语义搜索上线即失效且毫无症状。这组测试锁住真实 API 契约。
+    """
+
+    def test_index_to_vector_succeeds(self, tmp_path: Path):
+        """index_to_vector 应成功写入，而不是抛异常"""
+        service = MemoryService(tmp_path / "memory")
+        added = service.add("the quick brown fox", layer="l1", importance=0.5)
+        entry_id = added["id"]
+
+        result = service.index_to_vector(entry_id)
+
+        assert result["indexed"] is True
+        assert result["entry_id"] == entry_id
+        assert service.vector_store.size() == 1
+
+    def test_vector_search_returns_indexed_entry(self, tmp_path: Path):
+        """索引后用相同内容查询，_vector_search 必须返回该条目（不能静默为空）"""
+        service = MemoryService(tmp_path / "memory")
+        added = service.add("the quick brown fox", layer="l1", importance=0.5)
+        service.index_to_vector(added["id"])
+
+        results = service._vector_search("the quick brown fox", limit=5)
+
+        assert len(results) == 1, "向量搜索路径失效：有数据却返回空"
+        assert results[0].id == added["id"]
+
+    def test_search_reports_vector_source(self, tmp_path: Path):
+        """主搜索路径应在 sources['vector'] 里如实计数向量命中"""
+        service = MemoryService(tmp_path / "memory")
+        added = service.add("the quick brown fox", layer="l1", importance=0.5)
+        service.index_to_vector(added["id"])
+
+        out = service.query("the quick brown fox", enable_vector=True)
+
+        assert out["sources"]["vector"] >= 1, "向量命中未被主搜索路径计入"

@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Universal Agent Enhancement Kit MCP Server",
   "type": "stdio",
-  "command": "python",
+  "command": "/Users/audrey/项目/fable-research/.venv/bin/python",
   "args": ["-m", "mcp.server"],
-  "env": {}
+  "cwd": "/Users/audrey/项目/fable-research",
+  "env": {
+    "PYTHONPATH": "/Users/audrey/项目/fable-research/src"
+  }
 }

@@ -1,0 +1,40 @@
+# .pre-commit-config.yaml — UAEK 项目 pre-commit 钩子配置
+# 使用方法: pre-commit install
+
+repos:
+  # ruff: 代码检查与自动修复
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # mypy: 类型检查
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.0
+    hooks:
+      - id: mypy
+        args: [--config-file=pyproject.toml]
+        additional_dependencies:
+          - types-PyYAML>=6.0
+        files: ^src/
+
+  # 检查是否有 print 语句（调试残留）
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: debug-statements
+        # 检测 pdb、breakpoint() 等调试语句
+      - id: check-ast
+        # 检查 Python 语法是否有效
+      - id: trailing-whitespace
+        # 删除行尾空白
+      - id: end-of-file-fixer
+        # 确保文件以换行符结尾
+      - id: check-yaml
+        # 检查 YAML 文件语法
+      - id: check-json
+        # 检查 JSON 文件语法
+      - id: check-toml
+        # 检查 TOML 文件语法

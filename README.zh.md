@@ -56,7 +56,7 @@ uaek --help
 uaek benchmark --suite adversarial   # 自评分作弊率证据
 uaek capability matrix               # 跨平台真实任务评分矩阵
 uaek audit --output -                # 完整审计报告(JSON 输出到 stdout)
-python -m pytest -q                  # 400 个测试
+python -m pytest -q                  # 完整测试套件
 ```
 
 ## 🧩 组件概览
@@ -85,7 +85,7 @@ python -m pytest -q                  # 400 个测试
 | 真实场景基准 | 多维评分;能标出"功能齐全但**有回归**"的解 | ③ | 40 场景 / 38 类别 —— 还不是 100+ live 多小时会话 |
 | 跨平台矩阵 | **2/4** 平台通过全套 graded live 任务;Mimo/Hermes partial 证据保留 | ④ partial | 全套通过指 10/10;8/10 或 9/10 证据不再计为 graded-live 成功 |
 
-<a id="状态"></a>**门禁:** 400 测试通过 · ruff + mypy 全绿 · 本地 audit 语义门禁通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
+<a id="状态"></a>**门禁:** 测试通过 · ruff + mypy 全绿 · 强制覆盖率下限 · 本地 audit 语义门禁通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
 
 ## 🪜 方法论才是核心
 

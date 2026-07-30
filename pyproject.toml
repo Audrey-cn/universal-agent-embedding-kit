@@ -70,6 +70,13 @@ addopts = "-v --tb=short"
 line-length = 100
 target-version = ["py311"]
 
+[tool.coverage.run]
+source = ["src", "api", "mcp"]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -89,3 +96,8 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 check_untyped_defs = true
+
+# 可选依赖（惰性导入，未安装时无 stub）：忽略缺失导入
+[[tool.mypy.overrides]]
+module = ["chromadb.*", "sentence_transformers.*", "z3.*"]
+ignore_missing_imports = true

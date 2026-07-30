@@ -4,7 +4,15 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
+
+from .vector_backends import (
+    ChromaBackend,
+    SimpleBackend,
+    VectorBackend,
+    cosine_similarity,
+    detect_sentence_transformers,
+)
 
 
 @dataclass
@@ -20,29 +28,34 @@ class VectorDocument:
         """计算余弦相似度"""
         if len(self.embedding) != len(other.embedding):
             raise ValueError("Embedding dimensions must match")
-
-        dot_product = sum(a * b for a, b in zip(self.embedding, other.embedding))
-        norm_a = math.sqrt(sum(a * a for a in self.embedding))
-        norm_b = math.sqrt(sum(b * b for b in other.embedding))
-
-        if norm_a == 0 or norm_b == 0:
-            return 0.0
-
-        return dot_product / (norm_a * norm_b)
+        return cosine_similarity(self.embedding, other.embedding)
 
 
 class VectorStore:
-    """向量存储"""
+    """向量存储 — 支持可插拔后端（SimpleBackend / ChromaBackend）"""
 
-    def __init__(self, dimension: int = 384):
+    def __init__(self, dimension: int = 384, backend: VectorBackend | None = None):
         self.dimension = dimension
+        self._backend = backend if backend is not None else SimpleBackend(dimension=dimension)
         self.documents: dict[str, VectorDocument] = {}
+
+    @classmethod
+    def use_chromadb(cls, persist_dir: str | None = None, dimension: int = 384) -> VectorStore:
+        """使用 ChromaDB 后端创建 VectorStore"""
+        backend = ChromaBackend(persist_dir=persist_dir)
+        return cls(dimension=dimension, backend=backend)
+
+    @property
+    def backend_name(self) -> str:
+        """当前后端名称"""
+        return type(self._backend).__name__
 
     def add(self, doc: VectorDocument):
         """添加文档"""
         if len(doc.embedding) != self.dimension:
             raise ValueError(f"Embedding dimension must be {self.dimension}")
         self.documents[doc.id] = doc
+        self._backend.add(doc.id, doc.embedding, doc.metadata)
 
     def search(
         self, query_embedding: list[float], top_k: int = 5
@@ -51,39 +64,61 @@ class VectorStore:
         if len(query_embedding) != self.dimension:
             raise ValueError(f"Query embedding dimension must be {self.dimension}")
 
-        query = VectorDocument(id="query", content="", embedding=query_embedding, metadata={})
+        backend_results = self._backend.search(query_embedding, top_k)
 
-        results = []
-        for doc in self.documents.values():
-            score = query.similarity(doc)
-            results.append((doc, score))
-
-        # 按相似度排序
-        results.sort(key=lambda x: x[1], reverse=True)
-        return results[:top_k]
+        results: list[tuple[VectorDocument, float]] = []
+        for doc_id, score in backend_results:
+            doc = self.documents.get(doc_id)
+            if doc is not None:
+                results.append((doc, score))
+        return results
 
     def remove(self, doc_id: str) -> bool:
-        """删除文档"""
-        if doc_id in self.documents:
-            del self.documents[doc_id]
-            return True
-        return False
+        """删除文档（先后端删除，再本地删除，保证一致性）"""
+        if not self._backend.delete(doc_id):
+            return False
+        self.documents.pop(doc_id, None)
+        return True
 
     def size(self) -> int:
         """获取文档数量"""
-        return len(self.documents)
+        return self._backend.count()
 
 
 class SimpleEmbedding:
-    """简单嵌入模型（基于词频）"""
+    """嵌入模型 — 自动检测并使用最佳可用模型
+
+    优先级：sentence-transformers > 词袋模型
+    """
 
     def __init__(self, dimension: int = 384):
         self.dimension = dimension
         self.vocabulary: dict[str, int] = {}
+        self._model = None
+
+        # 尝试加载 sentence-transformers 语义模型
+        if detect_sentence_transformers():
+            try:
+                from sentence_transformers import SentenceTransformer
+
+                self._model = SentenceTransformer("all-MiniLM-L6-v2")
+                # 使用模型的实际维度
+                self.dimension = self._model.get_sentence_embedding_dimension()
+            except Exception:
+                self._model = None
 
     def encode(self, text: str) -> list[float]:
         """编码文本为向量"""
-        # 简单的词袋模型
+        if self._model is not None:
+            # 使用语义模型编码
+            embedding = self._model.encode(text, convert_to_numpy=True).tolist()
+            return cast(list[float], embedding)
+
+        # 降级到词袋模型
+        return self._bag_of_words_encode(text)
+
+    def _bag_of_words_encode(self, text: str) -> list[float]:
+        """词袋模型编码（fallback）"""
         words = text.lower().split()
         embedding = [0.0] * self.dimension
 
@@ -104,9 +139,9 @@ class SimpleEmbedding:
 class VectorSearchEngine:
     """向量搜索引擎"""
 
-    def __init__(self, dimension: int = 384):
-        self.store = VectorStore(dimension)
-        self.embedder = SimpleEmbedding(dimension)
+    def __init__(self, dimension: int = 384, backend: VectorBackend | None = None):
+        self.store = VectorStore(dimension=dimension, backend=backend)
+        self.embedder = SimpleEmbedding(dimension=dimension)
 
     def add_document(self, doc_id: str, content: str, metadata: dict[str, Any] | None = None):
         """添加文档"""

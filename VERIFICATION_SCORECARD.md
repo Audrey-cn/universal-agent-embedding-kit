@@ -11,11 +11,10 @@
 | 验证项 | 命令 | 结果 | 门禁状态 |
 |--------|------|------|----------|
 | 依赖安装 | `.venv/bin/python -m pip install -e '.[dev]'` | 通过，含 `types-PyYAML` | pass |
-| 全量测试 | `.venv/bin/python -m pytest -q` | 396 passed | pass |
-| 核心库覆盖率 | `.venv/bin/python -m pytest --cov=src --cov-report=term` | 88% total | pass（当前核心库口径） |
-| 产品接口覆盖率 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing` | 86% total | pass（API/MCP 已补 P2 覆盖） |
+| 全量测试 | `.venv/bin/python -m pytest -q` | 619 passed（2026-07-31 本地工作区） | pass |
+| 产品综合覆盖率 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing` | 76.32% total | pass（本地与 CI floor 均为 75%；高级 render/formal/multi-perspective 仍是后续重点） |
 | Ruff | `.venv/bin/python -m ruff check src api mcp tests` | All checks passed | pass |
-| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 74 source files | pass（渐进类型门禁） |
+| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 97 source files | pass（渐进类型门禁） |
 | CLI 入口 | `.venv/bin/uaek --help` | 可运行 | pass |
 | Workflow CLI | `.venv/bin/uaek workflow --config tests/fixtures/workflow.yaml` | fixture workflow 执行成功 | pass |
 | Memory CLI | `uaek memory add/query/compress/restore` | 持久化 roundtrip 成功 | pass |
@@ -58,8 +57,8 @@
 | Excellence tests | `.venv/bin/python -m pytest tests/unit/test_excellence.py -q` | strict live artifact validation、excellence evaluator、benchmark/CLI 覆盖通过 | pass |
 | Live matrix tests | `.venv/bin/python -m pytest tests/unit/test_live_matrix.py -q` | 3/4 partial matrix、4/4 full matrix、benchmark/CLI 覆盖通过 | pass |
 | Config/Logging tests | `.venv/bin/python -m pytest tests/unit/test_config_logging.py -q` | `load_config`、`uaek run --config`、`--log-file` 覆盖通过 | pass |
-| CI workflow | `.github/workflows/ci.yml` | Quality gates (lint/typecheck/test/coverage) + release-gate (wheel build/clean install/API+MCP smoke/benchmark/audit semantic validation) 已配置；最新本地修改仍需远端 Actions 复跑绑定 URL | configured |
-| Release gate (wheel) | `pip install dist/uaek-0.1.0-py3-none-any.whl` | Clean venv install + `uaek --version` + API/MCP import + MCP stdio + benchmark/audit 语义门禁；license metadata 已改为 SPDX 字符串口径，build 无 setuptools license 弃用警告 | pass（本地） |
+| CI workflow | `.github/workflows/ci.yml` | Quality gates 覆盖 Python 3.11/3.12 matrix；lint/typecheck/test+coverage floor；release-gate wheel build/metadata/clean install/API+MCP smoke/benchmark/audit semantic validation 已配置；最新本地修改仍需远端 Actions 复跑绑定 URL | configured |
+| Release gate (wheel) | `pip install dist/uaek-*.whl` | Clean venv 动态安装构建产物 + `uaek --version` + API/MCP import + MCP stdio + benchmark/audit 语义门禁；wheel metadata 校验项目 name/version/requires-python | pass（本地） |
 | Release gate (CI) | GitHub Actions release-gate job | Build wheel → clean venv install → CLI/API/MCP smoke → quick/adversarial/manifest/audit；最新 workflow 已加 audit semantic validation，远端运行记录待复跑 | configured |
 | Baseline schema | `benchmarks/baselines/fable5.example.json` | 示例 schema 存在，明确不是 Fable 5 实测证据 | configured |
 | README 旧入口 | `.venv/bin/python -m uae --help` | No module named uae；文档已改为 `uaek` | resolved |

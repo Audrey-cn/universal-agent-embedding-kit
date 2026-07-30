@@ -474,6 +474,8 @@ def _run_harness_once() -> dict[str, Any]:
 def run_audit(
     iterations: int = 2,
     baseline_path: Path | str | None = None,
+    ci_run_url: str | None = None,
+    ci_artifact_url: str | None = None,
 ) -> dict[str, Any]:
     """Run all benchmark suites and aggregate into a unified audit report."""
     safe_iterations = max(1, int(iterations))
@@ -506,8 +508,23 @@ def run_audit(
             errors.append({"suite": suite, "error": str(exc)})
 
     propositions = _build_proposition_summary(suite_results)
-    gates = _build_gate_summary(suite_results, errors, propositions)
     limitations = _build_limitations()
+    external_baseline = _load_external_baseline(baseline_path)
+    ci_evidence = _build_ci_evidence(ci_run_url=ci_run_url, ci_artifact_url=ci_artifact_url)
+    evidence_index = _build_evidence_index(
+        suite_results=suite_results,
+        propositions=propositions,
+        limitations=limitations,
+        external_baseline=external_baseline,
+        ci_evidence=ci_evidence,
+    )
+    gates = _build_gate_summary(
+        suite_results,
+        errors,
+        propositions,
+        ci_evidence=ci_evidence,
+        evidence_consistency=evidence_index["consistency"],
+    )
 
     return {
         "audit_version": "audit_v1",
@@ -518,7 +535,8 @@ def run_audit(
         "propositions": propositions,
         "gates": gates,
         "limitations": limitations,
-        "external_baseline": _load_external_baseline(baseline_path),
+        "evidence_index": evidence_index,
+        "external_baseline": external_baseline,
     }
 
 
@@ -706,6 +724,8 @@ def _build_gate_summary(
     suite_results: dict[str, dict[str, Any]],
     errors: list[dict[str, str]] | None = None,
     propositions: dict[str, Any] | None = None,
+    ci_evidence: dict[str, Any] | None = None,
+    evidence_consistency: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a quality-gate summary.
 
@@ -713,14 +733,8 @@ def _build_gate_summary(
     and constructs a run URL from GITHUB_SERVER_URL / GITHUB_REPOSITORY /
     GITHUB_RUN_ID when available.
     """
-    is_ci = os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
-    ci_run_url: str | None = None
-    if is_ci:
-        server = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
-        repo = os.environ.get("GITHUB_REPOSITORY", "")
-        run_id = os.environ.get("GITHUB_RUN_ID", "")
-        if repo and run_id:
-            ci_run_url = f"{server}/{repo}/actions/runs/{run_id}"
+    ci_evidence = ci_evidence or _build_ci_evidence()
+    consistency_passed = (evidence_consistency or {}).get("status") != "fail"
     proposition_items = []
     if isinstance(propositions, dict):
         proposition_items = [
@@ -730,18 +744,177 @@ def _build_gate_summary(
     has_incomplete_proposition = any(
         item.get("status") == "incomplete" for item in proposition_items
     )
-    audit_passed = not errors and not has_incomplete_proposition
+    audit_passed = not errors and not has_incomplete_proposition and consistency_passed
     return {
         "audit_passed": audit_passed,
         "tests_passing": True,  # validated by caller
         "ruff_clean": True,
         "mypy_clean": True,
         "ci_workflow_configured": True,
-        "ci_remote_verified": is_ci,
-        "ci_remote_run_url": ci_run_url,
+        "ci_remote_verified": bool(ci_evidence.get("verified")),
+        "ci_remote_run_url": ci_evidence.get("run_url"),
+        "ci_artifact_url": ci_evidence.get("artifact_url"),
+        "ci_commit_sha": ci_evidence.get("commit_sha"),
+        "evidence_consistency_passed": consistency_passed,
         "benchmark_evidence_count": len(suite_results),
         "live_matrix_complete": False,  # 3/4 live, Claude blocked
         "external_baseline_available": False,  # Fable 5 retired
+    }
+
+
+def _build_ci_evidence(
+    ci_run_url: str | None = None,
+    ci_artifact_url: str | None = None,
+) -> dict[str, Any]:
+    """Return structured CI evidence from explicit args or GitHub Actions env."""
+    is_ci = os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
+    run_url = ci_run_url
+    if run_url is None and is_ci:
+        server = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
+        repo = os.environ.get("GITHUB_REPOSITORY", "")
+        run_id = os.environ.get("GITHUB_RUN_ID", "")
+        if repo and run_id:
+            run_url = f"{server}/{repo}/actions/runs/{run_id}"
+    return {
+        "schema": "ci_evidence_v1",
+        "verified": bool(run_url or is_ci),
+        "source": "explicit" if ci_run_url else "github_actions_env" if is_ci else "local",
+        "run_url": run_url,
+        "artifact_url": ci_artifact_url,
+        "commit_sha": os.environ.get("GITHUB_SHA"),
+        "repository": os.environ.get("GITHUB_REPOSITORY"),
+    }
+
+
+def _build_evidence_index(
+    suite_results: dict[str, dict[str, Any]],
+    propositions: dict[str, Any],
+    limitations: list[str],
+    external_baseline: dict[str, Any],
+    ci_evidence: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the audit's canonical machine-readable evidence ledger."""
+    headline = {
+        "p1_context_utilization": _proposition_key_result(propositions, "p1_context_utilization"),
+        "p2_self_grading_cheating": _proposition_key_result(
+            propositions, "p2_self_grading_cheating"
+        ),
+        "p3_cost_optimization": _proposition_key_result(propositions, "p3_cost_optimization"),
+        "p4_real_scenario_benchmark": _proposition_key_result(
+            propositions, "p4_real_scenario_benchmark"
+        ),
+        "p5_cross_platform_verification": _proposition_key_result(
+            propositions, "p5_cross_platform_verification"
+        ),
+    }
+    capability = suite_results.get("capability", {}).get("capability_readiness", {})
+    scenario = suite_results.get("scenario", {}).get("scenario_readiness", {})
+    held_out = _capability_held_out_summary()
+    consistency = _build_evidence_consistency(
+        suite_results=suite_results,
+        propositions=propositions,
+        capability=capability if isinstance(capability, dict) else {},
+        scenario=scenario if isinstance(scenario, dict) else {},
+        held_out=held_out,
+    )
+    return {
+        "schema": "evidence_index_v1",
+        "source": "uaek audit",
+        "headline": headline,
+        "capability": {
+            "artifact_dir": (
+                capability.get("artifact_dir") if isinstance(capability, dict) else None
+            ),
+            "metrics": capability.get("metrics", {}) if isinstance(capability, dict) else {},
+            "held_out": held_out,
+        },
+        "ci": ci_evidence,
+        "external_baseline": {
+            "status": external_baseline.get("status"),
+            "name": external_baseline.get("name"),
+            "path": external_baseline.get("path"),
+        },
+        "limitations": limitations,
+        "consistency": consistency,
+    }
+
+
+def _proposition_key_result(propositions: dict[str, Any], key: str) -> dict[str, Any]:
+    proposition = propositions.get(key, {})
+    if not isinstance(proposition, dict):
+        return {}
+    key_result = proposition.get("key_result", {})
+    return dict(key_result) if isinstance(key_result, dict) else {}
+
+
+def _capability_held_out_summary() -> dict[str, Any]:
+    from src.capability_tasks import CAPABILITY_TASKS, HELD_OUT_COUNT, held_out_cases
+
+    regrade_path = Path("benchmarks/results/capability-heldout-regrade.json")
+    regrade: dict[str, Any] = {}
+    if regrade_path.exists():
+        data = json.loads(regrade_path.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            providers = data.get("providers", {})
+            regrade = {
+                "schema": data.get("schema"),
+                "path": str(regrade_path),
+                "exists": True,
+                "finding": data.get("finding"),
+                "provider_count": len(providers) if isinstance(providers, dict) else 0,
+            }
+
+    public_cases = sum(len(task.cases) for task in CAPABILITY_TASKS)
+    held_out_cases_total = sum(len(held_out_cases(task)) for task in CAPABILITY_TASKS)
+    return {
+        "enabled_in_current_grader": HELD_OUT_COUNT > 0,
+        "held_out_count_per_task": HELD_OUT_COUNT,
+        "public_case_count": public_cases,
+        "held_out_case_count": held_out_cases_total,
+        "regrade_artifact": regrade or {"path": str(regrade_path), "exists": False},
+        "stronger_next_step": "fresh randomized/property-based cases for new live reruns",
+    }
+
+
+def _build_evidence_consistency(
+    suite_results: dict[str, dict[str, Any]],
+    propositions: dict[str, Any],
+    capability: dict[str, Any],
+    scenario: dict[str, Any],
+    held_out: dict[str, Any],
+) -> dict[str, Any]:
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    cap_limitations = capability.get("limitations", [])
+    if held_out.get("enabled_in_current_grader") and any(
+        "no held-out" in str(item) for item in cap_limitations
+    ):
+        errors.append("capability limitations still claim no held-out inputs")
+
+    p4_count = _proposition_key_result(propositions, "p4_real_scenario_benchmark").get(
+        "scenario_count"
+    )
+    scorecard_count = suite_results.get("scenario", {}).get("scorecard", {}).get("scenario_count")
+    readiness_count = scenario.get("scenario_count")
+    scenario_counts = {
+        int(value)
+        for value in (p4_count, scorecard_count, readiness_count)
+        if isinstance(value, (int, float))
+    }
+    if len(scenario_counts) > 1:
+        errors.append(f"scenario counts disagree inside audit: {sorted(scenario_counts)}")
+
+    if not held_out.get("regrade_artifact", {}).get("exists"):
+        warnings.append(
+            "capability held-out regrade artifact is not archived in benchmarks/results"
+        )
+
+    status = "fail" if errors else "warn" if warnings else "pass"
+    return {
+        "status": status,
+        "errors": errors,
+        "warnings": warnings,
     }
 
 

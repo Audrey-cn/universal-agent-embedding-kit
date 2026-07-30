@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Stabilization (2026-07-31)
+
+- Added advanced behavior coverage for memory decay/token budgets/knowledge graph, effort cache, verification, workflow recovery, A2A, and MCP package entrypoints.
+- Fixed stale knowledge-graph indexes, zero-sized effort-cache crashes, feedback threshold rounding, incompatible JSON diff crashes, shared random-generator state, unknown A2A result messages, and divergent `python -m mcp` behavior.
+- Unified local and CI combined coverage floors at 75%; current measured combined coverage is 76.32% with 619 tests.
+- Added `docs/architecture.md` and a tracked 0.2 stabilization plan.
+
 ### Changed (red-team hardening 2026-06-24)
 - capability matrix: 新增 `partial` provider 状态。旧 `_provider_status` 把任何未满分的 live 运行一律标 `blocked / 0.0` 并归因 "usage limit/lock"，把真实跑出的 mimo 9/10、hermes 8/10 谎报成"跑不通"。现如实报告真实 tasks_passed/capability_score；`blocked` 仅留给真正零通过的非执行。
 - matrix/benchmark/audit JSON 按新口径重生成：**2 graded_live + 2 partial（blocked 0）**，headline 仍 98/partial（graded-live 门禁未放宽）。

@@ -56,7 +56,7 @@ uaek --help
 uaek benchmark --suite adversarial   # self-grading cheating-rate evidence
 uaek capability matrix               # cross-platform graded task matrix
 uaek audit --output -                # full audit report as JSON on stdout
-python -m pytest -q                  # 400 tests
+python -m pytest -q                  # full test suite
 ```
 
 ## 🧩 What's inside
@@ -85,7 +85,7 @@ Every number below is the result of a deliberate **red-team round** (independent
 | Real-scenario benchmark | multi-dimensional; flags a feature-complete-but-**regressing** solution | ③ | 40 scenarios / 38 categories — not yet 100+ live multi-hour sessions |
 | Cross-platform matrix | **2/4** providers pass the full graded live suite; partial Mimo/Hermes artifacts retained | ④ partial | full-suite means 10/10 tasks; partial 8/10 or 9/10 evidence is not counted as graded-live success |
 
-<a id="status"></a>**Gates:** 400 tests pass · ruff + mypy clean · audit semantics pass locally. Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
+<a id="status"></a>**Gates:** tests pass · ruff + mypy clean · coverage floor enforced · audit semantics pass locally. Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 
 ## 🪜 The methodology is the product
 
@@ -109,7 +109,7 @@ Climbing the evidence ladder is the roadmap:
 
 ## 🤝 Contributing
 
-PRs and issues are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). The one non-negotiable: any metric you add or change must come with its **rung** and an **honest caveat**. Run `bash scripts/setup.sh` (or `ruff check . && mypy src && pytest`) before opening a PR. Security reports: [`SECURITY.md`](SECURITY.md).
+PRs and issues are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). The one non-negotiable: any metric you add or change must come with its **rung** and an **honest caveat**. Run `bash scripts/setup.sh --verify` (or `ruff check src api mcp tests && mypy src api mcp && pytest --cov=src --cov=api --cov=mcp`) before opening a PR. Security reports: [`SECURITY.md`](SECURITY.md).
 
 ## ⚠️ Limitations (read these)
 

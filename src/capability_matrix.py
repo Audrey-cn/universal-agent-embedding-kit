@@ -645,9 +645,10 @@ def run_capability_readiness(
             "'blocked' is reserved for genuine non-execution (usage limit, headless lock, or no "
             "code emitted, i.e. zero passing tasks); it is not used for providers that ran and "
             "missed a task.",
-            "The graded suite grades against fixed public unit cases with no held-out or "
-            "randomized inputs, so a capability_score certifies 'emitted working code on a fixed "
-            "public set', not overfitting-resistant capability.",
+            "The current grader runs fixed public cases plus deterministic per-task held-out/"
+            "metamorphic cases; archived captured solutions were regraded in "
+            "capability-heldout-regrade.json. Fresh randomized/property-based live reruns remain "
+            "the stronger next step.",
             "This is a cross-CLI harness comparison, not cross-model-family: claude_code routes "
             "to mimo-v2.5-pro, so distinct model backends are at most 3.",
             "A zero capability_score_spread means the suite did not separate the providers at "

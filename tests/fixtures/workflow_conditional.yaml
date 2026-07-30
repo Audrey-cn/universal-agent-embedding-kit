@@ -1,0 +1,21 @@
+id: fixture-conditional-workflow
+type: conditional
+context:
+  mode: production
+conditions:
+  - name: check_mode
+    field: mode
+    operator: "=="
+    value: production
+    true_tasks:
+      - id: prod_task
+        name: Production Task
+        action: echo
+        args:
+          - "running in production mode"
+    false_tasks:
+      - id: staging_task
+        name: Staging Task
+        action: echo
+        args:
+          - "running in staging mode"

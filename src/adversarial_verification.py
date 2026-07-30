@@ -29,6 +29,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
+from src.security.sandbox import SandboxedExecutor, SandboxPolicy
+
 LIVE_MEASUREMENT_PATH = Path("benchmarks/results/cheating-live-measurement.json")
 
 TARGET_MAX_CHEATING_RATE = 0.10
@@ -304,9 +306,73 @@ def _corpus() -> list[CandidateSolution]:
 
 
 # --------------------------------------------------------------------------- #
-# Execution
+# 沙箱执行器（模块级单例）
 # --------------------------------------------------------------------------- #
+_EXECUTOR = SandboxedExecutor()
+
+# 沙箱策略：限制内存 256MB，运行时间 30 秒，禁止网络/文件系统写入
+_DEFAULT_SANDBOX_POLICY = SandboxPolicy(
+    max_memory_mb=256,
+    max_runtime_sec=30,
+    allow_network=False,
+    allow_filesystem_write=False,
+)
+
+
+# --------------------------------------------------------------------------- #
+# Execution（沙箱化）
+# --------------------------------------------------------------------------- #
+def _sandboxed_call(
+    code: str,
+    entrypoint: str,
+    args_list: list[tuple[Any, ...]],
+    policy: SandboxPolicy | None = None,
+) -> list[tuple[str, Any]] | None:
+    """在沙箱子进程中加载代码并对每组参数调用函数
+
+    将代码定义和所有输入参数打包为单个脚本，在一个子进程中完成所有调用，
+    避免多次启动子进程的开销。子进程受资源限制（CPU/内存/进程数/文件大小）。
+
+    Args:
+        code: 定义函数的 Python 代码字符串
+        entrypoint: 要调用的函数名
+        args_list: 多组调用参数，每组为一个 tuple
+        policy: 沙箱策略，为 None 时使用默认策略
+
+    Returns:
+        list[("ok", value) | ("error", msg)]: 每组参数对应的执行结果。
+        如果沙箱加载失败（语法错误、超时等），返回 None。
+    """
+    if policy is None:
+        policy = _DEFAULT_SANDBOX_POLICY
+
+    results = _EXECUTOR.execute_python_with_inputs(code, entrypoint, args_list, policy)
+
+    if len(results) == 1 and not results[0].success and results[0].error:
+        # 整个脚本执行失败（语法错误、超时等）
+        return None
+
+    converted: list[tuple[str, Any]] = []
+    for r in results:
+        if r.success:
+            converted.append(("ok", r.result))
+        else:
+            converted.append(("error", r.error or "沙箱执行失败"))
+    return converted
+
+
 def _load_callable(code: str, entrypoint: str) -> Callable[..., Any]:
+    """在沙箱子进程中加载代码定义的函数（返回可调用对象）
+
+    使用沙箱子进程执行代码，然后通过 exec 在当前进程中加载
+    （仅在已验证代码安全的场景下使用，如加载内置参考实现）。
+    """
+    # 先通过沙箱子进程验证代码可加载
+    load_result = _sandboxed_call(code, entrypoint, [])
+    if load_result is None:
+        raise ValueError(f"沙箱无法加载代码: {entrypoint}")
+
+    # 代码已通过沙箱验证，在当前进程中加载（仅用于参考实现）
     namespace: dict[str, Any] = {}
     exec(compile(code, "<candidate>", "exec"), namespace)  # noqa: S102
     fn = namespace.get(entrypoint)
@@ -316,6 +382,7 @@ def _load_callable(code: str, entrypoint: str) -> Callable[..., Any]:
 
 
 def _call(fn: Callable[..., Any], args: tuple[Any, ...]) -> tuple[str, Any]:
+    """调用已加载的函数（内部使用，仅用于参考实现）"""
     try:
         return ("ok", fn(*args))
     except Exception as exc:  # noqa: BLE001
@@ -330,12 +397,17 @@ def naive_verify(task_id: str, code: str) -> bool:
     entrypoint = ENTRYPOINTS[task_id]
     example = PUBLIC_EXAMPLE[task_id]
     try:
-        candidate = _load_callable(code, entrypoint)
+        # 参考实现在进程中加载（可信代码）
         reference = _load_callable(REFERENCE_SOLUTIONS[task_id], entrypoint)
     except Exception:  # noqa: BLE001
         return False
     expected = _call(reference, example)
-    actual = _call(candidate, example)
+
+    # 候选代码在沙箱中执行（不可信代码）
+    cand_results = _sandboxed_call(code, entrypoint, [example])
+    if cand_results is None:
+        return False
+    actual = cand_results[0]
     return actual == expected
 
 
@@ -347,10 +419,13 @@ def adversarial_verify(
     Runs the candidate and reference on boundary cases plus a randomized battery
     of inputs (distinct from any grading answer key). Any disagreement or crash
     rejects the candidate and returns the witnessing counterexample.
+
+    候选代码在沙箱子进程中执行，受资源限制保护。
     """
     entrypoint = ENTRYPOINTS[task_id]
+
+    # 参考实现在进程中加载（可信代码）
     try:
-        candidate = _load_callable(code, entrypoint)
         reference = _load_callable(REFERENCE_SOLUTIONS[task_id], entrypoint)
     except Exception as exc:  # noqa: BLE001
         return _verdict(False, {"args": None}, f"load_error: {exc}", 0, "crash_safety")
@@ -359,13 +434,21 @@ def adversarial_verify(
     inputs = list(BOUNDARY_INPUTS.get(task_id, []))
     inputs += [_GENERATORS[task_id](rng) for _ in range(max(0, trials))]
 
+    # 候选代码在沙箱中批量执行（不可信代码）
+    cand_results = _sandboxed_call(code, entrypoint, inputs)
+    if cand_results is None:
+        return _verdict(
+            False, {"args": None}, "沙箱执行失败（语法错误、超时或资源超限）", 0, "crash_safety"
+        )
+
     checked = 0
-    for args in inputs:
+    for i, args in enumerate(inputs):
+        # 参考实现在进程中调用（可信）
         ref_status, ref_value = _call(reference, args)
         if ref_status != "ok":
-            continue  # skip inputs the trusted oracle itself rejects
+            continue  # 跳过参考实现自身拒绝的输入
         checked += 1
-        cand_status, cand_value = _call(candidate, args)
+        cand_status, cand_value = cand_results[i]
         if cand_status != "ok":
             return _verdict(False, {"args": args}, str(cand_value), checked, "crash_safety")
         if cand_value != ref_value:
@@ -586,7 +669,6 @@ def run_adversarial_readiness() -> dict[str, Any]:
             "or a reference oracle with full domain coverage closes that gap.",
             "Differential verification needs an independent reference oracle and tasks with "
             "deterministic outputs; non-unique-output tasks (e.g. two_sum) are excluded.",
-            "Candidate code is executed in-process for speed; untrusted code would require the "
-            "sandboxed subprocess grader used by the capability suite.",
+            "候选代码在沙箱子进程中执行（subprocess + resource 限制），参考实现仍在进程中执行。",
         ],
     }

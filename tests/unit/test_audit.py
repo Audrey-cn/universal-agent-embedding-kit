@@ -53,7 +53,15 @@ def test_audit_run_all_suites():
     assert "audit_passed" in gates
     assert "tests_passing" in gates
     assert "ci_remote_verified" in gates
+    assert "evidence_consistency_passed" in gates
     assert gates["external_baseline_available"] is False
+
+    evidence = result["evidence_index"]
+    assert evidence["schema"] == "evidence_index_v1"
+    assert evidence["consistency"]["status"] == "pass"
+    assert evidence["capability"]["held_out"]["enabled_in_current_grader"] is True
+    assert evidence["capability"]["held_out"]["held_out_count_per_task"] == 16
+    assert evidence["headline"]["p4_real_scenario_benchmark"]["scenario_count"] >= 1
 
     # Limitations should list known caveats
     assert len(result["limitations"]) >= 6
@@ -77,6 +85,24 @@ def test_audit_with_baseline_path(tmp_path: Path):
     result = run_audit(iterations=1, baseline_path=baseline)
     assert result["external_baseline"]["status"] == "provided"
     assert result["external_baseline"]["name"] == "test-baseline"
+    assert result["evidence_index"]["external_baseline"]["status"] == "provided"
+
+
+def test_audit_records_explicit_ci_evidence():
+    """External CI URLs should be recorded in the audit and evidence index."""
+    from src.benchmark import run_audit
+
+    result = run_audit(
+        iterations=1,
+        ci_run_url="https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/1",
+        ci_artifact_url="https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/1/artifacts/2",
+    )
+
+    assert result["gates"]["ci_remote_verified"] is True
+    assert result["gates"]["ci_remote_run_url"].endswith("/actions/runs/1")
+    assert result["gates"]["ci_artifact_url"].endswith("/artifacts/2")
+    assert result["evidence_index"]["ci"]["source"] == "explicit"
+    assert result["evidence_index"]["ci"]["verified"] is True
 
 
 def test_audit_cli_command():

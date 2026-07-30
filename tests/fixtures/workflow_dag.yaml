@@ -1,0 +1,27 @@
+id: fixture-dag-workflow
+type: dag
+max_workers: 1
+fail_fast: true
+tasks:
+  - id: collect
+    name: Collect task signal
+    action: echo
+    args:
+      - "implement dag workflow"
+  - id: classify
+    name: Classify effort
+    action: effort
+    args:
+      - "implement dag workflow"
+    dependencies:
+      - collect
+  - id: summarize
+    name: Summarize result
+    action: concat
+    args:
+      - "dag:"
+      - "fixture"
+    kwargs:
+      separator: " "
+    dependencies:
+      - classify

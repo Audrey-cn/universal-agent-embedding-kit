@@ -5,10 +5,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   quality:
-    name: Quality gates
+    name: Quality gates (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Check out repository
@@ -17,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install package
         run: |
@@ -36,19 +44,14 @@ jobs:
       - name: Typecheck
         run: python -m mypy src api mcp
 
-      - name: Test
-        run: python -m pytest
-
-      - name: Core coverage
-        run: python -m pytest --cov=src --cov-report=term
-
-      - name: Product interface coverage
-        run: python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing
+      - name: Test with coverage floor
+        run: python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing --cov-fail-under=75
 
   release-gate:
     name: Release gate (wheel + install + smoke)
     needs: quality
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -64,10 +67,42 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build --wheel --outdir dist/
 
+      - name: Validate wheel metadata
+        run: |
+          python - <<'PY'
+          import tomllib
+          import zipfile
+          from pathlib import Path
+
+          project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]
+          wheels = sorted(Path("dist").glob("uaek-*.whl"))
+          assert len(wheels) == 1, wheels
+
+          with zipfile.ZipFile(wheels[0]) as wheel:
+              metadata_files = [
+                  name for name in wheel.namelist() if name.endswith(".dist-info/METADATA")
+              ]
+              assert len(metadata_files) == 1, metadata_files
+              metadata = wheel.read(metadata_files[0]).decode("utf-8")
+
+          assert f"Name: {project['name']}" in metadata
+          assert f"Version: {project['version']}" in metadata
+          assert f"Requires-Python: {project['requires-python']}" in metadata
+          PY
+
       - name: Install wheel in clean venv
         run: |
           python -m venv /tmp/release-venv
-          /tmp/release-venv/bin/pip install dist/uaek-0.1.0-*.whl
+          wheel="$(
+            python - <<'PY'
+          from pathlib import Path
+
+          wheels = sorted(Path("dist").glob("uaek-*.whl"))
+          assert len(wheels) == 1, wheels
+          print(wheels[0])
+          PY
+          )"
+          /tmp/release-venv/bin/pip install "$wheel"
 
       - name: CLI smoke test
         run: |
@@ -131,6 +166,9 @@ jobs:
           audit = json.loads(Path("/tmp/release-benchmarks/audit.json").read_text())
           assert audit["errors"] == [], audit["errors"]
           assert audit["gates"]["audit_passed"] is True, audit["gates"]
+          assert audit["gates"]["evidence_consistency_passed"] is True, audit["gates"]
+          assert audit["evidence_index"]["consistency"]["status"] == "pass"
+          assert audit["evidence_index"]["capability"]["held_out"]["enabled_in_current_grader"] is True
           for key, proposition in audit["propositions"].items():
               if key == "all_propositions_complete":
                   continue

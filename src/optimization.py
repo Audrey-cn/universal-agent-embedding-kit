@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -84,8 +85,19 @@ class PerformanceProfiler:
         self.metrics.clear()
 
 
-# 全局性能分析器
-profiler = PerformanceProfiler()
+# 全局性能分析器（懒加载，线程安全）
+_profiler: PerformanceProfiler | None = None
+_profiler_lock = threading.Lock()
+
+
+def get_profiler() -> PerformanceProfiler:
+    """获取全局性能分析器实例（懒加载，线程安全）"""
+    global _profiler
+    if _profiler is None:
+        with _profiler_lock:
+            if _profiler is None:
+                _profiler = PerformanceProfiler()
+    return _profiler
 
 
 class Cache:

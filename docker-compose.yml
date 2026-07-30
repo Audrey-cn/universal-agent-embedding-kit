@@ -1,0 +1,18 @@
+# docker-compose.yml — UAEK 开发环境
+# 使用方法: docker compose up -d
+
+services:
+  uaek-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uaek-dev
+    # 挂载源码卷，实现热更新
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
+    # 保持容器运行（开发模式）
+    stdin_open: true
+    tty: true
+    command: ["bash"]

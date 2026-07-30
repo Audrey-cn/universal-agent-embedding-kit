@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -131,8 +134,8 @@ class TemplateLibrary:
             try:
                 template = TaskTemplate.load(template_file)
                 self.templates[template.name] = template
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("加载模板文件 %s 失败: %s", template_file, e)
 
     def get(self, name: str) -> TaskTemplate | None:
         """获取模板"""

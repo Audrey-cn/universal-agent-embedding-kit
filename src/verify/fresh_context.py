@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from .interface import VerificationResult, VerificationType
@@ -35,21 +36,38 @@ class FreshContextVerifier:
             VerificationResult: 验证结果
         """
         try:
-            # 读取验收标准
-            criteria_text = criteria_path.read_text()
+            if not criteria_path.is_file():
+                return VerificationResult(
+                    passed=False,
+                    verdict="INDETERMINATE",
+                    evidence=f"Criteria file not found: {criteria_path}",
+                    verification_type=verification_type,
+                    artifact_path=artifact_path,
+                    criteria_path=criteria_path,
+                    notes="Fresh context verification requires a criteria file",
+                )
+            # Read the criteria to prove the verifier received an explicit spec;
+            # the local command runners are still responsible for objective checks.
+            criteria_path.read_text(encoding="utf-8")
 
-            # 构建验证脚本
-            verify_script = self._build_verify_script(
-                artifact_path, criteria_text, verification_type
-            )
+            command, cwd = self._command_for(artifact_path, verification_type)
+            if command is None:
+                return VerificationResult(
+                    passed=False,
+                    verdict="INDETERMINATE",
+                    evidence=f"Unknown verification type: {verification_type.value}",
+                    verification_type=verification_type,
+                    artifact_path=artifact_path,
+                    criteria_path=criteria_path,
+                    notes=f"No fresh-context runner for {verification_type.value}",
+                )
 
-            # 在全新进程中运行验证（不继承当前上下文）
             result = subprocess.run(
-                ["python", "-c", verify_script],
+                command,
                 capture_output=True,
                 text=True,
                 timeout=300,
-                cwd=str(artifact_path.parent),
+                cwd=str(cwd),
             )
 
             passed = result.returncode == 0
@@ -86,55 +104,35 @@ class FreshContextVerifier:
                 notes=f"Error: {e}",
             )
 
-    def _build_verify_script(
+    def _command_for(
         self,
         artifact_path: Path,
-        criteria_text: str,
         verification_type: VerificationType,
-    ) -> str:
-        """构建验证脚本"""
-        return f"""
-import sys
-import subprocess
-from pathlib import Path
+    ) -> tuple[list[str] | None, Path]:
+        """Build a subprocess command without interpolating untrusted text into code."""
+        cwd = artifact_path if artifact_path.is_dir() else artifact_path.parent
+        if verification_type == VerificationType.TEST:
+            return [sys.executable, "-m", "pytest", str(artifact_path), "-v"], cwd
+        if verification_type == VerificationType.BUILD:
+            return [sys.executable, "-m", "build"], cwd
+        if verification_type == VerificationType.LINT:
+            cache_dir = self._project_root(artifact_path) / ".ruff_cache"
+            return [
+                sys.executable,
+                "-m",
+                "ruff",
+                "check",
+                "--cache-dir",
+                str(cache_dir),
+                str(artifact_path),
+            ], cwd
+        return None, cwd
 
-artifact = Path("{artifact_path}")
-criteria = '''{criteria_text}'''
-
-# 检查产出物是否存在
-if not artifact.exists():
-    print(f"FAIL: Artifact not found: {{artifact}}")
-    sys.exit(1)
-
-# 根据验证类型运行检查
-if "{verification_type.value}" == "test":
-    result = subprocess.run(
-        ["python", "-m", "pytest", str(artifact), "-v"],
-        capture_output=True, text=True
-    )
-    print(result.stdout)
-    print(result.stderr)
-    sys.exit(result.returncode)
-
-elif "{verification_type.value}" == "build":
-    result = subprocess.run(
-        ["python", "-m", "build"],
-        capture_output=True, text=True, cwd=str(artifact.parent)
-    )
-    print(result.stdout)
-    print(result.stderr)
-    sys.exit(result.returncode)
-
-elif "{verification_type.value}" == "lint":
-    result = subprocess.run(
-        ["python", "-m", "ruff", "check", str(artifact)],
-        capture_output=True, text=True
-    )
-    print(result.stdout)
-    print(result.stderr)
-    sys.exit(result.returncode)
-
-else:
-    print(f"INDETERMINATE: Unknown verification type: {verification_type.value}")
-    sys.exit(2)
-"""
+    def _project_root(self, start: Path) -> Path:
+        candidate = start if start.is_dir() else start.parent
+        for path in [candidate, *candidate.parents]:
+            if (path / "pyproject.toml").exists():
+                return path
+            if path == path.parent:
+                break
+        return candidate

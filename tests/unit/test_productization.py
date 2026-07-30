@@ -6,9 +6,14 @@ import asyncio
 import json
 import subprocess
 import sys
-import tomllib
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib  # type: ignore[no-redef]
 from pathlib import Path
 
+import pytest
 import yaml
 from click.testing import CliRunner
 
@@ -108,6 +113,30 @@ def test_workflow_config_executes_builtin_actions(tmp_path: Path):
     assert [task["id"] for task in result["completed_tasks"]] == ["collect", "combine"]
     assert result["task_results"]["collect"] == "alpha"
     assert result["task_results"]["combine"] == "alpha-beta"
+
+
+def test_workflow_config_rejects_actions_outside_safe_allowlist(tmp_path: Path):
+    """Workflow configs should enforce the configured safe action surface."""
+    config_path = tmp_path / "workflow.yaml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "id": "unsafe-workflow",
+                "tasks": [
+                    {
+                        "id": "verify",
+                        "name": "Verify arbitrary path",
+                        "action": "verify",
+                        "args": ["."],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="not allowed"):
+        execute_workflow_config(load_workflow_config(config_path))
 
 
 def test_memory_service_add_query_compress_and_restore(tmp_path: Path):
@@ -278,3 +307,59 @@ def test_mcp_workflow_and_memory_tools_are_stateful():
         assert memory_result["results"][0]["content"] == "MCP memory is queryable"
 
     asyncio.run(scenario())
+
+
+def test_mcp_validates_tool_arguments_before_calling_handlers():
+    """MCP tools/call should enforce required fields, types, enums, and unknown args."""
+    server = create_mcp_server()
+
+    async def scenario() -> None:
+        missing = await server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/call",
+                "params": {"name": "uaek_workflow_create", "arguments": {}},
+            }
+        )
+        assert missing["error"]["code"] == -32602
+        assert "missing required field 'workflow_id'" in missing["error"]["message"]
+
+        invalid_enum = await server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {
+                    "name": "uaek_workflow_create",
+                    "arguments": {"workflow_id": "bad", "workflow_type": "shell"},
+                },
+            }
+        )
+        assert invalid_enum["error"]["code"] == -32602
+        assert "workflow_type" in invalid_enum["error"]["message"]
+
+        unknown = await server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {
+                    "name": "uaek_memory_query",
+                    "arguments": {"query": "x", "surprise": True},
+                },
+            }
+        )
+        assert unknown["error"]["code"] == -32602
+        assert "unknown field 'surprise'" in unknown["error"]["message"]
+
+    asyncio.run(scenario())
+
+
+def test_mcp_workflow_tool_schema_limits_actions_to_safe_allowlist():
+    server = create_mcp_server()
+    tool = next(tool for tool in server.tools.values() if tool["name"] == "uaek_workflow_add_task")
+    enum = tool["inputSchema"]["properties"]["func_name"]["enum"]
+
+    assert "echo" in enum
+    assert "verify" not in enum

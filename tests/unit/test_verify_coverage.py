@@ -131,10 +131,25 @@ class TestFreshContextVerifierCoverage:
             artifact = Path(tmpdir) / "test.py"
             artifact.write_text("def hello():\n    return 'hello'\n")
             criteria = Path(tmpdir) / "spec.md"
-            criteria.write_text("# Spec\n\nFunction should return string.")
+            criteria.write_text("# Spec\n\nFunction should return '''string'''.\nimport sys")
 
             result = verifier.verify(artifact, criteria, VerificationType.LINT)
             assert isinstance(result, VerificationResult)
+            assert result.passed is True
+            assert "SyntaxError" not in result.evidence
+
+    def test_verify_requires_criteria_file(self):
+        """fresh context verifier should fail closed when criteria is missing."""
+        verifier = FreshContextVerifier()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifact = Path(tmpdir) / "test.py"
+            artifact.write_text("def hello():\n    return 'hello'\n")
+
+            result = verifier.verify(artifact, Path(tmpdir) / "missing.md", VerificationType.LINT)
+
+        assert result.passed is False
+        assert result.verdict == "INDETERMINATE"
+        assert "Criteria file not found" in result.evidence
 
     def test_verify_nonexistent(self):
         """测试验证不存在的文件"""

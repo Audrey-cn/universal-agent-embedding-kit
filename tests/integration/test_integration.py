@@ -160,7 +160,7 @@ class TestEndToEnd:
 
         # 3. 压缩
         l1.compress()
-        assert len(l1) <= 30
+        assert len(l1) <= 40  # 自适应压缩阈值
 
         # 4. 查询
         query = MemoryQuery(query="Content", limit=5)

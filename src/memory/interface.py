@@ -18,7 +18,12 @@ class MemoryLayerType(Enum):
 
 @dataclass
 class MemoryEntry:
-    """记忆条目"""
+    """记忆条目
+
+    支持记忆衰减机制（艾宾浩斯遗忘曲线）：
+    - last_accessed: 最后访问时间戳，用于计算衰减
+    - access_count: 访问次数，每次访问增强记忆抗衰减能力
+    """
 
     id: str
     content: str
@@ -27,10 +32,21 @@ class MemoryEntry:
     timestamp: float = 0.0
     metadata: dict[str, Any] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)
+    # 记忆衰减字段
+    last_accessed: float = 0.0   # 最后访问时间戳
+    access_count: int = 0        # 访问次数
 
     def __post_init__(self):
         if not self.id:
             raise ValueError("Memory entry id cannot be empty")
+        if self.last_accessed == 0.0:
+            self.last_accessed = self.timestamp
+
+    def record_access(self) -> None:
+        """记录一次访问，更新最后访问时间和访问计数"""
+        import time
+        self.last_accessed = time.time()
+        self.access_count += 1
 
 
 @dataclass

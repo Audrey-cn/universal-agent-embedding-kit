@@ -128,6 +128,28 @@ class TestAPIEndpoints:
         assert len(responses) == 1
         assert responses[0][0] == 400
 
+    def test_verify_fresh_context_requires_criteria_path(self):
+        """fresh-context verification should require an explicit criteria file."""
+        handler = UAEKHandler.__new__(UAEKHandler)
+        handler.path = "/verify"
+        handler.command = "POST"
+
+        responses = []
+
+        def mock_respond(status, data):
+            responses.append((status, data))
+
+        handler._respond = mock_respond
+
+        with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
+            f.write("def hello():\n    return 'hello'\n")
+            f.flush()
+            handler._handle_verify({"artifact_path": f.name, "fresh_context": True})
+
+        assert responses == [
+            (400, {"error": "criteria_path is required when fresh_context is true"})
+        ]
+
     def test_memory_endpoint_add(self):
         """测试记忆添加端点"""
         handler = UAEKHandler.__new__(UAEKHandler)
@@ -174,6 +196,35 @@ class TestAPIEndpoints:
 
         assert len(responses) == 1
         assert responses[0][0] == 200
+
+    def test_workflow_endpoint_rejects_unsafe_action(self):
+        """API workflow execution should enforce the safe action allowlist."""
+        handler = UAEKHandler.__new__(UAEKHandler)
+        handler.path = "/workflow"
+        handler.command = "POST"
+
+        responses = []
+
+        def mock_respond(status, data):
+            responses.append((status, data))
+
+        handler._respond = mock_respond
+        handler._handle_workflow(
+            {
+                "id": "unsafe-api-workflow",
+                "tasks": [
+                    {
+                        "id": "verify",
+                        "name": "Verify arbitrary path",
+                        "action": "verify",
+                        "args": ["."],
+                    }
+                ],
+            }
+        )
+
+        assert responses[-1][0] == 400
+        assert "not allowed" in responses[-1][1]["error"]
 
     def test_create_server(self):
         """测试创建服务器"""

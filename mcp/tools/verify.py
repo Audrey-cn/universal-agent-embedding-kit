@@ -27,12 +27,12 @@ def register_verify_tool(server) -> None:
             vtype = VerificationType(verification_type)
 
         if fresh_context:
+            if criteria is None:
+                raise ValueError("criteria_path is required when fresh_context is true")
             from src.verify.fresh_context import FreshContextVerifier
 
             verifier = FreshContextVerifier()
-            result = verifier.verify(
-                artifact, criteria or Path("."), vtype or VerificationType.TEST
-            )
+            result = verifier.verify(artifact, criteria, vtype or VerificationType.TEST)
         else:
             result = run_verify(artifact, criteria, vtype)
 

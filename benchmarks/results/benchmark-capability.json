@@ -37,7 +37,7 @@
       "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
       "A provider must pass every task in the graded suite to count as graded-live; a 'partial' provider ran the live suite and passed some but not all tasks (its real tasks_passed/capability_score are reported, e.g. mimo_code 9/10, hermes 8/10) and is evidence but not graded-live.",
       "'blocked' is reserved for genuine non-execution (usage limit, headless lock, or no code emitted, i.e. zero passing tasks); it is not used for providers that ran and missed a task.",
-      "The graded suite grades against fixed public unit cases with no held-out or randomized inputs, so a capability_score certifies 'emitted working code on a fixed public set', not overfitting-resistant capability.",
+      "The current grader runs fixed public cases plus deterministic per-task held-out/metamorphic cases; archived captured solutions were regraded in capability-heldout-regrade.json. Fresh randomized/property-based live reruns remain the stronger next step.",
       "This is a cross-CLI harness comparison, not cross-model-family: claude_code routes to mimo-v2.5-pro, so distinct model backends are at most 3.",
       "A zero capability_score_spread means the suite did not separate the providers at this difficulty, not that they are proven equivalent.",
       "Remote CI and release publication remain separate evidence tracks."
@@ -150,24 +150,15 @@
     "status": "partial"
   },
   "external_baseline": {
-    "generated_at": null,
-    "metrics": {},
-    "name": "fable5",
-    "notes": [
-      "This file is not benchmark evidence.",
-      "Use it to document the expected shape for external baseline ingestion.",
-      "Do not convert status to completed until the underlying run artifact is available."
-    ],
-    "path": "benchmarks/baselines/fable5.example.json",
-    "source": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
+    "reason": "No authorized external Fable 5 baseline run is available in this repo.",
     "status": "not_configured"
   },
-  "generated_at": "2026-06-24T07:00:10.929286+00:00",
+  "generated_at": "2026-06-30T09:00:58.698213+00:00",
   "iterations": 1,
   "metrics": {
-    "effort_latency_ms": 0.4655,
-    "harness_latency_ms": 1.3112,
-    "workflow_latency_ms": 0.0307
+    "effort_latency_ms": 0.6737,
+    "harness_latency_ms": 1.9299,
+    "workflow_latency_ms": 0.0359
   },
   "scorecard": {
     "basis": [

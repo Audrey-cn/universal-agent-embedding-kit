@@ -81,6 +81,9 @@ class UAEKHandler(BaseHTTPRequestHandler):
         if not artifact_path:
             self._respond(400, {"error": "artifact_path is required"})
             return
+        if fresh_context and not criteria_path:
+            self._respond(400, {"error": "criteria_path is required when fresh_context is true"})
+            return
 
         try:
             artifact = Path(artifact_path)
@@ -158,6 +161,8 @@ class UAEKHandler(BaseHTTPRequestHandler):
                 }
             )
             self._respond(200, result)
+        except ValueError as e:
+            self._respond(400, {"error": str(e)})
         except Exception as e:
             self._respond(500, {"error": str(e)})
 
@@ -177,7 +182,7 @@ class UAEKHandler(BaseHTTPRequestHandler):
                 if not isinstance(layer, str):
                     self._respond(400, {"error": "layer must be a string"})
                     return
-                if not isinstance(importance, int | float):
+                if not isinstance(importance, (int, float)):
                     self._respond(400, {"error": "importance must be a number"})
                     return
                 if not isinstance(tags, list):

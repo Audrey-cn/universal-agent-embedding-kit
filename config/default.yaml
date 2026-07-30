@@ -11,7 +11,16 @@ uaek:
       - concat
       - sum
       - effort
+      - effort_cached
       - fail
+      - verify
+      - verify_lint
+      - verify_test
+      - verify_render
+      - verify_diff
+      - verify_multi_perspective
+      - memory_add
+      - memory_query
   skills:
     search_paths:
       - "skills"
