@@ -85,6 +85,8 @@ def test_ci_workflow_defines_quality_gates():
     assert "--cov=src" in workflow_text
     assert "--cov=api" in workflow_text
     assert "--cov=mcp" in workflow_text
+    assert "--cov-report=json:/tmp/uaek-coverage.json" in workflow_text
+    assert "python scripts/check_supported_coverage.py /tmp/uaek-coverage.json" in workflow_text
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     coverage_floor = pyproject["tool"]["coverage"]["report"]["fail_under"]
     assert coverage_floor >= 75

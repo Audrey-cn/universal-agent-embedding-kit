@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from src.workflow.dag_workflow import DAGWorkflow
 from src.workflow.interface import Task, TaskStatus
 from src.workflow.recovery import (
@@ -10,7 +13,16 @@ from src.workflow.recovery import (
     RecoveryStrategy,
     create_fallback_task,
 )
-from src.workflow.runtime import execute_workflow_config
+from src.workflow.runtime import execute_workflow_config, load_workflow_config
+
+
+def test_runtime_loads_json_workflow_config(tmp_path: Path) -> None:
+    """The supported runtime should load an object from a JSON workflow file."""
+    config_path = tmp_path / "workflow.json"
+    expected = {"id": "json-workflow", "tasks": []}
+    config_path.write_text(json.dumps(expected), encoding="utf-8")
+
+    assert load_workflow_config(config_path) == expected
 
 
 def test_dag_workflow_obeys_dependencies_and_skips_failed_descendants() -> None:

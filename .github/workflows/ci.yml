@@ -45,7 +45,10 @@ jobs:
         run: python -m mypy src api mcp
 
       - name: Test with coverage floor
-        run: python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing --cov-fail-under=75
+        run: |
+          python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing \
+            --cov-report=json:/tmp/uaek-coverage.json --cov-fail-under=75
+          python scripts/check_supported_coverage.py /tmp/uaek-coverage.json
 
   release-gate:
     name: Release gate (wheel + install + smoke)
