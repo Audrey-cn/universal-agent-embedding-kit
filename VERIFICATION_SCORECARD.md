@@ -2,7 +2,8 @@
 
 > 每个阶段的评分标准和当前分数
 > 总分 100 分，每 Phase 25 分
-> 当前口径：以 2026-06-20 本地重审与最新 benchmark JSON 为准
+> 当前口径：以 2026-08-09 本地 0.2 RC 重审与最新 benchmark JSON 为准。Phase 1–4
+> 复选框保留为历史评分模板；当前 release 状态以顶部实测表和总分汇总为准。
 
 ---
 
@@ -10,11 +11,13 @@
 
 | 验证项 | 命令 | 结果 | 门禁状态 |
 |--------|------|------|----------|
-| 依赖安装 | `.venv/bin/python -m pip install -e '.[dev]'` | 通过，含 `types-PyYAML` | pass |
-| 全量测试 | `.venv/bin/python -m pytest -q` | 619 passed（2026-07-31 本地工作区） | pass |
-| 产品综合覆盖率 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing` | 76.32% total | pass（本地与 CI floor 均为 75%；高级 render/formal/multi-perspective 仍是后续重点） |
+| 依赖安装 | `uv pip install --python .venv/bin/python -e '.[dev]'` | 通过，含 `types-PyYAML` | pass |
+| 全量测试 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp` | 629 passed（2026-08-09 本地分支） | pass |
+| 产品综合覆盖率 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing` | 76.44% total | pass（全局 floor 75%；高级 render/formal/multi-perspective 为 experimental） |
+| 核心模块覆盖率 | `.venv/bin/python scripts/check_supported_coverage.py /tmp/uaek-coverage.json` | 6 个 release-supported 模块 floor 通过 | pass |
 | Ruff | `.venv/bin/python -m ruff check src api mcp tests` | All checks passed | pass |
-| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 97 source files | pass（渐进类型门禁） |
+| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 100 source files | pass（渐进类型门禁） |
+| 远端 CI 基线 | GitHub Actions run `30589485212`，commit `dd82cda` | Python 3.11/3.12 quality + release-gate success | pass（当前分支仍需新远端复跑） |
 | CLI 入口 | `.venv/bin/uaek --help` | 可运行 | pass |
 | Workflow CLI | `.venv/bin/uaek workflow --config tests/fixtures/workflow.yaml` | fixture workflow 执行成功 | pass |
 | Memory CLI | `uaek memory add/query/compress/restore` | 持久化 roundtrip 成功 | pass |

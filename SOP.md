@@ -44,7 +44,7 @@ python --version  # 应显示 3.11+
 which python      # 应指向 .venv/bin/python
 
 # 4. 安装依赖（如果尚未安装）
-pip install -e ".[dev]"
+uv pip install --python .venv/bin/python -e ".[dev]"
 
 # 5. 开始开发
 ```
@@ -67,10 +67,10 @@ pip install -e ".[dev]"
    python -m pytest tests/ -v
 
    # 运行 linter
-   python -m ruff check src/
+   python -m ruff check src api mcp tests scripts
 
    # 运行类型检查
-   python -m mypy src/
+   python -m mypy src api mcp
    ```
 
 ### 2.3 提交代码
@@ -80,10 +80,11 @@ pip install -e ".[dev]"
 python -m pytest tests/ -v
 
 # 2. 更新进度追踪器
-# 编辑 PROGRESS_TRACKER.md，更新任务状态
+# 编辑 task_plan.md，并在 progress.md 记录验证证据
 
 # 3. 提交
-git add .
+git status --short
+git add <本次任务明确修改的文件>
 git commit -m "feat: <描述>"
 ```
 
@@ -132,14 +133,9 @@ python -m pytest tests/benchmark/ -v --benchmark-json=benchmarks/results.json
 
 ### 3.4 测试覆盖率目标
 
-| 模块 | 目标覆盖率 | 当前覆盖率 |
-|------|-----------|-----------|
-| src/verify/ | >80% | — |
-| src/effort/ | >80% | — |
-| src/workflow/ | >80% | — |
-| src/memory/ | >80% | — |
-| src/skills/ | >80% | — |
-| src/harness/ | >80% | — |
+- 产品综合覆盖率（`src` + `api` + `mcp`）不得低于 75%。
+- release-supported 核心模块还必须通过 `scripts/check_supported_coverage.py` 的独立 floor。
+- 实验模块的低覆盖率必须在 `docs/support-matrix.md` 暴露，不能靠排除文件隐藏。
 
 ---
 
@@ -154,17 +150,19 @@ python -m pytest tests/benchmark/ -v --benchmark-json=benchmarks/results.json
 python -m pytest tests/ -v
 
 # 2. 运行 linter
-python -m ruff check src/
+python -m ruff check src api mcp tests scripts
 
 # 3. 运行类型检查
-python -m mypy src/
+python -m mypy src api mcp
 
 # 4. 运行 CLI 验证
 python -m src.cli verify ./tests/fixtures/simple_function.py
 python -m src.cli effort "implement auth module"
 
 # 5. 检查覆盖率
-python -m pytest tests/ -v --cov=src --cov-report=term-missing
+python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing \
+  --cov-report=json:/tmp/uaek-coverage.json --cov-fail-under=75
+python scripts/check_supported_coverage.py /tmp/uaek-coverage.json
 ```
 
 ### 4.2 验证标准
@@ -172,7 +170,7 @@ python -m pytest tests/ -v --cov=src --cov-report=term-missing
 | 验证项 | 标准 | 阻断级别 |
 |--------|------|----------|
 | 测试通过率 | 100% | critical |
-| 代码覆盖率 | >80% | high |
+| 产品综合覆盖率 | ≥75% 且核心模块 floor 通过 | high |
 | Linter 错误 | 0 | high |
 | 类型检查错误 | 0 | medium |
 | CLI 可运行 | 是 | critical |
@@ -191,7 +189,7 @@ python -m pytest tests/ -v --cov=src --cov-report=term-missing
 ### 5.1 每日更新
 
 ```bash
-# 1. 更新 PROGRESS_TRACKER.md
+# 1. 更新 task_plan.md 和 progress.md
 # - 标记完成的任务
 # - 记录遇到的问题
 # - 更新每周日志
@@ -206,7 +204,7 @@ python -m pytest tests/ -v --cov=src --cov-report=term-missing
 1. 回顾本周完成的任务
 2. 更新 Phase 完成度
 3. 调整下周计划
-4. 更新 `PROGRESS_TRACKER.md` 中的每周日志
+4. 更新 `progress.md` 中的每周日志
 
 ### 5.3 Phase 完成
 
@@ -337,7 +335,7 @@ git commit -m "docs: 更新执行手册"
 - `README.md`：项目概述
 - `EXECUTION_MANUAL.md`：执行手册
 - `VERIFICATION_SCORECARD.md`：验证评分卡
-- `PROGRESS_TRACKER.md`：进度追踪器
+- `task_plan.md`：当前 To Do List；`progress.md`：执行记录
 - `docs/architecture/`：架构文档
 - `docs/api/`：API 文档
 - `docs/guides/`：使用指南
@@ -378,7 +376,7 @@ git commit -m "docs: 更新执行手册"
 # 环境设置
 cd /Users/audrey/项目/fable-research
 source .venv/bin/activate
-pip install -e ".[dev]"
+uv pip install --python .venv/bin/python -e ".[dev]"
 
 # 运行测试
 python -m pytest tests/ -v
@@ -387,8 +385,8 @@ python -m pytest tests/integration/ -v
 python -m pytest tests/benchmark/ -v
 
 # 代码检查
-python -m ruff check src/
-python -m mypy src/
+python -m ruff check src api mcp tests scripts
+python -m mypy src api mcp
 
 # CLI 使用
 python -m src.cli verify <artifact>

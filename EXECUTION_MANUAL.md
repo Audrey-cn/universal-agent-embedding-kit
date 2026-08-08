@@ -3,6 +3,10 @@
 > 完整的执行流程和验证标准
 > 基于 universal-agent-workflow 技能协议
 
+> **历史规划说明（2026-08-09）：** 本文的 Phase 1–4 与 pending 表格记录早期建设路线，
+> 不再代表当前完成状态。当前开发入口以 `task_plan.md`、`docs/architecture.md`、
+> `docs/support-matrix.md` 和 `VERIFICATION_SCORECARD.md` 为准；历史条目保留用于追溯。
+
 ---
 
 ## 执行原则
@@ -275,7 +279,7 @@ python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing
 
 ### 每日
 
-1. 更新 `PROGRESS_TRACKER.md` 中的任务状态
+1. 更新 `task_plan.md` 中的任务状态，并在 `progress.md` 记录执行证据
 2. 记录遇到的问题到 findings ledger
 3. 更新 `VERIFICATION_SCORECARD.md` 中的分数
 

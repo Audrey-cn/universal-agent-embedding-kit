@@ -11,8 +11,8 @@
 [![CI](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-400%20passing-brightgreen.svg)](#状态)
+[![Version](https://img.shields.io/badge/version-0.2.0rc1-orange.svg)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-600%2B%20passing-brightgreen.svg)](#状态)
 [![Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -71,7 +71,7 @@ python -m pytest -q                  # 完整测试套件
 | 🔌 跨平台能力矩阵 | `src/capability_matrix.py` | 驱动并客观评分真实 Agent 平台 |
 | 🔧 工作流 / 记忆 / 技能 / Harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | 编排原语 |
 
-三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。
+三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。稳定能力与实验能力的边界见 [`0.2 支持矩阵`](docs/support-matrix.md)。
 
 ## 🔬 诚实证据
 
@@ -85,7 +85,7 @@ python -m pytest -q                  # 完整测试套件
 | 真实场景基准 | 多维评分;能标出"功能齐全但**有回归**"的解 | ③ | 40 场景 / 38 类别 —— 还不是 100+ live 多小时会话 |
 | 跨平台矩阵 | **2/4** 平台通过全套 graded live 任务;Mimo/Hermes partial 证据保留 | ④ partial | 全套通过指 10/10;8/10 或 9/10 证据不再计为 graded-live 成功 |
 
-<a id="状态"></a>**门禁:** 测试通过 · ruff + mypy 全绿 · 强制覆盖率下限 · 本地 audit 语义门禁通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
+<a id="状态"></a>**门禁:** 测试通过 · ruff + mypy 全绿 · 全局与核心模块覆盖率下限 · 本地 audit 语义门禁通过。最新 `main` release gate 已在 [GitHub Actions run 30589485212](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212) 通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
 
 ## 🪜 方法论才是核心
 
@@ -101,7 +101,7 @@ python -m pytest -q                  # 完整测试套件
 往证据阶梯上爬,就是路线图:
 
 - [ ] **档位 ④ → ⑤** —— 多 provider / 多采样 live 运行;超出单账户的远端 CI 证据
-- [ ] **真实场景语料** —— 从 30 个确定性场景扩到 100+ live 多小时会话
+- [ ] **真实场景语料** —— 从 40 个确定性场景扩到 100+ live 多小时会话
 - [ ] **成本·冷路径** —— 测 TTL-miss 为主的真实会话,而不只是 warm 会话
 - [ ] **外部基线** —— 为已退役参考模型找一个可复现的替代基线
 - [x] **红队硬化轮** —— 每个头条指标都被攻击并加固

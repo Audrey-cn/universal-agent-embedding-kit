@@ -2,11 +2,26 @@
 
 ## Unreleased
 
+### 0.3 direction
+
+- Multi-sample evidence grouped by actual backend family.
+- Separate warm/mixed/cold cost ledgers and deterministic/live session evidence.
+- Comparable external-baseline validation and a unified 0.3 evidence index.
+
+## 0.2.0rc1 (2026-08-09)
+
+### Release closure
+
+- Unified package, CLI, config, HTTP and MCP version surfaces at `0.2.0rc1`.
+- Derived audit live/baseline/CI gates and capability limitations from evidence instead of stale constants.
+- Added focused coverage non-regression floors for release-supported modules.
+- Published a support matrix that marks advanced verification modes experimental.
+
 ### Stabilization (2026-07-31)
 
 - Added advanced behavior coverage for memory decay/token budgets/knowledge graph, effort cache, verification, workflow recovery, A2A, and MCP package entrypoints.
 - Fixed stale knowledge-graph indexes, zero-sized effort-cache crashes, feedback threshold rounding, incompatible JSON diff crashes, shared random-generator state, unknown A2A result messages, and divergent `python -m mcp` behavior.
-- Unified local and CI combined coverage floors at 75%; current measured combined coverage is 76.32% with 619 tests.
+- Unified local and CI combined coverage floors at 75%; the 0.2 RC verification is recorded in `VERIFICATION_SCORECARD.md`.
 - Added `docs/architecture.md` and a tracked 0.2 stabilization plan.
 
 ### Changed (red-team hardening 2026-06-24)

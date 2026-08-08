@@ -11,8 +11,8 @@
 [![CI](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-400%20passing-brightgreen.svg)](#status)
+[![Version](https://img.shields.io/badge/version-0.2.0rc1-orange.svg)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-600%2B%20passing-brightgreen.svg)](#status)
 [![Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -71,7 +71,8 @@ python -m pytest -q                  # full test suite
 | 🔌 Cross-platform capability | `src/capability_matrix.py` | drive + objectively grade real agent platforms |
 | 🔧 Workflow / memory / skills / harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | orchestration primitives |
 
-Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** (`mcp/`).
+Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** (`mcp/`). See the
+[`0.2 support matrix`](docs/support-matrix.md) for supported versus experimental capabilities.
 
 ## 🔬 Honest evidence
 
@@ -85,7 +86,7 @@ Every number below is the result of a deliberate **red-team round** (independent
 | Real-scenario benchmark | multi-dimensional; flags a feature-complete-but-**regressing** solution | ③ | 40 scenarios / 38 categories — not yet 100+ live multi-hour sessions |
 | Cross-platform matrix | **2/4** providers pass the full graded live suite; partial Mimo/Hermes artifacts retained | ④ partial | full-suite means 10/10 tasks; partial 8/10 or 9/10 evidence is not counted as graded-live success |
 
-<a id="status"></a>**Gates:** tests pass · ruff + mypy clean · coverage floor enforced · audit semantics pass locally. Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
+<a id="status"></a>**Gates:** tests pass · ruff + mypy clean · global and supported-module coverage floors enforced · audit semantics pass locally. The latest `main` release gate passed on [GitHub Actions run 30589485212](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212). Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 
 ## 🪜 The methodology is the product
 
@@ -101,7 +102,7 @@ See [`docs/methodology.md`](docs/methodology.md), the research framing in [`RESE
 Climbing the evidence ladder is the roadmap:
 
 - [ ] **Rung ④ → ⑤** — multi-provider / multi-sample live runs; remote-CI evidence beyond a single account
-- [ ] **Real-scenario corpus** — grow from 30 deterministic scenarios toward 100+ live, multi-hour sessions
+- [ ] **Real-scenario corpus** — grow from 40 deterministic scenarios toward 100+ live, multi-hour sessions
 - [ ] **Cost, cold-path** — measure TTL-miss-heavy real sessions, not just warm ones
 - [ ] **External baseline** — a reproducible substitute for the retired reference model
 - [x] **Red-team hardening pass** — every headline metric attacked and hardened
