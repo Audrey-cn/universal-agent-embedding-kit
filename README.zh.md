@@ -37,7 +37,7 @@ UAEK 始于对一个已退役前沿 Agent(代号 "Fable 5")的研究,核心论�
 ```bash
 git clone https://github.com/Audrey-cn/universal-agent-embedding-kit.git
 cd universal-agent-embedding-kit
-bash scripts/setup.sh          # 创建 .venv、安装依赖、跑 ruff + mypy + 测试
+bash scripts/setup.sh --verify # 创建 .venv、安装依赖、跑 ruff + mypy + 测试
 ```
 
 **或手动安装:**
@@ -73,7 +73,7 @@ python -m pytest -q                  # 完整测试套件
 | 📚 证据契约 | `src/evidence` | 多样本、成本、会话与可比 baseline 校验 |
 | 🔧 工作流 / 记忆 / 技能 / Harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | 编排原语 |
 
-三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。稳定能力与实验能力的边界见 [`0.2 支持矩阵`](docs/support-matrix.md)。
+三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。稳定能力与实验能力的边界见 [`0.3 支持矩阵`](docs/support-matrix.md)。
 
 ## 🔬 诚实证据
 
@@ -87,7 +87,7 @@ python -m pytest -q                  # 完整测试套件
 | 真实场景基准 | 多维评分;能标出"功能齐全但**有回归**"的解 | ③ | 40 场景 / 38 类别 —— 还不是 100+ live 多小时会话 |
 | 跨平台矩阵 | **2/4** 平台通过全套 graded live 任务;Mimo/Hermes partial 证据保留 | ④ partial | 全套通过指 10/10;8/10 或 9/10 证据不再计为 graded-live 成功 |
 
-<a id="状态"></a>**门禁:** 测试通过 · ruff + mypy 全绿 · 全局与核心模块覆盖率下限 · 本地 audit 语义门禁通过。最新 `main` release gate 已在 [GitHub Actions run 30589485212](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212) 通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
+<a id="状态"></a>**门禁:** 测试通过 · ruff + mypy 全绿 · 全局与核心模块覆盖率下限 · 本地 audit 语义门禁通过。最新状态见 [`main` CI 运行记录](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml?query=branch%3Amain)；固定运行出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
 
 0.3 无凭据核心已经能按真实 backend family 聚合多样本 campaign，分离 warm/mixed/cold
 成本 cohort 与 deterministic/live 会话，并拒绝不可比 baseline。CI fixtures 只证明契约，
@@ -117,7 +117,7 @@ python -m pytest -q                  # 完整测试套件
 
 ## 🤝 贡献
 
-欢迎 PR 和 issue —— 见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。唯一不可破的规矩:任何新增或改动的指标,都必须带上它的**档位**和**诚实注记**。提 PR 前请跑 `bash scripts/setup.sh`(或 `ruff check . && mypy src && pytest`)。安全问题报告见 [`SECURITY.md`](SECURITY.md)。
+欢迎 PR 和 issue —— 见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。唯一不可破的规矩:任何新增或改动的指标,都必须带上它的**档位**和**诚实注记**。提 PR 前请跑 `bash scripts/setup.sh --verify`(或 `ruff check src api mcp tests scripts && mypy src api mcp && pytest`)。安全问题报告见 [`SECURITY.md`](SECURITY.md)。
 
 ## ⚠️ 已知局限(请务必读)
 

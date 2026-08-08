@@ -13,6 +13,16 @@ from click.testing import CliRunner
 from src.cli import main
 
 EXPECTED_VERSION = "0.3.0.dev1"
+ACTIVE_PORTABLE_DOCS = (
+    "README.md",
+    "README.zh.md",
+    "CONTRIBUTING.md",
+    "docs/support-matrix.md",
+    "SOP.md",
+    "EXECUTION_MANUAL.md",
+    "VERIFICATION_SCORECARD.md",
+    "docs/guides/capability-batch.md",
+)
 
 
 def test_release_version_is_consistent_across_runtime_surfaces():
@@ -35,6 +45,19 @@ def test_release_metadata_files_use_the_same_version():
     assert pyproject["project"]["version"] == EXPECTED_VERSION
     assert default_config["uaek"]["version"] == EXPECTED_VERSION
     assert mcp_config["version"] == EXPECTED_VERSION
+
+
+def test_active_release_docs_use_current_setup_and_portable_paths() -> None:
+    documents = {
+        name: Path(name).read_text(encoding="utf-8") for name in ACTIVE_PORTABLE_DOCS
+    }
+
+    assert "# UAEK 0.3 Support Matrix" in documents["docs/support-matrix.md"]
+    assert EXPECTED_VERSION in documents["docs/support-matrix.md"]
+    for name in ("README.md", "README.zh.md", "CONTRIBUTING.md"):
+        assert "bash scripts/setup.sh --verify" in documents[name]
+    for name, content in documents.items():
+        assert "/Users/audrey" not in content, name
 
 
 def test_cli_reports_release_version():

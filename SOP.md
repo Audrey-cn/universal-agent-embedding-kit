@@ -10,7 +10,7 @@
 ### 1.1 虚拟环境
 
 - **所有开发必须在虚拟环境中进行**
-- 虚拟环境路径：`/Users/audrey/项目/fable-research/.venv`
+- 虚拟环境路径：仓库根目录下的 `.venv`
 - **禁止**在系统 Python 或全局环境中安装任何依赖
 - **禁止**修改主机的 `.hermes/`、`.claude/` 或其他配置
 
@@ -34,7 +34,7 @@
 
 ```bash
 # 1. 进入项目目录
-cd /Users/audrey/项目/fable-research
+cd universal-agent-embedding-kit
 
 # 2. 激活虚拟环境
 source .venv/bin/activate
@@ -374,7 +374,7 @@ git commit -m "docs: 更新执行手册"
 
 ```bash
 # 环境设置
-cd /Users/audrey/项目/fable-research
+cd universal-agent-embedding-kit
 source .venv/bin/activate
 uv pip install --python .venv/bin/python -e ".[dev]"
 

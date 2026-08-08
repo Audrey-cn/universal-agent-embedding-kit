@@ -37,7 +37,7 @@ What makes it different isn't a number — it's the **discipline**: every headli
 ```bash
 git clone https://github.com/Audrey-cn/universal-agent-embedding-kit.git
 cd universal-agent-embedding-kit
-bash scripts/setup.sh          # creates .venv, installs, runs ruff + mypy + tests
+bash scripts/setup.sh --verify # creates .venv, installs, runs ruff + mypy + tests
 ```
 
 **Or manually:**
@@ -74,7 +74,7 @@ python -m pytest -q                  # full test suite
 | 🔧 Workflow / memory / skills / harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | orchestration primitives |
 
 Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** (`mcp/`). See the
-[`0.2 support matrix`](docs/support-matrix.md) for supported versus experimental capabilities.
+[`0.3 support matrix`](docs/support-matrix.md) for supported versus experimental capabilities.
 
 ## 🔬 Honest evidence
 
@@ -88,7 +88,7 @@ Every number below is the result of a deliberate **red-team round** (independent
 | Real-scenario benchmark | multi-dimensional; flags a feature-complete-but-**regressing** solution | ③ | 40 scenarios / 38 categories — not yet 100+ live multi-hour sessions |
 | Cross-platform matrix | **2/4** providers pass the full graded live suite; partial Mimo/Hermes artifacts retained | ④ partial | full-suite means 10/10 tasks; partial 8/10 or 9/10 evidence is not counted as graded-live success |
 
-<a id="status"></a>**Gates:** tests pass · ruff + mypy clean · global and supported-module coverage floors enforced · audit semantics pass locally. The latest `main` release gate passed on [GitHub Actions run 30589485212](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212). Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
+<a id="status"></a>**Gates:** tests pass · ruff + mypy clean · global and supported-module coverage floors enforced · audit semantics pass locally. See the [latest `main` CI runs](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml?query=branch%3Amain); fixed run provenance lives in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 
 The 0.3 credential-free core validates multi-sample campaigns by actual backend family, separates
 warm/mixed/cold cost cohorts and deterministic/live sessions, and rejects incomparable baselines.

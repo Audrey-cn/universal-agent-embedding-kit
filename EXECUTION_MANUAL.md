@@ -350,7 +350,7 @@ python3 ~/.hermes/skills/universal-agent-workflow/scripts/agent_goals.py --root 
 ### 安装
 
 ```bash
-cd /Users/audrey/项目/fable-research
+cd universal-agent-embedding-kit
 pip install -e ".[dev]"
 ```
 

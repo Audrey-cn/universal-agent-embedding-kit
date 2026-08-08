@@ -30,7 +30,7 @@ an isolated writable HOME plus explicit config seeds.
     {
       "provider": "mimo_code",
       "command": [
-        "/Users/audrey/.mimocode/bin/mimo",
+        "mimo",
         "run",
         "--pure",
         "--dir",

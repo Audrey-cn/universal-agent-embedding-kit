@@ -1,6 +1,6 @@
-# UAEK 0.2 Support Matrix
+# UAEK 0.3 Support Matrix
 
-UAEK `0.2.0rc1` is an alpha release candidate. This matrix separates release-supported paths
+UAEK `0.3.0.dev1` is an alpha development release. This matrix separates release-supported paths
 from advanced experiments so that a module's presence is not mistaken for a stability promise.
 
 ## Release-supported
@@ -31,4 +31,3 @@ for the API server, MCP server, workflow runtime, sandbox, core test runner, and
 
 Experimental APIs may change before UAEK 1.0. They must not be described as externally validated
 or release-complete solely because the module imports successfully.
-

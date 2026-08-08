@@ -2,14 +2,14 @@
 
 > 每个阶段的评分标准和当前分数
 > 总分 100 分，每 Phase 25 分
-> 当前口径：以 2026-08-09 本地 0.2 RC 重审与最新 benchmark JSON 为准。Phase 1–4
+> 当前口径：以 2026-08-09 本地 0.3 主线重审与最新 benchmark JSON 为准。Phase 1–4
 > 复选框保留为历史评分模板；当前 release 状态以顶部实测表和总分汇总为准。
 > 0.3 无凭据 evidence core 已实现；fixture 仅为 contract evidence，不计作真实 provider、
 > 真实成本、live corpus 或外部 baseline。
 
 ---
 
-## 当前实测状态（2026-06-20 红队复审后）
+## 当前实测状态（2026-08-09 0.3 主线复审后）
 
 | 验证项 | 命令 | 结果 | 门禁状态 |
 |--------|------|------|----------|
@@ -22,7 +22,7 @@
 | 0.3 evidence contracts | `uaek evidence campaign/cost/session/baseline ...` | 四类 schema 校验与聚合 fixture 全部通过；campaign 按 backend family 聚合 | pass（contract） |
 | 0.3 audit index | `uaek audit --evidence-root benchmarks/evidence/fixtures` | `evidence_index.v0_3.status=valid`；原始 artifact path 保留 | pass（contract） |
 | 0.3 external gate | 授权后的真实 campaign | 3 backend families × 每任务 3 样本；每 cohort 5 会话；100 live sessions；可比 baseline | blocked（待预算、凭据、baseline 审批） |
-| 远端 CI 基线 | GitHub Actions run `30589485212`，commit `dd82cda` | Python 3.11/3.12 quality + release-gate success | pass（当前分支仍需新远端复跑） |
+| 远端 CI 基线 | GitHub Actions run `31277812279`，commit `ea1b2120c7ff` | Python 3.11/3.12 quality + release-gate success | pass（0.3 主线基线） |
 | CLI 入口 | `.venv/bin/uaek --help` | 可运行 | pass |
 | Workflow CLI | `.venv/bin/uaek workflow --config tests/fixtures/workflow.yaml` | fixture workflow 执行成功 | pass |
 | Memory CLI | `uaek memory add/query/compress/restore` | 持久化 roundtrip 成功 | pass |
@@ -44,7 +44,7 @@
 | Live matrix benchmark CLI | `.venv/bin/uaek benchmark --suite live_matrix --iterations 2 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results` | 生成 `benchmark-live_matrix.json`，score 97，3/4 live，Claude blocked | partial |
 | 区分度任务集 | `src/capability_tasks.py`（10 题 3 难度层）| easy×4 + medium×3（roman_to_int/valid_parentheses/longest_unique_substring）+ hard×3（edit_distance/lru_cache_sim/calculator），难度加权 capability_score | pass |
 | Codex graded capability run（难套件） | `.venv/bin/uaek capability run --provider codex ... --output-mode plain` | 10/10 graded，capability_score 1.0，hardest tier=hard | pass |
-| Claude graded capability run（难套件） | `.venv/bin/uaek capability run --provider claude_code --command env -u ANTHROPIC_AUTH_TOKEN ... /Users/audrey/.hermes/node/bin/claude -p ...` | 10/10 graded，capability_score 1.0（CLI 路由 mimo-v2.5-pro，详见诚信注记） | pass |
+| Claude graded capability run（难套件） | `.venv/bin/uaek capability run --provider claude_code --command env -u ANTHROPIC_AUTH_TOKEN ... /path/to/claude -p ...` | 10/10 graded，capability_score 1.0（CLI 路由 mimo-v2.5-pro，详见诚信注记） | pass |
 | Mimo graded capability run（难套件） | `.venv/bin/uaek capability run --provider mimo_code ... --output-mode mimo_jsonl --provider-home /tmp/uaek-provider-homes/mimo` | 9/10 graded，capability_score 0.9474；唯一失败=is_palindrome（120s 超时）| pass |
 | Hermes graded capability run（难套件） | `.venv/bin/uaek capability run --provider hermes ... -z --provider-home /tmp/uaek-provider-homes/hermes-seeded --provider-home-seed config.yaml --provider-home-seed .env` | 最佳加权 artifact 8/10，`capability_score 0.8947`；seeded 复跑 9/10，`capability_score 0.8421`（唯一失败=edit_distance 输出含非代码字符）| pass |
 | Capability batch CLI | `.venv/bin/uaek capability batch <manifest.json> --matrix-output ... --output ...` | 可从 JSON manifest 批量复跑 provider recipe、写 capability artifacts、聚合 matrix；支持隔离 HOME、显式 seed 和 `--dry-run` CI 校验 | pass |
