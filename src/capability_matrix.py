@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import time
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -51,6 +52,7 @@ def run_capability_suite_live(
     tasks: tuple[CapabilityTask, ...] = CAPABILITY_TASKS,
     timeout: float = 120.0,
     source: str = "uaek capability run",
+    environment: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Drive a provider command through the task suite and grade every answer.
 
@@ -66,7 +68,7 @@ def run_capability_suite_live(
     if not base:
         raise ValueError("run_capability_suite_live requires a base command")
 
-    run_env = _build_run_environment(provider_home, provider_home_seed_paths)
+    run_env = _build_run_environment(provider_home, provider_home_seed_paths, environment)
 
     task_results: list[dict[str, Any]] = []
     for task in tasks:
@@ -188,6 +190,7 @@ def _decode_output(stdout: str, output_mode: str) -> str:
 def _build_run_environment(
     provider_home: str | None,
     seed_paths: tuple[str, ...] = (),
+    environment: Mapping[str, str] | None = None,
 ) -> dict[str, str] | None:
     """Build a provider-specific subprocess environment.
 
@@ -196,7 +199,11 @@ def _build_run_environment(
     to avoid permission-related failures in restricted execution contexts.
     """
     if provider_home is None:
-        return None
+        if environment is None:
+            return None
+        env = os.environ.copy()
+        env.update(environment)
+        return env
 
     home_path = os.path.abspath(os.fspath(provider_home))
     os.makedirs(home_path, exist_ok=True)
@@ -210,6 +217,8 @@ def _build_run_environment(
     env["XDG_CONFIG_HOME"] = os.path.join(home_path, ".config")
     env["XDG_CACHE_HOME"] = os.path.join(home_path, ".cache")
     env["XDG_DATA_HOME"] = os.path.join(home_path, ".local", "share")
+    if environment is not None:
+        env.update(environment)
     return env
 
 
