@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import subprocess
 import sys
 
@@ -46,6 +47,86 @@ def test_packaging_uses_non_deprecated_license_metadata():
         classifier.startswith("License ::")
         for classifier in data["project"].get("classifiers", [])
     )
+
+
+def test_development_dependencies_and_ci_use_one_lock_contract() -> None:
+    data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    dev_dependencies = "\n".join(data["project"]["optional-dependencies"]["dev"])
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "black" not in dev_dependencies
+    assert "pytest-asyncio" not in dev_dependencies
+    assert "uv==0.11.32" in workflow
+    assert "uv lock --check" in workflow
+
+
+def test_docker_development_environment_contains_all_runtime_entrypoints() -> None:
+    dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
+    compose = Path("docker-compose.yml").read_text(encoding="utf-8")
+    dockerignore_path = Path(".dockerignore")
+
+    assert "COPY . ." in dockerfile
+    assert dockerfile.index("COPY . .") < dockerfile.index('pip install --no-cache-dir ".[dev]"')
+    for mount in ("./src:/app/src", "./api:/app/api", "./mcp:/app/mcp", "./tests:/app/tests"):
+        assert mount in compose
+    assert dockerignore_path.exists()
+    ignored = {
+        line.strip()
+        for line in dockerignore_path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    }
+    required_ignores = {
+        ".git",
+        ".venv",
+        ".worktrees",
+        "__pycache__",
+        ".pytest_cache",
+        "dist",
+        "build",
+    }
+    assert required_ignores <= ignored
+
+
+def test_setup_verify_exits_nonzero_when_a_quality_gate_fails(tmp_path: Path) -> None:
+    repository = tmp_path / "repository"
+    scripts_dir = repository / "scripts"
+    venv_bin = repository / ".venv" / "bin"
+    fake_bin = tmp_path / "fake-bin"
+    scripts_dir.mkdir(parents=True)
+    venv_bin.mkdir(parents=True)
+    fake_bin.mkdir()
+    setup_script = scripts_dir / "setup.sh"
+    setup_script.write_text(Path("scripts/setup.sh").read_text(encoding="utf-8"), encoding="utf-8")
+    (venv_bin / "activate").write_text("", encoding="utf-8")
+
+    fake_python = """#!/usr/bin/env bash
+if [[ "$1" == "--version" ]]; then
+  echo "Python 3.12.0"
+  exit 0
+fi
+if [[ "$*" == *"-m ruff check"* ]]; then
+  exit 9
+fi
+exit 0
+"""
+    for command in ("python3.11", "python"):
+        path = fake_bin / command
+        path.write_text(fake_python, encoding="utf-8")
+        path.chmod(0o755)
+    fake_pip = fake_bin / "pip"
+    fake_pip.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    fake_pip.chmod(0o755)
+
+    result = subprocess.run(
+        ["bash", str(setup_script), "--verify"],
+        cwd=repository,
+        env={**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 9
 
 
 def test_mcp_module_runs_stdio_initialize_and_tools_list():

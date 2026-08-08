@@ -10,6 +10,8 @@ services:
     # 挂载源码卷，实现热更新
     volumes:
       - ./src:/app/src
+      - ./api:/app/api
+      - ./mcp:/app/mcp
       - ./tests:/app/tests
       - ./pyproject.toml:/app/pyproject.toml
     # 保持容器运行（开发模式）

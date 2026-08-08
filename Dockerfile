@@ -9,20 +9,11 @@ RUN groupadd -r uaek && useradd -r -g uaek -m uaek
 # 设置工作目录
 WORKDIR /app
 
-# 安装系统依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# 复制经过 .dockerignore 过滤的仓库，确保 CLI/API/MCP 与测试夹具同构
+COPY . .
 
-# 先复制依赖文件（利用 Docker 缓存层）
-COPY pyproject.toml README.md ./
-
-# 安装项目依赖（包含 dev 可选依赖）
-RUN pip install --no-cache-dir -e ".[dev]"
-
-# 复制源码
-COPY src/ ./src/
-COPY tests/ ./tests/
+# 安装项目及开发门禁依赖
+RUN pip install --no-cache-dir ".[dev]"
 
 # 切换到非 root 用户
 RUN chown -R uaek:uaek /app

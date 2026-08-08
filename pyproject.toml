@@ -32,8 +32,6 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "pytest-asyncio>=0.21",
-    "black>=23.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
     "types-PyYAML>=6.0",
@@ -65,10 +63,6 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
-
-[tool.black]
-line-length = 100
-target-version = ["py311"]
 
 [tool.coverage.run]
 source = ["src", "api", "mcp"]

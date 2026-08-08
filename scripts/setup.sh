@@ -4,8 +4,8 @@ set -euo pipefail
 # ==============================================================
 # UAEK — Universal Agent Embedding Kit 一键安装脚本
 # ==============================================================
-# 用法: bash scripts/setup.sh
-# 作用: 创建虚拟环境、安装依赖、运行质量门禁
+# 用法: bash scripts/setup.sh [--verify]
+# 作用: 创建虚拟环境、安装依赖；传 --verify 时运行质量门禁
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_DIR"
@@ -59,7 +59,7 @@ echo ""
 echo "可用命令:"
 echo "  uaek --help              — 查看 CLI 帮助"
 echo "  uaek benchmark --suite quick  — 跑快速基准"
-echo "  python -m pytest -q      — 跑测试 (nq)"
+echo "  python -m pytest -q      — 跑测试"
 echo ""
 echo "快速入门:"
 echo "  source .venv/bin/activate"
@@ -73,11 +73,14 @@ if [[ "${1:-}" == "--verify" || "${1:-}" == "-v" ]]; then
     echo "========================================"
     echo ""
     echo "--- ruff ---"
-    python -m ruff check src api mcp tests && echo "✅ ruff passed" || echo "⚠️  ruff 有警告"
+    python -m ruff check src api mcp tests scripts
+    echo "✅ ruff passed"
     echo ""
     echo "--- mypy ---"
-    python -m mypy src api mcp && echo "✅ mypy passed" || echo "⚠️  mypy 有警告"
+    python -m mypy src api mcp
+    echo "✅ mypy passed"
     echo ""
     echo "--- pytest ---"
-    python -m pytest -q && echo "✅ 所有测试通过" || echo "❌ 测试有失败"
+    python -m pytest -q
+    echo "✅ 所有测试通过"
 fi
