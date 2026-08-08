@@ -2,13 +2,24 @@ from __future__ import annotations
 
 import os
 import subprocess
+from pathlib import Path
 from typing import Any
 
+import pytest
+
 from src.capability_tasks import get_task
-from src.evidence.campaign import build_sample_plan, validate_campaign_manifest
+from src.evidence.campaign import (
+    aggregate_campaign,
+    attach_sample_metadata,
+    build_sample_plan,
+    run_campaign,
+    validate_campaign_artifact,
+    validate_campaign_manifest,
+)
 
 
 def _campaign(**provider_overrides: Any) -> dict[str, Any]:
+    artifact_dir = provider_overrides.pop("artifact_dir", None)
     provider = {
         "provider": "fixture-runtime",
         "backend_family": "fixture-family",
@@ -18,13 +29,16 @@ def _campaign(**provider_overrides: Any) -> dict[str, Any]:
         "seed_start": 101,
     }
     provider.update(provider_overrides)
-    return {
+    manifest = {
         "schema": "evidence_campaign_v1",
         "campaign_id": "fixture-campaign",
         "task_set_digest": "a" * 64,
         "grader_version": "0.3.0.dev1",
         "providers": [provider],
     }
+    if artifact_dir is not None:
+        manifest["artifact_dir"] = artifact_dir
+    return manifest
 
 
 def test_campaign_expands_provider_samples_with_backend_identity() -> None:
@@ -99,3 +113,122 @@ def test_live_runner_adds_sample_environment_without_mutating_parent(monkeypatch
     assert captured[0] is not None
     assert captured[0]["UAEK_SAMPLE_SEED"] == "101"
     assert "UAEK_SAMPLE_SEED" not in os.environ
+
+
+def _sample(
+    provider: str = "fixture-runtime",
+    backend_family: str = "fixture-family",
+    sample_id: str = "sample-1",
+    seed: int = 1,
+) -> dict[str, Any]:
+    return {
+        "campaign_id": "fixture-campaign",
+        "provider": provider,
+        "backend_family": backend_family,
+        "sample_id": sample_id,
+        "seed": seed,
+        "task_set_digest": "a" * 64,
+        "grader_version": "0.3.0.dev1",
+    }
+
+
+def _artifact(score: float = 1.0, *, error: str | None = None) -> dict[str, Any]:
+    status = "completed" if error is None else "failed"
+    return {
+        "schema": "capability_run_v1",
+        "provider": "fixture-runtime",
+        "status": status,
+        "evidence_level": "live_external",
+        "task_results": [
+            {
+                "task_id": "two_sum",
+                "passed": int(score > 0),
+                "total": 1,
+                "status": "pass" if error is None else "fail",
+                "error": error,
+            }
+        ],
+        "metrics": {
+            "tasks_passed": int(score > 0),
+            "tasks_attempted": 1,
+            "suite_pass_rate": score,
+        },
+        "provenance": {"source": "fixture", "command": ["fixture-agent"]},
+        "error": error,
+    }
+
+
+def _sample_artifact(
+    provider: str,
+    backend_family: str,
+    sample_id: str,
+    score: float,
+    *,
+    error: str | None = None,
+) -> dict[str, Any]:
+    artifact = _artifact(score, error=error)
+    artifact["provider"] = provider
+    return attach_sample_metadata(artifact, _sample(provider, backend_family, sample_id))
+
+
+def test_attach_metadata_is_immutable_and_valid() -> None:
+    artifact = _artifact()
+    attached = attach_sample_metadata(artifact, _sample())
+
+    assert "sample" not in artifact
+    assert attached["sample"]["sample_id"] == "sample-1"
+    assert validate_campaign_artifact(attached)["valid"] is True
+
+
+def test_aggregate_groups_aliases_by_backend_family() -> None:
+    result = aggregate_campaign(
+        [
+            _sample_artifact("claude-shell", "mimo-family", "s1", 1.0),
+            _sample_artifact("mimo-cli", "mimo-family", "s2", 0.8),
+            _sample_artifact("codex", "openai-family", "s3", 1.0),
+        ]
+    )
+
+    assert result["backend_family_count"] == 2
+    assert result["backend_families"]["mimo-family"]["sample_count"] == 2
+    assert result["backend_families"]["mimo-family"]["mean_score"] == 0.9
+
+
+def test_aggregate_reports_timeout_and_failure_rates() -> None:
+    result = aggregate_campaign(
+        [
+            _sample_artifact("fixture", "family", "s1", 1.0),
+            _sample_artifact("fixture", "family", "s2", 0.0, error="provider timed out"),
+            _sample_artifact("fixture", "family", "s3", 0.0, error="grader failure"),
+        ]
+    )
+
+    assert result["totals"]["timeout_rate"] == pytest.approx(1 / 3)
+    assert result["totals"]["failure_rate"] == pytest.approx(2 / 3)
+
+
+def test_run_campaign_executes_every_resolved_sample_once(tmp_path: Path) -> None:
+    manifest = _campaign(artifact_dir=str(tmp_path / "artifacts"))
+    calls: list[str] = []
+
+    def fixture_runner(sample: dict[str, Any]) -> dict[str, Any]:
+        calls.append(sample["sample_id"])
+        return _artifact()
+
+    result = run_campaign(manifest, runner=fixture_runner)
+
+    assert calls == ["fixture-runtime-001", "fixture-runtime-002", "fixture-runtime-003"]
+    assert result["status"] == "completed"
+    assert len(list((tmp_path / "artifacts").glob("*.json"))) == 3
+
+
+def test_run_campaign_dry_run_never_calls_runner(tmp_path: Path) -> None:
+    def forbidden_runner(sample: dict[str, Any]) -> dict[str, Any]:
+        raise AssertionError(f"runner called for {sample['sample_id']}")
+
+    manifest = _campaign(artifact_dir=str(tmp_path / "artifacts"))
+    result = run_campaign(manifest, runner=forbidden_runner, dry_run=True)
+
+    assert result["status"] == "dry_run"
+    assert len(result["sample_plan"]) == 3
+    assert not (tmp_path / "artifacts").exists()
