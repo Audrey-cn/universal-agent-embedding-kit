@@ -65,6 +65,8 @@ def test_audit_run_all_suites():
 
     # Limitations should list known caveats
     assert len(result["limitations"]) >= 6
+    assert any("2/4" in item for item in result["limitations"])
+    assert not any("4/4 graded-live" in item for item in result["limitations"])
 
     # External baseline should be not_configured when no path given
     assert result["external_baseline"]["status"] == "not_configured"
@@ -96,13 +98,59 @@ def test_audit_records_explicit_ci_evidence():
         iterations=1,
         ci_run_url="https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/1",
         ci_artifact_url="https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/1/artifacts/2",
+        ci_commit_sha="abc123",
     )
 
     assert result["gates"]["ci_remote_verified"] is True
     assert result["gates"]["ci_remote_run_url"].endswith("/actions/runs/1")
     assert result["gates"]["ci_artifact_url"].endswith("/artifacts/2")
+    assert result["gates"]["ci_commit_sha"] == "abc123"
     assert result["evidence_index"]["ci"]["source"] == "explicit"
     assert result["evidence_index"]["ci"]["verified"] is True
+
+
+def test_gate_summary_derives_live_and_baseline_status():
+    """Gate completeness should come from evidence inputs, not constants."""
+    from src.benchmark import _build_gate_summary
+
+    completed = _build_gate_summary(
+        {"live_matrix": {"live_matrix_readiness": {"status": "completed"}}},
+        errors=[],
+        propositions={},
+        external_baseline={"status": "provided"},
+    )
+    partial = _build_gate_summary(
+        {"live_matrix": {"live_matrix_readiness": {"status": "partial"}}},
+        errors=[],
+        propositions={},
+        external_baseline={"status": "not_configured"},
+    )
+
+    assert completed["live_matrix_complete"] is True
+    assert completed["external_baseline_available"] is True
+    assert partial["live_matrix_complete"] is False
+    assert partial["external_baseline_available"] is False
+
+
+def test_audit_cli_records_explicit_ci_commit_sha():
+    """The CLI should preserve an explicit remote commit in machine output."""
+    result = CliRunner().invoke(
+        main,
+        [
+            "audit",
+            "--iterations",
+            "1",
+            "--ci-run-url",
+            "https://github.com/org/repo/actions/runs/7",
+            "--ci-commit-sha",
+            "deadbeef",
+            "--output",
+            "-",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert json.loads(result.output)["gates"]["ci_commit_sha"] == "deadbeef"
 
 
 def test_audit_cli_command():

@@ -792,12 +792,14 @@ def benchmark(suite: str, iterations: int, output: str, baseline: str | None):
 @click.option("--baseline", type=click.Path(exists=True), help="外部 baseline JSON 文件")
 @click.option("--ci-run-url", type=str, help="远端 CI run URL，用于审计证据账本")
 @click.option("--ci-artifact-url", type=str, help="远端 CI artifact URL，用于审计证据账本")
+@click.option("--ci-commit-sha", type=str, help="远端 CI 对应提交 SHA")
 def audit(
     iterations: int,
     output: str,
     baseline: str | None,
     ci_run_url: str | None,
     ci_artifact_url: str | None,
+    ci_commit_sha: str | None,
 ):
     """运行全量审计：聚合所有 benchmark suite 为统一报告"""
     from src.benchmark import run_audit
@@ -807,6 +809,7 @@ def audit(
         baseline_path=Path(baseline) if baseline else None,
         ci_run_url=ci_run_url,
         ci_artifact_url=ci_artifact_url,
+        ci_commit_sha=ci_commit_sha,
     )
 
     payload = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"

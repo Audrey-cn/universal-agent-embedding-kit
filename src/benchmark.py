@@ -476,6 +476,7 @@ def run_audit(
     baseline_path: Path | str | None = None,
     ci_run_url: str | None = None,
     ci_artifact_url: str | None = None,
+    ci_commit_sha: str | None = None,
 ) -> dict[str, Any]:
     """Run all benchmark suites and aggregate into a unified audit report."""
     safe_iterations = max(1, int(iterations))
@@ -508,9 +509,13 @@ def run_audit(
             errors.append({"suite": suite, "error": str(exc)})
 
     propositions = _build_proposition_summary(suite_results)
-    limitations = _build_limitations()
     external_baseline = _load_external_baseline(baseline_path)
-    ci_evidence = _build_ci_evidence(ci_run_url=ci_run_url, ci_artifact_url=ci_artifact_url)
+    limitations = _build_limitations(suite_results)
+    ci_evidence = _build_ci_evidence(
+        ci_run_url=ci_run_url,
+        ci_artifact_url=ci_artifact_url,
+        ci_commit_sha=ci_commit_sha,
+    )
     evidence_index = _build_evidence_index(
         suite_results=suite_results,
         propositions=propositions,
@@ -524,6 +529,7 @@ def run_audit(
         propositions,
         ci_evidence=ci_evidence,
         evidence_consistency=evidence_index["consistency"],
+        external_baseline=external_baseline,
     )
 
     return {
@@ -726,6 +732,7 @@ def _build_gate_summary(
     propositions: dict[str, Any] | None = None,
     ci_evidence: dict[str, Any] | None = None,
     evidence_consistency: dict[str, Any] | None = None,
+    external_baseline: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a quality-gate summary.
 
@@ -745,6 +752,12 @@ def _build_gate_summary(
         item.get("status") == "incomplete" for item in proposition_items
     )
     audit_passed = not errors and not has_incomplete_proposition and consistency_passed
+    live_status = (
+        suite_results.get("live_matrix", {})
+        .get("live_matrix_readiness", {})
+        .get("status")
+    )
+    baseline_status = (external_baseline or {}).get("status")
     return {
         "audit_passed": audit_passed,
         "tests_passing": True,  # validated by caller
@@ -757,14 +770,15 @@ def _build_gate_summary(
         "ci_commit_sha": ci_evidence.get("commit_sha"),
         "evidence_consistency_passed": consistency_passed,
         "benchmark_evidence_count": len(suite_results),
-        "live_matrix_complete": False,  # 3/4 live, Claude blocked
-        "external_baseline_available": False,  # Fable 5 retired
+        "live_matrix_complete": live_status == "completed",
+        "external_baseline_available": baseline_status == "provided",
     }
 
 
 def _build_ci_evidence(
     ci_run_url: str | None = None,
     ci_artifact_url: str | None = None,
+    ci_commit_sha: str | None = None,
 ) -> dict[str, Any]:
     """Return structured CI evidence from explicit args or GitHub Actions env."""
     is_ci = os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
@@ -781,7 +795,7 @@ def _build_ci_evidence(
         "source": "explicit" if ci_run_url else "github_actions_env" if is_ci else "local",
         "run_url": run_url,
         "artifact_url": ci_artifact_url,
-        "commit_sha": os.environ.get("GITHUB_SHA"),
+        "commit_sha": ci_commit_sha or os.environ.get("GITHUB_SHA"),
         "repository": os.environ.get("GITHUB_REPOSITORY"),
     }
 
@@ -918,8 +932,21 @@ def _build_evidence_consistency(
     }
 
 
-def _build_limitations() -> list[str]:
+def _build_limitations(suite_results: dict[str, dict[str, Any]]) -> list[str]:
     """Return the known limitations of this audit."""
+    capability_metrics = (
+        suite_results.get("capability", {})
+        .get("capability_readiness", {})
+        .get("metrics", {})
+    )
+    graded_count = int(capability_metrics.get("graded_live_provider_count", 0) or 0)
+    expected_count = int(capability_metrics.get("expected_provider_count", 0) or 0)
+    capability_summary = (
+        f"Cross-platform matrix is {graded_count}/{expected_count} full-suite graded-live; "
+        "partial providers retain their measured scores and do not count as full-suite success"
+        if expected_count
+        else "Cross-platform full-suite graded-live evidence is unavailable"
+    )
     return [
         (
             "No direct Fable 5 baseline — reference model is retired; "
@@ -936,9 +963,6 @@ def _build_limitations() -> list[str]:
             "a 100+ live multi-hour corpus remains open work"
         ),
         "Claude Code CLI routes to mimo-v2.5-pro — model backend is ≤3 distinct, not 4",
-        (
-            "Cross-platform matrix is 4/4 graded-live but requires "
-            "seed config/credentials for CI reproducibility"
-        ),
+        capability_summary,
         "CI workflow runs on GitHub Actions (quality gates + release-gate wheel validation)",
     ]
