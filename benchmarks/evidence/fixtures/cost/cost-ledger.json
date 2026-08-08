@@ -1,0 +1,12 @@
+{
+  "schema": "cost_evidence_v1",
+  "evidence_level": "contract",
+  "sessions": [
+    {"session_id": "warm-1", "cohort": "warm", "input_tokens": 800, "cache_read_tokens": 200, "cache_write_tokens": 50, "output_tokens": 100, "elapsed_seconds": 10, "session_gap_seconds": 30, "baseline_cost": 1.0, "measured_cost": 0.6},
+    {"session_id": "warm-2", "cohort": "warm", "input_tokens": 700, "cache_read_tokens": 300, "cache_write_tokens": 50, "output_tokens": 100, "elapsed_seconds": 11, "session_gap_seconds": 45, "baseline_cost": 1.0, "measured_cost": 0.7},
+    {"session_id": "mixed-1", "cohort": "mixed", "input_tokens": 900, "cache_read_tokens": 100, "cache_write_tokens": 100, "output_tokens": 100, "elapsed_seconds": 12, "session_gap_seconds": 900, "baseline_cost": 1.0, "measured_cost": 0.9},
+    {"session_id": "mixed-2", "cohort": "mixed", "input_tokens": 950, "cache_read_tokens": 50, "cache_write_tokens": 100, "output_tokens": 100, "elapsed_seconds": 13, "session_gap_seconds": 1200, "baseline_cost": 1.0, "measured_cost": 1.0},
+    {"session_id": "cold-1", "cohort": "cold", "input_tokens": 1000, "cache_read_tokens": 0, "cache_write_tokens": 150, "output_tokens": 100, "elapsed_seconds": 14, "session_gap_seconds": 7200, "baseline_cost": 1.0, "measured_cost": 1.2},
+    {"session_id": "cold-2", "cohort": "cold", "input_tokens": 1000, "cache_read_tokens": 0, "cache_write_tokens": 150, "output_tokens": 100, "elapsed_seconds": 15, "session_gap_seconds": 10800, "baseline_cost": 1.0, "measured_cost": 1.1}
+  ]
+}

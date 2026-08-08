@@ -55,6 +55,7 @@ pip install -e '.[dev]'
 uaek --help
 uaek benchmark --suite adversarial   # 自评分作弊率证据
 uaek capability matrix               # 跨平台真实任务评分矩阵
+uaek evidence --help                 # 校验/聚合 0.3 证据契约
 uaek audit --output -                # 完整审计报告(JSON 输出到 stdout)
 python -m pytest -q                  # 完整测试套件
 ```
@@ -69,6 +70,7 @@ python -m pytest -q                  # 完整测试套件
 | 💰 成本模型 | `src/cost_model.py` | Cache 感知的成本核算 |
 | 🎯 真实场景基准 | `src/scenario_benchmark.py` | 多维评分,抓 pass/fail 漏掉的回归 |
 | 🔌 跨平台能力矩阵 | `src/capability_matrix.py` | 驱动并客观评分真实 Agent 平台 |
+| 📚 证据契约 | `src/evidence` | 多样本、成本、会话与可比 baseline 校验 |
 | 🔧 工作流 / 记忆 / 技能 / Harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | 编排原语 |
 
 三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。稳定能力与实验能力的边界见 [`0.2 支持矩阵`](docs/support-matrix.md)。
@@ -87,6 +89,11 @@ python -m pytest -q                  # 完整测试套件
 
 <a id="状态"></a>**门禁:** 测试通过 · ruff + mypy 全绿 · 全局与核心模块覆盖率下限 · 本地 audit 语义门禁通过。最新 `main` release gate 已在 [GitHub Actions run 30589485212](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212) 通过。完整拆解与出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
 
+0.3 无凭据核心已经能按真实 backend family 聚合多样本 campaign，分离 warm/mixed/cold
+成本 cohort 与 deterministic/live 会话，并拒绝不可比 baseline。CI fixtures 只证明契约，
+不是真实 provider 或外部证据。外部门槛仍是：3 个真实 backend family、每任务每 backend
+至少 3 个样本、每种成本 cohort 5 个真实会话、100 个 live 会话，以及获批的可比 baseline。
+
 ## 🪜 方法论才是核心
 
 这里最可复用的不是某个指标,而是两条实践强制的纪律:
@@ -100,6 +107,7 @@ python -m pytest -q                  # 完整测试套件
 
 往证据阶梯上爬,就是路线图:
 
+- [x] **0.3 无凭据证据核心** —— schema、校验器、聚合、CLI、audit index 与 CI fixtures
 - [ ] **档位 ④ → ⑤** —— 多 provider / 多采样 live 运行;超出单账户的远端 CI 证据
 - [ ] **真实场景语料** —— 从 40 个确定性场景扩到 100+ live 多小时会话
 - [ ] **成本·冷路径** —— 测 TTL-miss 为主的真实会话,而不只是 warm 会话

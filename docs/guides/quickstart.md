@@ -46,6 +46,22 @@ Generate local benchmark evidence:
 .venv/bin/uaek benchmark --suite live_matrix --iterations 2 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results
 ```
 
+Validate and aggregate the credential-free 0.3 evidence fixtures:
+
+```bash
+.venv/bin/uaek evidence campaign validate benchmarks/manifests/evidence-campaign.ci-example.json --output -
+.venv/bin/uaek evidence campaign aggregate benchmarks/evidence/fixtures/campaign/*.json --output -
+.venv/bin/uaek evidence campaign run benchmarks/manifests/evidence-campaign.ci-example.json --dry-run --output -
+.venv/bin/uaek evidence cost validate benchmarks/evidence/fixtures/cost/cost-ledger.json --output -
+.venv/bin/uaek evidence cost aggregate benchmarks/evidence/fixtures/cost/cost-ledger.json --output -
+.venv/bin/uaek evidence session aggregate benchmarks/evidence/fixtures/sessions/*.json --output -
+.venv/bin/uaek evidence baseline validate benchmarks/evidence/fixtures/baseline.json --output -
+.venv/bin/uaek audit --iterations 1 --evidence-root benchmarks/evidence/fixtures --output -
+```
+
+These fixtures are contract tests, not live or external evidence. `campaign run` is shown with
+`--dry-run`; real provider execution requires separately approved credentials and spending.
+
 Run a command-backed external Agent Adapter:
 
 ```bash

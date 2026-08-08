@@ -22,6 +22,25 @@ Report the rung next to the number: *"−43% cost reduction (rung 1–2: modeled
 under documented cache pricing, red-teamed for TTL)"* tells a reader exactly how
 much to trust it and what would strengthen it.
 
+## UAEK 0.3 evidence contracts
+
+The 0.3 evidence core turns the ladder into machine-checkable contracts:
+
+- `evidence_campaign_v1` records provider aliases, the actual `backend_family`, sample IDs,
+  seeds, the task-set digest, and grader version. Aggregation happens by both provider and backend
+  family, so two shells over one model family never count as two independent families.
+- `cost_evidence_v1` keeps warm, mixed, and cold sessions in separate cohorts. It deliberately has
+  no combined reduction headline.
+- `session_evidence_v1` keeps deterministic scenarios separate from recorded live sessions and
+  derives multi-hour counts only from the latter.
+- `external_baseline_v1` is `provided` only when its task-set digest and grader version match the
+  current evaluator; mismatches are `incompatible`.
+
+The files in `benchmarks/evidence/fixtures` have `evidence_level=contract`. They test schemas,
+aggregation, CLI behavior, and audit consistency in CI; they are not provider measurements,
+real billing sessions, live-session corpus entries, or external validation. External acceptance
+still requires authorized real artifacts.
+
 ### Smell tests for a rung-1 number pretending to be more
 
 - It hits a round target exactly (50%, 70%, 0%, 100%).

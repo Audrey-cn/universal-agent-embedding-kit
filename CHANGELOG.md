@@ -2,11 +2,15 @@
 
 ## Unreleased
 
-### 0.3 direction
+### 0.3.0.dev1 evidence core
 
-- Multi-sample evidence grouped by actual backend family.
-- Separate warm/mixed/cold cost ledgers and deterministic/live session evidence.
-- Comparable external-baseline validation and a unified 0.3 evidence index.
+- Added validated multi-sample campaigns grouped by actual backend family, with immutable sample
+  identity, uncertainty, timeout rates, and failure rates.
+- Added separate warm/mixed/cold cost ledgers and deterministic/live session evidence.
+- Added comparable external-baseline validation, `uaek evidence`, a unified 0.3 audit index, and
+  credential-free CI fixtures.
+- The fixtures are contract evidence only. Paid multi-provider samples, five real sessions per
+  cost cohort, 100 live sessions, and an approved comparable baseline remain external gates.
 
 ## 0.2.0rc1 (2026-08-09)
 

@@ -1,0 +1,14 @@
+{
+  "schema": "external_baseline_v1",
+  "evidence_level": "contract",
+  "name": "contract-fixture",
+  "source_ref": "fixture://baseline",
+  "model": "fixture-family-a",
+  "runtime": "fixture-runtime-a",
+  "evaluated_at": "2026-08-09T00:00:00Z",
+  "task_set_digest": "6893b7a9320c61482b1dcf5b60c6a32df1e804cb146f309c2559c6709419a522",
+  "grader_version": "capability-grader-v1",
+  "samples_per_task": 3,
+  "metrics": {"mean_score": 0.9},
+  "limitations": ["Contract fixture only; not an external evaluation result."]
+}

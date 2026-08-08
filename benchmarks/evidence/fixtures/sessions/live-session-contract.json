@@ -1,0 +1,12 @@
+{
+  "schema": "session_evidence_v1",
+  "evidence_level": "contract",
+  "evidence_type": "live_session",
+  "session_id": "fixture-live-session",
+  "provenance": {"source": "fixture://session", "recorded_at": "2026-08-09T00:00:00Z"},
+  "duration_seconds": 3700,
+  "turn_count": 12,
+  "checkpoints": [{"turn": 6, "status": "passing"}],
+  "final_outcome": "completed fixture contract",
+  "grades": {"correctness": 0.9, "maintainability": 0.8, "security": 1.0, "documentation": 0.75}
+}

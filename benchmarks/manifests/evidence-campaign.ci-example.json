@@ -1,0 +1,25 @@
+{
+  "schema": "evidence_campaign_v1",
+  "campaign_id": "ci-contract-campaign",
+  "task_set_digest": "6893b7a9320c61482b1dcf5b60c6a32df1e804cb146f309c2559c6709419a522",
+  "grader_version": "capability-grader-v1",
+  "artifact_dir": "/tmp/uaek-evidence-campaign",
+  "providers": [
+    {
+      "provider": "fixture-runtime-a",
+      "backend_family": "fixture-family-a",
+      "command": ["fixture-runtime-a"],
+      "output_mode": "plain",
+      "sample_count": 2,
+      "seed_start": 101
+    },
+    {
+      "provider": "fixture-runtime-b",
+      "backend_family": "fixture-family-b",
+      "command": ["fixture-runtime-b"],
+      "output_mode": "plain",
+      "sample_count": 2,
+      "seed_start": 201
+    }
+  ]
+}

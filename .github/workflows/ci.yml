@@ -38,8 +38,31 @@ jobs:
             --dry-run \
             --output /tmp/uaek-capability-manifest-validation.json
 
+      - name: Validate UAEK 0.3 evidence contracts
+        run: |
+          uaek evidence campaign validate \
+            benchmarks/manifests/evidence-campaign.ci-example.json \
+            --output /tmp/uaek-evidence-campaign-validation.json
+          uaek evidence campaign aggregate benchmarks/evidence/fixtures/campaign/*.json \
+            --output /tmp/uaek-evidence-campaign-summary.json
+          uaek evidence campaign run \
+            benchmarks/manifests/evidence-campaign.ci-example.json \
+            --dry-run --output /tmp/uaek-evidence-campaign-plan.json
+          uaek evidence cost validate benchmarks/evidence/fixtures/cost/cost-ledger.json \
+            --output /tmp/uaek-evidence-cost-validation.json
+          uaek evidence cost aggregate benchmarks/evidence/fixtures/cost/cost-ledger.json \
+            --output /tmp/uaek-evidence-cost-summary.json
+          for artifact in benchmarks/evidence/fixtures/sessions/*.json; do
+            uaek evidence session validate "$artifact" \
+              --output "/tmp/$(basename "$artifact")"
+          done
+          uaek evidence session aggregate benchmarks/evidence/fixtures/sessions/*.json \
+            --output /tmp/uaek-evidence-session-summary.json
+          uaek evidence baseline validate benchmarks/evidence/fixtures/baseline.json \
+            --output /tmp/uaek-evidence-baseline-validation.json
+
       - name: Lint
-        run: python -m ruff check src api mcp tests
+        run: python -m ruff check src api mcp tests scripts
 
       - name: Typecheck
         run: python -m mypy src api mcp
@@ -49,6 +72,12 @@ jobs:
           python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing \
             --cov-report=json:/tmp/uaek-coverage.json --cov-fail-under=75
           python scripts/check_supported_coverage.py /tmp/uaek-coverage.json
+
+      - name: Audit credential-free evidence index
+        run: |
+          uaek audit --iterations 1 \
+            --evidence-root benchmarks/evidence/fixtures \
+            --output /tmp/uaek-evidence-audit.json
 
   release-gate:
     name: Release gate (wheel + install + smoke)
@@ -158,6 +187,7 @@ jobs:
       - name: Audit (from wheel)
         run: |
           /tmp/release-venv/bin/uaek audit --iterations 1 \
+            --evidence-root benchmarks/evidence/fixtures \
             --output /tmp/release-benchmarks
 
       - name: Validate audit semantics
@@ -171,6 +201,7 @@ jobs:
           assert audit["gates"]["audit_passed"] is True, audit["gates"]
           assert audit["gates"]["evidence_consistency_passed"] is True, audit["gates"]
           assert audit["evidence_index"]["consistency"]["status"] == "pass"
+          assert audit["evidence_index"]["v0_3"]["status"] == "valid"
           assert audit["evidence_index"]["capability"]["held_out"]["enabled_in_current_grader"] is True
           for key, proposition in audit["propositions"].items():
               if key == "all_propositions_complete":

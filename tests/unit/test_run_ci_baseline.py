@@ -75,7 +75,8 @@ def test_ci_workflow_defines_quality_gates():
     workflow_path = Path(".github/workflows/ci.yml")
 
     assert workflow_path.exists()
-    data = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    workflow_source = workflow_path.read_text(encoding="utf-8")
+    data = yaml.safe_load(workflow_source)
     assert data["name"] == "CI"
 
     workflow_text = json.dumps(data, ensure_ascii=False)
@@ -95,6 +96,12 @@ def test_ci_workflow_defines_quality_gates():
     assert "evidence_consistency_passed" in workflow_text
     assert "evidence_index" in workflow_text
     assert "errors" in workflow_text
+    assert "uaek evidence campaign validate" in workflow_text
+    assert "uaek evidence cost aggregate" in workflow_text
+    assert "uaek evidence session aggregate" in workflow_text
+    assert "uaek evidence baseline validate" in workflow_text
+    assert "--evidence-root benchmarks/evidence/fixtures" in workflow_text
+    assert 'audit["evidence_index"]["v0_3"]["status"] == "valid"' in workflow_source
 
 
 def test_ci_workflow_uses_current_node24_actions():

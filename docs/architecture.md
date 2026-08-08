@@ -18,10 +18,22 @@ The entrypoints must remain thin: domain behavior belongs in shared services so 
 
 `src/benchmark.py`, the scenario/capability modules, and `uaek audit` measure product claims. Evidence follows five rungs: local benchmark, adversarial/stress, real data, live measurement, and external validation. A higher score without stronger evidence is not treated as progress.
 
+The 0.3 contract layer lives in `src/evidence`:
+
+1. `common.py` loads canonical JSON, hashes task definitions, and rejects credential material.
+2. `campaign.py` validates multi-sample manifests, writes immutable per-sample artifacts, and
+   aggregates provider aliases by their real backend family.
+3. `cost.py` and `session.py` enforce disjoint cost cohorts and deterministic/live evidence.
+4. `baseline.py` checks task/grader comparability before an external baseline can be available.
+5. `cli.py` exposes these pure validators and aggregators through `uaek evidence`; `uaek audit
+   --evidence-root ...` adds their paths and validation state to `evidence_index.v0_3`.
+
+Credential-free CI fixtures stop at contract evidence. The execution boundary for paid providers,
+real billing histories, and independent baseline artifacts remains outside the local core.
+
 ## Trust boundaries
 
 - Workflow actions are allowlisted before execution.
 - MCP authentication, rate limiting, argument validation, and tool authorization run before handlers.
 - Optional ChromaDB, sentence-transformers, and Z3 integrations are lazy and must not be required for the base install.
 - Credentialed provider runs, remote pushes, and package publication are external operations and require explicit authorization.
-

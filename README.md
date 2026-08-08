@@ -55,6 +55,7 @@ pip install -e '.[dev]'
 uaek --help
 uaek benchmark --suite adversarial   # self-grading cheating-rate evidence
 uaek capability matrix               # cross-platform graded task matrix
+uaek evidence --help                 # validate/aggregate 0.3 evidence contracts
 uaek audit --output -                # full audit report as JSON on stdout
 python -m pytest -q                  # full test suite
 ```
@@ -69,6 +70,7 @@ python -m pytest -q                  # full test suite
 | 💰 Cost model | `src/cost_model.py` | cache-aware cost accounting (prompt/KV cache) |
 | 🎯 Real-scenario benchmark | `src/scenario_benchmark.py` | multi-dimensional scoring (catches regressions a pass/fail misses) |
 | 🔌 Cross-platform capability | `src/capability_matrix.py` | drive + objectively grade real agent platforms |
+| 📚 Evidence contracts | `src/evidence` | multi-sample, cost, session, and comparable-baseline validation |
 | 🔧 Workflow / memory / skills / harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | orchestration primitives |
 
 Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** (`mcp/`). See the
@@ -88,6 +90,12 @@ Every number below is the result of a deliberate **red-team round** (independent
 
 <a id="status"></a>**Gates:** tests pass · ruff + mypy clean · global and supported-module coverage floors enforced · audit semantics pass locally. The latest `main` release gate passed on [GitHub Actions run 30589485212](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212). Full breakdown and provenance in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 
+The 0.3 credential-free core validates multi-sample campaigns by actual backend family, separates
+warm/mixed/cold cost cohorts and deterministic/live sessions, and rejects incomparable baselines.
+CI fixtures prove those contracts only. The external thresholds remain open: three real backend
+families with at least three samples per task, five real sessions per cost cohort, 100 live
+sessions, and an approved comparable baseline.
+
 ## 🪜 The methodology is the product
 
 The most reusable thing here isn't a metric — it's the discipline two practices enforce:
@@ -101,6 +109,7 @@ See [`docs/methodology.md`](docs/methodology.md), the research framing in [`RESE
 
 Climbing the evidence ladder is the roadmap:
 
+- [x] **0.3 credential-free evidence core** — schemas, validators, aggregation, CLI, audit index, and CI fixtures
 - [ ] **Rung ④ → ⑤** — multi-provider / multi-sample live runs; remote-CI evidence beyond a single account
 - [ ] **Real-scenario corpus** — grow from 40 deterministic scenarios toward 100+ live, multi-hour sessions
 - [ ] **Cost, cold-path** — measure TTL-miss-heavy real sessions, not just warm ones

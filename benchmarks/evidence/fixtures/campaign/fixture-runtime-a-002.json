@@ -1,0 +1,21 @@
+{
+  "schema": "capability_run_v1",
+  "provider": "fixture-runtime-a",
+  "status": "completed",
+  "evidence_level": "contract",
+  "task_results": [
+    {"task_id": "two_sum", "passed": 1, "total": 1, "status": "pass", "error": null}
+  ],
+  "metrics": {"tasks_passed": 1, "tasks_attempted": 1, "suite_pass_rate": 0.8},
+  "provenance": {"source": "fixture", "command": ["fixture-runtime-a"]},
+  "error": null,
+  "sample": {
+    "campaign_id": "ci-contract-campaign",
+    "provider": "fixture-runtime-a",
+    "backend_family": "fixture-family-a",
+    "sample_id": "fixture-runtime-a-002",
+    "seed": 102,
+    "task_set_digest": "6893b7a9320c61482b1dcf5b60c6a32df1e804cb146f309c2559c6709419a522",
+    "grader_version": "capability-grader-v1"
+  }
+}

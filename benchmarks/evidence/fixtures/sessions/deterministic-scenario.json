@@ -1,0 +1,7 @@
+{
+  "schema": "session_evidence_v1",
+  "evidence_level": "contract",
+  "evidence_type": "deterministic_scenario",
+  "scenario_id": "fixture-scenario",
+  "grader_output": {"passed": true, "score": 1.0}
+}
