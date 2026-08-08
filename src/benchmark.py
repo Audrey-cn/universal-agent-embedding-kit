@@ -174,20 +174,20 @@ def _load_external_baseline(baseline_path: Path | str | None) -> dict[str, Any]:
             "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         }
 
-    path = Path(baseline_path)
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError("External baseline file must contain a JSON object")
+    from src.evidence.baseline import (
+        CURRENT_GRADER_VERSION,
+        current_task_set_digest,
+        validate_external_baseline,
+    )
 
-    return {
-        "name": data.get("name", "external"),
-        "status": data.get("status", "provided"),
-        "path": str(path),
-        "source": data.get("source", ""),
-        "generated_at": data.get("generated_at"),
-        "metrics": data.get("metrics", {}),
-        "notes": data.get("notes", []),
-    }
+    path = Path(baseline_path)
+    result = validate_external_baseline(
+        path,
+        expected_task_digest=current_task_set_digest(),
+        expected_grader_version=CURRENT_GRADER_VERSION,
+    )
+    result["path"] = str(path)
+    return result
 
 
 def _scorecard_for_suite(

@@ -74,12 +74,21 @@ def test_audit_run_all_suites():
 
 def test_audit_with_baseline_path(tmp_path: Path):
     """run_audit should load external baseline when a valid path is given."""
+    from src.evidence.baseline import CURRENT_GRADER_VERSION, current_task_set_digest
+
     baseline = tmp_path / "test-baseline.json"
     baseline.write_text(json.dumps({
+        "schema": "external_baseline_v1",
         "name": "test-baseline",
-        "status": "provided",
-        "source": "test",
-        "metrics": {"score": 85},
+        "source_ref": "artifact://test/baseline",
+        "model": "fixture-model",
+        "runtime": "fixture-runtime",
+        "evaluated_at": "2026-08-09T00:00:00Z",
+        "task_set_digest": current_task_set_digest(),
+        "grader_version": CURRENT_GRADER_VERSION,
+        "samples_per_task": 3,
+        "metrics": {"mean_score": 0.85},
+        "limitations": ["Test fixture only."],
     }))
 
     from src.benchmark import run_audit
@@ -88,6 +97,31 @@ def test_audit_with_baseline_path(tmp_path: Path):
     assert result["external_baseline"]["status"] == "provided"
     assert result["external_baseline"]["name"] == "test-baseline"
     assert result["evidence_index"]["external_baseline"]["status"] == "provided"
+
+
+def test_audit_rejects_incompatible_baseline_for_availability_gate(tmp_path: Path):
+    from src.benchmark import run_audit
+    from src.evidence.baseline import CURRENT_GRADER_VERSION
+
+    baseline = tmp_path / "incompatible.json"
+    baseline.write_text(json.dumps({
+        "schema": "external_baseline_v1",
+        "name": "incompatible",
+        "source_ref": "artifact://test/incompatible",
+        "model": "fixture-model",
+        "runtime": "fixture-runtime",
+        "evaluated_at": "2026-08-09T00:00:00Z",
+        "task_set_digest": "different-task-set",
+        "grader_version": CURRENT_GRADER_VERSION,
+        "samples_per_task": 3,
+        "metrics": {"mean_score": 1.0},
+        "limitations": ["Test fixture only."],
+    }))
+
+    result = run_audit(iterations=1, baseline_path=baseline)
+
+    assert result["external_baseline"]["status"] == "incompatible"
+    assert result["gates"]["external_baseline_available"] is False
 
 
 def test_audit_records_explicit_ci_evidence():
