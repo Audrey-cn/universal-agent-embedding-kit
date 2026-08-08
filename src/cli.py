@@ -11,6 +11,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
+from src.evidence.cli import evidence
 from src.version import __version__
 
 console = Console()
@@ -21,6 +22,8 @@ console = Console()
 def main():
     """UAEK — Universal Agent Enhancement Kit"""
     pass
+
+main.add_command(evidence)
 
 
 @main.command()
@@ -793,6 +796,11 @@ def benchmark(suite: str, iterations: int, output: str, baseline: str | None):
 @click.option("--ci-run-url", type=str, help="远端 CI run URL，用于审计证据账本")
 @click.option("--ci-artifact-url", type=str, help="远端 CI artifact URL，用于审计证据账本")
 @click.option("--ci-commit-sha", type=str, help="远端 CI 对应提交 SHA")
+@click.option(
+    "--evidence-root",
+    type=click.Path(exists=True, file_okay=False),
+    help="0.3 证据根目录",
+)
 def audit(
     iterations: int,
     output: str,
@@ -800,6 +808,7 @@ def audit(
     ci_run_url: str | None,
     ci_artifact_url: str | None,
     ci_commit_sha: str | None,
+    evidence_root: str | None,
 ):
     """运行全量审计：聚合所有 benchmark suite 为统一报告"""
     from src.benchmark import run_audit
@@ -810,6 +819,7 @@ def audit(
         ci_run_url=ci_run_url,
         ci_artifact_url=ci_artifact_url,
         ci_commit_sha=ci_commit_sha,
+        evidence_root=Path(evidence_root) if evidence_root else None,
     )
 
     payload = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"

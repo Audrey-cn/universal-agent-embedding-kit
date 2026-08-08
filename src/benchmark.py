@@ -477,6 +477,7 @@ def run_audit(
     ci_run_url: str | None = None,
     ci_artifact_url: str | None = None,
     ci_commit_sha: str | None = None,
+    evidence_root: Path | str | None = None,
 ) -> dict[str, Any]:
     """Run all benchmark suites and aggregate into a unified audit report."""
     safe_iterations = max(1, int(iterations))
@@ -516,12 +517,14 @@ def run_audit(
         ci_artifact_url=ci_artifact_url,
         ci_commit_sha=ci_commit_sha,
     )
+    v03_evidence = _load_v03_evidence(evidence_root)
     evidence_index = _build_evidence_index(
         suite_results=suite_results,
         propositions=propositions,
         limitations=limitations,
         external_baseline=external_baseline,
         ci_evidence=ci_evidence,
+        v03_evidence=v03_evidence,
     )
     gates = _build_gate_summary(
         suite_results,
@@ -806,6 +809,7 @@ def _build_evidence_index(
     limitations: list[str],
     external_baseline: dict[str, Any],
     ci_evidence: dict[str, Any],
+    v03_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the audit's canonical machine-readable evidence ledger."""
     headline = {
@@ -831,6 +835,10 @@ def _build_evidence_index(
         scenario=scenario if isinstance(scenario, dict) else {},
         held_out=held_out,
     )
+    v03_evidence = v03_evidence or {"status": "not_configured"}
+    if v03_evidence.get("status") == "invalid":
+        consistency["errors"].extend(v03_evidence.get("errors", []))
+        consistency["status"] = "fail"
     return {
         "schema": "evidence_index_v1",
         "source": "uaek audit",
@@ -848,9 +856,98 @@ def _build_evidence_index(
             "name": external_baseline.get("name"),
             "path": external_baseline.get("path"),
         },
+        "v0_3": v03_evidence,
         "limitations": limitations,
         "consistency": consistency,
     }
+
+
+def _load_v03_evidence(evidence_root: Path | str | None) -> dict[str, Any]:
+    """Validate standard 0.3 evidence files while preserving their source paths."""
+
+    if evidence_root is None:
+        return {"status": "not_configured", "root": None, "errors": []}
+
+    from src.evidence.baseline import (
+        CURRENT_GRADER_VERSION,
+        current_task_set_digest,
+        validate_external_baseline,
+    )
+    from src.evidence.campaign import (
+        validate_campaign_artifact,
+        validate_campaign_manifest,
+    )
+    from src.evidence.common import load_json_object
+    from src.evidence.cost import validate_cost_ledger
+    from src.evidence.session import validate_session_artifact
+
+    root = Path(evidence_root)
+    if not root.is_dir():
+        return {
+            "status": "invalid",
+            "root": str(root),
+            "errors": [f"evidence root is not a directory: {root}"],
+        }
+
+    errors: list[str] = []
+    campaign_records: list[dict[str, Any]] = []
+    for path in sorted((root / "campaign").glob("*.json")):
+        data = load_json_object(path)
+        validation = (
+            validate_campaign_manifest(data)
+            if data.get("schema") == "evidence_campaign_v1" and "providers" in data
+            else validate_campaign_artifact(data)
+        )
+        record = {"path": str(path), "valid": validation["valid"], "errors": validation["errors"]}
+        campaign_records.append(record)
+        errors.extend(f"{path}: {error}" for error in validation["errors"])
+
+    cost_records = _validate_path_group(root / "cost", validate_cost_ledger, errors)
+    session_records = _validate_path_group(
+        root / "sessions", validate_session_artifact, errors
+    )
+
+    baseline_path = root / "baseline.json"
+    baseline_record: dict[str, Any] | None = None
+    if baseline_path.is_file():
+        validation = validate_external_baseline(
+            baseline_path,
+            expected_task_digest=current_task_set_digest(),
+            expected_grader_version=CURRENT_GRADER_VERSION,
+        )
+        baseline_record = {
+            "path": str(baseline_path),
+            "status": validation["status"],
+            "compatible": validation["compatible"],
+            "errors": validation["errors"],
+        }
+        if validation["status"] == "invalid":
+            errors.extend(f"{baseline_path}: {error}" for error in validation["errors"])
+
+    configured = bool(campaign_records or cost_records or session_records or baseline_record)
+    return {
+        "status": "invalid" if errors else "valid" if configured else "not_configured",
+        "root": str(root),
+        "campaign": campaign_records,
+        "cost": cost_records,
+        "sessions": session_records,
+        "baseline": baseline_record,
+        "errors": errors,
+    }
+
+
+def _validate_path_group(
+    directory: Path,
+    validator: Callable[[Path], dict[str, Any]],
+    errors: list[str],
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for path in sorted(directory.glob("*.json")):
+        validation = validator(path)
+        record = {"path": str(path), "valid": validation["valid"], "errors": validation["errors"]}
+        records.append(record)
+        errors.extend(f"{path}: {error}" for error in validation["errors"])
+    return records
 
 
 def _proposition_key_result(propositions: dict[str, Any], key: str) -> dict[str, Any]:

@@ -70,6 +70,22 @@ def test_audit_run_all_suites():
 
     # External baseline should be not_configured when no path given
     assert result["external_baseline"]["status"] == "not_configured"
+    assert result["evidence_index"]["v0_3"]["status"] == "not_configured"
+
+
+def test_audit_reports_invalid_v03_evidence_with_raw_path(tmp_path: Path):
+    from src.benchmark import run_audit
+
+    invalid_path = tmp_path / "cost" / "invalid.json"
+    invalid_path.parent.mkdir(parents=True)
+    invalid_path.write_text('{"schema":"cost_evidence_v1","sessions":[]}', encoding="utf-8")
+
+    result = run_audit(iterations=1, evidence_root=tmp_path)
+
+    v03 = result["evidence_index"]["v0_3"]
+    assert v03["status"] == "invalid"
+    assert v03["cost"][0]["path"] == str(invalid_path)
+    assert result["gates"]["audit_passed"] is False
 
 
 def test_audit_with_baseline_path(tmp_path: Path):
