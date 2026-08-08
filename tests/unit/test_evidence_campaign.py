@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -89,6 +90,28 @@ def test_campaign_rejects_seed_count_mismatch_and_backend_omission() -> None:
     assert validation["valid"] is False
     assert any("backend_family" in error for error in validation["errors"])
     assert any("seeds" in error for error in validation["errors"])
+
+
+@pytest.mark.parametrize(
+    "sample_id",
+    ["../escaped", "nested/sample", r"nested\sample", ".", "..", ".hidden"],
+)
+def test_campaign_rejects_sample_ids_that_are_not_safe_file_names(sample_id: str) -> None:
+    validation = validate_campaign_manifest(
+        _campaign(sample_count=1, seeds=[1], sample_ids=[sample_id])
+    )
+
+    assert validation["valid"] is False
+    assert any("safe file name" in error for error in validation["errors"])
+
+
+def test_campaign_rejects_unsafe_provider_derived_sample_ids() -> None:
+    validation = validate_campaign_manifest(
+        _campaign(provider="../fixture", sample_count=1, seeds=[1])
+    )
+
+    assert validation["valid"] is False
+    assert any("safe file name" in error for error in validation["errors"])
 
 
 def test_live_runner_adds_sample_environment_without_mutating_parent(monkeypatch) -> None:
@@ -232,3 +255,82 @@ def test_run_campaign_dry_run_never_calls_runner(tmp_path: Path) -> None:
     assert result["status"] == "dry_run"
     assert len(result["sample_plan"]) == 3
     assert not (tmp_path / "artifacts").exists()
+
+
+def test_run_campaign_resume_reuses_valid_matching_artifacts(tmp_path: Path) -> None:
+    manifest = _campaign(
+        artifact_dir=str(tmp_path / "artifacts"),
+        sample_count=2,
+        seeds=[1, 2],
+        sample_ids=["sample-a", "sample-b"],
+    )
+    plan = build_sample_plan(validate_campaign_manifest(manifest))
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
+    existing_path = artifact_dir / "sample-a.json"
+    existing_path.write_text(
+        json.dumps(attach_sample_metadata(_artifact(), plan[0])),
+        encoding="utf-8",
+    )
+    calls: list[str] = []
+
+    def fixture_runner(sample: dict[str, Any]) -> dict[str, Any]:
+        calls.append(sample["sample_id"])
+        return _artifact()
+
+    result = run_campaign(manifest, runner=fixture_runner, resume=True)
+
+    assert calls == ["sample-b"]
+    assert result["status"] == "completed"
+    assert result["reused_artifact_paths"] == [str(existing_path)]
+    assert result["artifact_paths"] == [
+        str(existing_path),
+        str(artifact_dir / "sample-b.json"),
+    ]
+
+
+def test_run_campaign_resume_rejects_mismatched_existing_artifact(tmp_path: Path) -> None:
+    manifest = _campaign(
+        artifact_dir=str(tmp_path / "artifacts"),
+        sample_count=1,
+        seeds=[1],
+        sample_ids=["sample-a"],
+    )
+    plan = build_sample_plan(validate_campaign_manifest(manifest))
+    plan[0]["seed"] = 999
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
+    (artifact_dir / "sample-a.json").write_text(
+        json.dumps(attach_sample_metadata(_artifact(), plan[0])),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="does not match the campaign plan"):
+        run_campaign(manifest, runner=lambda sample: _artifact(), resume=True)
+
+
+def test_run_campaign_records_partial_state_after_runner_failure(tmp_path: Path) -> None:
+    manifest = _campaign(
+        artifact_dir=str(tmp_path / "artifacts"),
+        sample_count=2,
+        seeds=[1, 2],
+        sample_ids=["sample-a", "sample-b"],
+    )
+
+    def flaky_runner(sample: dict[str, Any]) -> dict[str, Any]:
+        if sample["sample_id"] == "sample-b":
+            raise RuntimeError("synthetic provider failure")
+        return _artifact()
+
+    with pytest.raises(RuntimeError, match="synthetic provider failure"):
+        run_campaign(manifest, runner=flaky_runner)
+
+    state = json.loads((tmp_path / "artifacts" / ".campaign-state").read_text())
+    assert state == {
+        "schema": "evidence_campaign_state_v1",
+        "campaign_id": "fixture-campaign",
+        "status": "partial",
+        "completed_sample_ids": ["sample-a"],
+        "failed_sample_id": "sample-b",
+        "error_type": "RuntimeError",
+    }

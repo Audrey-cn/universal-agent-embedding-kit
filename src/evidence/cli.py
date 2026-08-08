@@ -56,11 +56,12 @@ def campaign_aggregate(artifacts: tuple[str, ...], output: str) -> None:
 @campaign_group.command("run")
 @click.argument("source", type=click.Path(exists=True, dir_okay=False))
 @click.option("--dry-run", is_flag=True, help="Resolve samples without invoking providers.")
+@click.option("--resume", is_flag=True, help="Reuse valid matching sample artifacts.")
 @click.option("--output", "-o", type=click.Path(), default="-")
-def campaign_run(source: str, dry_run: bool, output: str) -> None:
+def campaign_run(source: str, dry_run: bool, resume: bool, output: str) -> None:
     """Run or resolve every sample in a campaign manifest."""
 
-    _emit(run_campaign(source, dry_run=dry_run), output)
+    _emit(run_campaign(source, dry_run=dry_run, resume=resume), output)
 
 
 @evidence.group("cost")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import statistics
 from collections import defaultdict
 from collections.abc import Callable, Iterable
@@ -21,6 +22,8 @@ from src.evidence.common import (
 CAMPAIGN_SCHEMA = "evidence_campaign_v1"
 CAMPAIGN_VALIDATION_SCHEMA = "evidence_campaign_validation_v1"
 CAMPAIGN_SUMMARY_SCHEMA = "evidence_campaign_summary_v1"
+CAMPAIGN_STATE_SCHEMA = "evidence_campaign_state_v1"
+_SAFE_SAMPLE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 _SAMPLE_FIELDS = (
     "campaign_id",
     "provider",
@@ -78,6 +81,10 @@ def validate_campaign_manifest(source: JsonObjectSource) -> dict[str, Any]:
         seeds = _resolve_seeds(raw_provider, sample_count, index, errors)
         sample_ids = _resolve_sample_ids(raw_provider, provider, sample_count, index, errors)
         for sample_id in sample_ids:
+            if not _is_safe_sample_id(sample_id):
+                errors.append(
+                    f"providers[{index}].sample_ids must contain safe file names: {sample_id}"
+                )
             if sample_id in seen_sample_ids:
                 errors.append(f"duplicate sample_id: {sample_id}")
             seen_sample_ids.add(sample_id)
@@ -228,6 +235,7 @@ def run_campaign(
     source: JsonObjectSource,
     runner: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
     dry_run: bool = False,
+    resume: bool = False,
 ) -> dict[str, Any]:
     """Resolve and optionally execute every campaign sample exactly once."""
 
@@ -245,25 +253,71 @@ def run_campaign(
 
     artifact_dir = Path(validation["artifact_dir"])
     artifact_dir.mkdir(parents=True, exist_ok=True)
+    resolved_artifact_dir = artifact_dir.resolve()
     resolved_runner = runner or _default_campaign_runner
-    artifact_paths: list[Path] = []
+    planned_paths: list[Path] = []
     for sample in sample_plan:
-        artifact = attach_sample_metadata(resolved_runner(sample), sample)
-        artifact_validation = validate_campaign_artifact(artifact)
-        if not artifact_validation["valid"]:
-            raise ValueError("; ".join(artifact_validation["errors"]))
         artifact_path = artifact_dir / f"{sample['sample_id']}.json"
-        with artifact_path.open("x", encoding="utf-8") as output:
-            json.dump(artifact, output, ensure_ascii=False, indent=2, sort_keys=True)
-            output.write("\n")
-        artifact_paths.append(artifact_path)
+        if artifact_path.resolve().parent != resolved_artifact_dir:
+            raise ValueError(f"sample_id escapes artifact_dir: {sample['sample_id']}")
+        if artifact_path.exists() and not resume:
+            raise FileExistsError(artifact_path)
+        planned_paths.append(artifact_path)
+
+    artifact_paths: list[Path] = []
+    reused_artifact_paths: list[Path] = []
+    state_path = artifact_dir / ".campaign-state"
+    completed_sample_ids: list[str] = []
+    for sample, artifact_path in zip(sample_plan, planned_paths, strict=True):
+        try:
+            if artifact_path.exists():
+                validation_result = validate_campaign_artifact(artifact_path)
+                if not validation_result["valid"] or not _artifact_matches_sample(
+                    validation_result["artifact"], sample
+                ):
+                    raise ValueError(
+                        f"existing artifact for {sample['sample_id']} "
+                        "does not match the campaign plan"
+                    )
+                artifact_paths.append(artifact_path)
+                reused_artifact_paths.append(artifact_path)
+                completed_sample_ids.append(sample["sample_id"])
+                continue
+
+            artifact = attach_sample_metadata(resolved_runner(sample), sample)
+            artifact_validation = validate_campaign_artifact(artifact)
+            if not artifact_validation["valid"]:
+                raise ValueError("; ".join(artifact_validation["errors"]))
+            with artifact_path.open("x", encoding="utf-8") as output:
+                json.dump(artifact, output, ensure_ascii=False, indent=2, sort_keys=True)
+                output.write("\n")
+            artifact_paths.append(artifact_path)
+            completed_sample_ids.append(sample["sample_id"])
+        except Exception as exc:
+            _write_campaign_state(
+                state_path,
+                campaign_id=validation["campaign_id"],
+                status="partial",
+                completed_sample_ids=completed_sample_ids,
+                failed_sample_id=sample["sample_id"],
+                error_type=type(exc).__name__,
+            )
+            raise
 
     summary = aggregate_campaign(artifact_paths)
+    _write_campaign_state(
+        state_path,
+        campaign_id=validation["campaign_id"],
+        status="completed",
+        completed_sample_ids=completed_sample_ids,
+    )
     return {
         "schema": CAMPAIGN_SCHEMA,
         "campaign_id": validation["campaign_id"],
         "status": "completed",
         "artifact_paths": [str(path) for path in artifact_paths],
+        "reused_artifact_paths": [str(path) for path in reused_artifact_paths],
+        "state_path": str(state_path),
         "summary": summary,
     }
 
@@ -355,6 +409,44 @@ def _resolve_sample_ids(
     if sample_count and len(sample_ids) != sample_count:
         errors.append(f"providers[{index}].sample_ids must contain sample_count values")
     return [sample_id.strip() for sample_id in sample_ids]
+
+
+def _is_safe_sample_id(sample_id: str) -> bool:
+    return bool(_SAFE_SAMPLE_ID.fullmatch(sample_id))
+
+
+def _artifact_matches_sample(artifact: dict[str, Any], sample: dict[str, Any]) -> bool:
+    artifact_sample = artifact.get("sample")
+    return isinstance(artifact_sample, dict) and all(
+        artifact_sample.get(field) == sample.get(field) for field in _SAMPLE_FIELDS
+    )
+
+
+def _write_campaign_state(
+    state_path: Path,
+    *,
+    campaign_id: str,
+    status: str,
+    completed_sample_ids: list[str],
+    failed_sample_id: str | None = None,
+    error_type: str | None = None,
+) -> None:
+    payload: dict[str, Any] = {
+        "schema": CAMPAIGN_STATE_SCHEMA,
+        "campaign_id": campaign_id,
+        "status": status,
+        "completed_sample_ids": list(completed_sample_ids),
+    }
+    if failed_sample_id is not None:
+        payload["failed_sample_id"] = failed_sample_id
+    if error_type is not None:
+        payload["error_type"] = error_type
+    temporary_path = state_path.with_name(f"{state_path.name}.tmp")
+    temporary_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    temporary_path.replace(state_path)
 
 
 def _string_list(value: Any, field: str, errors: list[str]) -> list[str]:

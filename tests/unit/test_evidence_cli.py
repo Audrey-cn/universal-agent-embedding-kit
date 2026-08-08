@@ -127,6 +127,24 @@ def test_evidence_campaign_aggregate_and_dry_run(tmp_path: Path) -> None:
     assert json.loads(dry_run.output)["status"] == "dry_run"
 
 
+def test_evidence_campaign_run_forwards_resume_flag(tmp_path: Path, monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_campaign(source: str, *, dry_run: bool, resume: bool) -> dict[str, object]:
+        captured.update(source=source, dry_run=dry_run, resume=resume)
+        return {"status": "completed"}
+
+    monkeypatch.setattr("src.evidence.cli.run_campaign", fake_run_campaign)
+
+    result = CliRunner().invoke(
+        main,
+        ["evidence", "campaign", "run", str(_campaign(tmp_path)), "--resume", "--output", "-"],
+    )
+
+    assert result.exit_code == 0
+    assert captured["resume"] is True
+
+
 def test_evidence_cost_and_session_commands_emit_json(tmp_path: Path) -> None:
     cost = _cost_ledger(tmp_path)
     session = _session(tmp_path)
