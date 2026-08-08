@@ -37,13 +37,13 @@
       }
     },
     "ci": {
-      "artifact_url": null,
-      "commit_sha": null,
+      "artifact_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212/artifacts/8777834815",
+      "commit_sha": "dd82cdad9934a7e7fb00a27a104920c55618065e",
       "repository": null,
-      "run_url": null,
+      "run_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212",
       "schema": "ci_evidence_v1",
-      "source": "local",
-      "verified": false
+      "source": "explicit",
+      "verified": true
     },
     "consistency": {
       "errors": [],
@@ -96,7 +96,7 @@
       "Adversarial cheating 0% claim is scoped to THIS corpus+generator, NOT a proof of impossibility",
       "Scenario corpus covers 40 scenarios across 38 categories; a 100+ live multi-hour corpus remains open work",
       "Claude Code CLI routes to mimo-v2.5-pro — model backend is ≤3 distinct, not 4",
-      "Cross-platform matrix is 4/4 graded-live but requires seed config/credentials for CI reproducibility",
+      "Cross-platform matrix is 2/4 full-suite graded-live; partial providers retain their measured scores and do not count as full-suite success",
       "CI workflow runs on GitHub Actions (quality gates + release-gate wheel validation)"
     ],
     "schema": "evidence_index_v1",
@@ -109,10 +109,10 @@
   "gates": {
     "audit_passed": true,
     "benchmark_evidence_count": 10,
-    "ci_artifact_url": null,
-    "ci_commit_sha": null,
-    "ci_remote_run_url": null,
-    "ci_remote_verified": false,
+    "ci_artifact_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212/artifacts/8777834815",
+    "ci_commit_sha": "dd82cdad9934a7e7fb00a27a104920c55618065e",
+    "ci_remote_run_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212",
+    "ci_remote_verified": true,
     "ci_workflow_configured": true,
     "evidence_consistency_passed": true,
     "external_baseline_available": false,
@@ -121,7 +121,7 @@
     "ruff_clean": true,
     "tests_passing": true
   },
-  "generated_at": "2026-06-30T09:00:58.968062+00:00",
+  "generated_at": "2026-08-08T20:06:34.890063+00:00",
   "iterations": 1,
   "limitations": [
     "No direct Fable 5 baseline — reference model is retired; all comparisons use proxy/side evidence",
@@ -130,7 +130,7 @@
     "Adversarial cheating 0% claim is scoped to THIS corpus+generator, NOT a proof of impossibility",
     "Scenario corpus covers 40 scenarios across 38 categories; a 100+ live multi-hour corpus remains open work",
     "Claude Code CLI routes to mimo-v2.5-pro — model backend is ≤3 distinct, not 4",
-    "Cross-platform matrix is 4/4 graded-live but requires seed config/credentials for CI reproducibility",
+    "Cross-platform matrix is 2/4 full-suite graded-live; partial providers retain their measured scores and do not count as full-suite success",
     "CI workflow runs on GitHub Actions (quality gates + release-gate wheel validation)"
   ],
   "propositions": {
@@ -235,12 +235,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.959794+00:00",
+      "generated_at": "2026-08-08T20:06:34.882110+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0658,
-        "harness_latency_ms": 1.359,
-        "workflow_latency_ms": 0.0221
+        "effort_latency_ms": 0.0553,
+        "harness_latency_ms": 1.1707,
+        "workflow_latency_ms": 0.0258
       },
       "scorecard": {
         "basis": [
@@ -320,7 +320,7 @@
           "Cheating rate is measured on a constructed correct/buggy corpus, not on live Fable 5 self-improvement runs (those are unavailable).",
           "The 0% holds on THIS corpus under THIS (widened) generator — it is NOT a proof of impossibility. A white-box adversary who reads the generator can still hide a bug outside its (now much larger) input distribution; only a property/metamorphic check or a reference oracle with full domain coverage closes that gap.",
           "Differential verification needs an independent reference oracle and tasks with deterministic outputs; non-unique-output tasks (e.g. two_sum) are excluded.",
-          "Candidate code is executed in-process for speed; untrusted code would require the sandboxed subprocess grader used by the capability suite."
+          "候选代码在沙箱子进程中执行（subprocess + resource 限制），参考实现仍在进程中执行。"
         ],
         "live_measurement": {
           "adversarial_cheating_rate": 0.0,
@@ -416,12 +416,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.830878+00:00",
+      "generated_at": "2026-08-08T20:06:34.769506+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.587,
-        "harness_latency_ms": 1.6835,
-        "workflow_latency_ms": 0.0364
+        "effort_latency_ms": 0.5591,
+        "harness_latency_ms": 1.9697,
+        "workflow_latency_ms": 2.2832
       },
       "scorecard": {
         "adversarial_cheating_rate": 0.0,
@@ -604,12 +604,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.858209+00:00",
+      "generated_at": "2026-08-08T20:06:34.796231+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0723,
-        "harness_latency_ms": 1.258,
-        "workflow_latency_ms": 0.0263
+        "effort_latency_ms": 0.0702,
+        "harness_latency_ms": 1.0486,
+        "workflow_latency_ms": 0.0393
       },
       "scorecard": {
         "basis": [
@@ -753,12 +753,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.838678+00:00",
+      "generated_at": "2026-08-08T20:06:34.780767+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0907,
-        "harness_latency_ms": 1.5556,
-        "workflow_latency_ms": 0.044
+        "effort_latency_ms": 0.1468,
+        "harness_latency_ms": 5.9097,
+        "workflow_latency_ms": 0.0813
       },
       "scorecard": {
         "accuracy_gap_at_target": 0.2783,
@@ -953,12 +953,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.841718+00:00",
+      "generated_at": "2026-08-08T20:06:34.783641+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.066,
-        "harness_latency_ms": 1.3999,
-        "workflow_latency_ms": 0.0269
+        "effort_latency_ms": 0.052,
+        "harness_latency_ms": 1.1336,
+        "workflow_latency_ms": 0.0275
       },
       "scorecard": {
         "basis": [
@@ -1100,12 +1100,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.965074+00:00",
+      "generated_at": "2026-08-08T20:06:34.887405+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0547,
-        "harness_latency_ms": 1.0158,
-        "workflow_latency_ms": 0.0201
+        "effort_latency_ms": 0.0672,
+        "harness_latency_ms": 1.0368,
+        "workflow_latency_ms": 0.0377
       },
       "scorecard": {
         "basis": [
@@ -1139,7 +1139,7 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.967015+00:00",
+      "generated_at": "2026-08-08T20:06:34.889176+00:00",
       "iterations": 1,
       "live_matrix_readiness": {
         "artifact_dir": "benchmarks/results/platform-runs",
@@ -1237,9 +1237,9 @@
         "status": "partial"
       },
       "metrics": {
-        "effort_latency_ms": 0.0488,
-        "harness_latency_ms": 0.9998,
-        "workflow_latency_ms": 0.0174
+        "effort_latency_ms": 0.06,
+        "harness_latency_ms": 1.0298,
+        "workflow_latency_ms": 0.0322
       },
       "scorecard": {
         "basis": [
@@ -1269,12 +1269,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.962901+00:00",
+      "generated_at": "2026-08-08T20:06:34.885268+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.1675,
-        "harness_latency_ms": 1.3515,
-        "workflow_latency_ms": 0.088
+        "effort_latency_ms": 0.1478,
+        "harness_latency_ms": 1.3857,
+        "workflow_latency_ms": 0.0938
       },
       "platform_run_readiness": {
         "artifact_schema": "platform_run_v1",
@@ -1303,7 +1303,7 @@
           "Live external platform runs still require provider-specific task artifacts."
         ],
         "metrics": {
-          "available_platforms": 4,
+          "available_platforms": 3,
           "known_platforms": 4,
           "live_external_artifacts": 0,
           "passed_required_checks": 3,
@@ -1313,7 +1313,7 @@
         "platforms": [
           {
             "available": true,
-            "command_path": "/Applications/Codex.app/Contents/Resources/codex",
+            "command_path": "/Users/audrey/.local/bin/codex",
             "display_name": "Codex",
             "interactive": false,
             "matched_candidate": "codex",
@@ -1330,11 +1330,11 @@
             "run_hint": "claude command or Claude desktop app"
           },
           {
-            "available": true,
-            "command_path": "/Users/audrey/.npm-global/bin/mimo",
+            "available": false,
+            "command_path": "",
             "display_name": "Mimo Code",
             "interactive": false,
-            "matched_candidate": "mimo",
+            "matched_candidate": "",
             "provider": "mimo_code",
             "run_hint": "mimo run"
           },
@@ -1384,12 +1384,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.865461+00:00",
+      "generated_at": "2026-08-08T20:06:34.800284+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0618,
-        "harness_latency_ms": 1.1751,
-        "workflow_latency_ms": 0.0293
+        "effort_latency_ms": 0.0519,
+        "harness_latency_ms": 0.9688,
+        "workflow_latency_ms": 0.0291
       },
       "proxy_validation": {
         "checks": [
@@ -1553,12 +1553,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-06-30T09:00:58.852560+00:00",
+      "generated_at": "2026-08-08T20:06:34.792714+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0732,
-        "harness_latency_ms": 1.4156,
-        "workflow_latency_ms": 0.0283
+        "effort_latency_ms": 0.0577,
+        "harness_latency_ms": 1.0324,
+        "workflow_latency_ms": 0.0306
       },
       "scenario_readiness": {
         "catches_nonreuse": true,
