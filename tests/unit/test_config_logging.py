@@ -13,10 +13,11 @@ from src.cli import main
 def test_load_config_reads_default_yaml():
     """Config loader should expose the execution-manual settings as typed data."""
     from src.config import load_config
+    from src.version import SOURCE_VERSION
 
     config = load_config(Path("config/default.yaml"))
 
-    assert config.version == "0.2.0rc1"
+    assert config.version == SOURCE_VERSION
     assert config.memory.storage_path == ".uaek/memory"
     assert config.memory.default_layer == "l2"
     assert "effort" in config.workflow.safe_actions

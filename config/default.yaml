@@ -1,5 +1,5 @@
 uaek:
-  version: "0.2.0rc1"
+  version: "0.3.0.dev1"
   memory:
     storage_path: ".uaek/memory"
     default_layer: "l2"

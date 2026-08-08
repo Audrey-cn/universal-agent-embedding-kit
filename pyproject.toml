@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uaek"
-version = "0.2.0rc1"
+version = "0.3.0.dev1"
 description = "Universal Agent Embedding Kit — model-agnostic, embeddable agent enhancement layer with red-teamed benchmarks"
 readme = "README.md"
 license = "MIT"

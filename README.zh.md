@@ -11,7 +11,7 @@
 [![CI](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
-[![Version](https://img.shields.io/badge/version-0.2.0rc1-orange.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.0.dev1-orange.svg)](CHANGELOG.md)
 [![Tests](https://img.shields.io/badge/tests-600%2B%20passing-brightgreen.svg)](#状态)
 [![Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)

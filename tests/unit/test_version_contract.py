@@ -12,7 +12,7 @@ from click.testing import CliRunner
 
 from src.cli import main
 
-EXPECTED_VERSION = "0.2.0rc1"
+EXPECTED_VERSION = "0.3.0.dev1"
 
 
 def test_release_version_is_consistent_across_runtime_surfaces():

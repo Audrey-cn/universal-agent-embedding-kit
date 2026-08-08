@@ -37,13 +37,13 @@
       }
     },
     "ci": {
-      "artifact_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212/artifacts/8777834815",
-      "commit_sha": "dd82cdad9934a7e7fb00a27a104920c55618065e",
+      "artifact_url": null,
+      "commit_sha": null,
       "repository": null,
-      "run_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212",
+      "run_url": null,
       "schema": "ci_evidence_v1",
-      "source": "explicit",
-      "verified": true
+      "source": "local",
+      "verified": false
     },
     "consistency": {
       "errors": [],
@@ -100,7 +100,59 @@
       "CI workflow runs on GitHub Actions (quality gates + release-gate wheel validation)"
     ],
     "schema": "evidence_index_v1",
-    "source": "uaek audit"
+    "source": "uaek audit",
+    "v0_3": {
+      "baseline": {
+        "compatible": true,
+        "errors": [],
+        "path": "benchmarks/evidence/fixtures/baseline.json",
+        "status": "provided"
+      },
+      "campaign": [
+        {
+          "errors": [],
+          "path": "benchmarks/evidence/fixtures/campaign/fixture-runtime-a-001.json",
+          "valid": true
+        },
+        {
+          "errors": [],
+          "path": "benchmarks/evidence/fixtures/campaign/fixture-runtime-a-002.json",
+          "valid": true
+        },
+        {
+          "errors": [],
+          "path": "benchmarks/evidence/fixtures/campaign/fixture-runtime-b-001.json",
+          "valid": true
+        },
+        {
+          "errors": [],
+          "path": "benchmarks/evidence/fixtures/campaign/fixture-runtime-b-002.json",
+          "valid": true
+        }
+      ],
+      "cost": [
+        {
+          "errors": [],
+          "path": "benchmarks/evidence/fixtures/cost/cost-ledger.json",
+          "valid": true
+        }
+      ],
+      "errors": [],
+      "root": "benchmarks/evidence/fixtures",
+      "sessions": [
+        {
+          "errors": [],
+          "path": "benchmarks/evidence/fixtures/sessions/deterministic-scenario.json",
+          "valid": true
+        },
+        {
+          "errors": [],
+          "path": "benchmarks/evidence/fixtures/sessions/live-session-contract.json",
+          "valid": true
+        }
+      ],
+      "status": "valid"
+    }
   },
   "external_baseline": {
     "reason": "No authorized external Fable 5 baseline run is available in this repo.",
@@ -109,10 +161,10 @@
   "gates": {
     "audit_passed": true,
     "benchmark_evidence_count": 10,
-    "ci_artifact_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212/artifacts/8777834815",
-    "ci_commit_sha": "dd82cdad9934a7e7fb00a27a104920c55618065e",
-    "ci_remote_run_url": "https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/runs/30589485212",
-    "ci_remote_verified": true,
+    "ci_artifact_url": null,
+    "ci_commit_sha": null,
+    "ci_remote_run_url": null,
+    "ci_remote_verified": false,
     "ci_workflow_configured": true,
     "evidence_consistency_passed": true,
     "external_baseline_available": false,
@@ -121,7 +173,7 @@
     "ruff_clean": true,
     "tests_passing": true
   },
-  "generated_at": "2026-08-08T20:06:34.890063+00:00",
+  "generated_at": "2026-08-08T20:33:53.926531+00:00",
   "iterations": 1,
   "limitations": [
     "No direct Fable 5 baseline — reference model is retired; all comparisons use proxy/side evidence",
@@ -235,12 +287,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.882110+00:00",
+      "generated_at": "2026-08-08T20:33:53.918597+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0553,
-        "harness_latency_ms": 1.1707,
-        "workflow_latency_ms": 0.0258
+        "effort_latency_ms": 0.0528,
+        "harness_latency_ms": 0.8276,
+        "workflow_latency_ms": 0.0262
       },
       "scorecard": {
         "basis": [
@@ -416,12 +468,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.769506+00:00",
+      "generated_at": "2026-08-08T20:33:53.807527+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.5591,
-        "harness_latency_ms": 1.9697,
-        "workflow_latency_ms": 2.2832
+        "effort_latency_ms": 0.554,
+        "harness_latency_ms": 1.3933,
+        "workflow_latency_ms": 1.9313
       },
       "scorecard": {
         "adversarial_cheating_rate": 0.0,
@@ -604,12 +656,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.796231+00:00",
+      "generated_at": "2026-08-08T20:33:53.829556+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0702,
-        "harness_latency_ms": 1.0486,
-        "workflow_latency_ms": 0.0393
+        "effort_latency_ms": 0.0679,
+        "harness_latency_ms": 1.3113,
+        "workflow_latency_ms": 0.0414
       },
       "scorecard": {
         "basis": [
@@ -753,12 +805,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.780767+00:00",
+      "generated_at": "2026-08-08T20:33:53.814430+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.1468,
-        "harness_latency_ms": 5.9097,
-        "workflow_latency_ms": 0.0813
+        "effort_latency_ms": 0.1445,
+        "harness_latency_ms": 1.1832,
+        "workflow_latency_ms": 0.0805
       },
       "scorecard": {
         "accuracy_gap_at_target": 0.2783,
@@ -953,12 +1005,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.783641+00:00",
+      "generated_at": "2026-08-08T20:33:53.816518+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.052,
-        "harness_latency_ms": 1.1336,
-        "workflow_latency_ms": 0.0275
+        "effort_latency_ms": 0.0572,
+        "harness_latency_ms": 0.9774,
+        "workflow_latency_ms": 0.0335
       },
       "scorecard": {
         "basis": [
@@ -1100,12 +1152,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.887405+00:00",
+      "generated_at": "2026-08-08T20:33:53.923345+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0672,
-        "harness_latency_ms": 1.0368,
-        "workflow_latency_ms": 0.0377
+        "effort_latency_ms": 0.0585,
+        "harness_latency_ms": 0.9305,
+        "workflow_latency_ms": 0.031
       },
       "scorecard": {
         "basis": [
@@ -1139,7 +1191,7 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.889176+00:00",
+      "generated_at": "2026-08-08T20:33:53.924735+00:00",
       "iterations": 1,
       "live_matrix_readiness": {
         "artifact_dir": "benchmarks/results/platform-runs",
@@ -1237,9 +1289,9 @@
         "status": "partial"
       },
       "metrics": {
-        "effort_latency_ms": 0.06,
-        "harness_latency_ms": 1.0298,
-        "workflow_latency_ms": 0.0322
+        "effort_latency_ms": 0.041,
+        "harness_latency_ms": 0.7843,
+        "workflow_latency_ms": 0.0201
       },
       "scorecard": {
         "basis": [
@@ -1269,12 +1321,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.885268+00:00",
+      "generated_at": "2026-08-08T20:33:53.921469+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.1478,
-        "harness_latency_ms": 1.3857,
-        "workflow_latency_ms": 0.0938
+        "effort_latency_ms": 0.1366,
+        "harness_latency_ms": 1.1955,
+        "workflow_latency_ms": 0.0966
       },
       "platform_run_readiness": {
         "artifact_schema": "platform_run_v1",
@@ -1384,12 +1436,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.800284+00:00",
+      "generated_at": "2026-08-08T20:33:53.833776+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0519,
-        "harness_latency_ms": 0.9688,
-        "workflow_latency_ms": 0.0291
+        "effort_latency_ms": 0.0609,
+        "harness_latency_ms": 0.9588,
+        "workflow_latency_ms": 0.0354
       },
       "proxy_validation": {
         "checks": [
@@ -1553,12 +1605,12 @@
         "reason": "No authorized external Fable 5 baseline run is available in this repo.",
         "status": "not_configured"
       },
-      "generated_at": "2026-08-08T20:06:34.792714+00:00",
+      "generated_at": "2026-08-08T20:33:53.827165+00:00",
       "iterations": 1,
       "metrics": {
-        "effort_latency_ms": 0.0577,
-        "harness_latency_ms": 1.0324,
-        "workflow_latency_ms": 0.0306
+        "effort_latency_ms": 0.0426,
+        "harness_latency_ms": 0.8235,
+        "workflow_latency_ms": 0.097
       },
       "scenario_readiness": {
         "catches_nonreuse": true,

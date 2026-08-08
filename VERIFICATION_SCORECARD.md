@@ -14,11 +14,11 @@
 | 验证项 | 命令 | 结果 | 门禁状态 |
 |--------|------|------|----------|
 | 依赖安装 | `uv pip install --python .venv/bin/python -e '.[dev]'` | 通过，含 `types-PyYAML` | pass |
-| 全量测试 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp` | 629 passed（2026-08-09 本地分支） | pass |
-| 产品综合覆盖率 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing` | 76.44% total | pass（全局 floor 75%；高级 render/formal/multi-perspective 为 experimental） |
+| 全量测试 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp` | 671 passed（2026-08-09 本地分支） | pass |
+| 产品综合覆盖率 | `.venv/bin/python -m pytest --cov=src --cov=api --cov=mcp --cov-report=term-missing` | 77.15% total | pass（全局 floor 75%；高级 render/formal/multi-perspective 为 experimental） |
 | 核心模块覆盖率 | `.venv/bin/python scripts/check_supported_coverage.py /tmp/uaek-coverage.json` | 6 个 release-supported 模块 floor 通过 | pass |
 | Ruff | `.venv/bin/python -m ruff check src api mcp tests` | All checks passed | pass |
-| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 100 source files | pass（渐进类型门禁） |
+| Mypy | `.venv/bin/python -m mypy src api mcp` | Success: no issues found in 107 source files | pass（渐进类型门禁） |
 | 0.3 evidence contracts | `uaek evidence campaign/cost/session/baseline ...` | 四类 schema 校验与聚合 fixture 全部通过；campaign 按 backend family 聚合 | pass（contract） |
 | 0.3 audit index | `uaek audit --evidence-root benchmarks/evidence/fixtures` | `evidence_index.v0_3.status=valid`；原始 artifact path 保留 | pass（contract） |
 | 0.3 external gate | 授权后的真实 campaign | 3 backend families × 每任务 3 样本；每 cohort 5 会话；100 live sessions；可比 baseline | blocked（待预算、凭据、baseline 审批） |
