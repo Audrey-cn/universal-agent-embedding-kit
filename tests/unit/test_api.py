@@ -175,6 +175,29 @@ class TestAPIEndpoints:
         assert responses[0][0] == 200
         assert responses[0][1]["status"] == "added"
 
+    def test_memory_endpoint_lets_service_generate_unique_id(self, monkeypatch):
+        handler = UAEKHandler.__new__(UAEKHandler)
+        captured = {}
+
+        class StubMemoryService:
+            def add(self, **kwargs):
+                captured.update(kwargs)
+                return {"id": "generated", **kwargs}
+
+            def persist(self):
+                return {"status": "persisted"}
+
+        responses = []
+        handler._respond = lambda status, data: responses.append((status, data))
+        monkeypatch.setattr("api.server.MEMORY_SERVICE", StubMemoryService())
+
+        handler._handle_memory(
+            {"action": "add", "content": "Test memory", "layer": "l1", "importance": 0.8}
+        )
+
+        assert responses[0][0] == 200
+        assert "entry_id" not in captured
+
     def test_memory_endpoint_query(self):
         """测试记忆查询端点"""
         handler = UAEKHandler.__new__(UAEKHandler)

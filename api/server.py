@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
@@ -193,7 +192,6 @@ class UAEKHandler(BaseHTTPRequestHandler):
                     return
 
                 entry = MEMORY_SERVICE.add(
-                    entry_id=f"api_{int(time.time() * 1000)}",
                     content=content,
                     layer=layer,
                     importance=importance,

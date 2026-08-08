@@ -227,7 +227,7 @@ def memory_query(
         limit=limit,
     )
     table = Table(title=f"Memory Query: {query}")
-    table.add_column("ID", style="cyan")
+    table.add_column("ID", style="cyan", max_width=20, overflow="ellipsis", no_wrap=True)
     table.add_column("Layer", style="green")
     table.add_column("Importance")
     table.add_column("Content")

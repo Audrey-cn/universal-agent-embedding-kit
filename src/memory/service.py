@@ -13,6 +13,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from .compression import ContextCompressor
 from .interface import MemoryEntry, MemoryLayer, MemoryLayerType, MemoryQuery
@@ -79,8 +80,14 @@ class MemoryService:
     ) -> dict[str, Any]:
         """Add a memory entry and return a serializable representation."""
         layer_type = self.resolve_layer(layer)
+        resolved_entry_id = entry_id or self._new_entry_id()
+        if any(
+            layer_object.get(resolved_entry_id) is not None
+            for layer_object in self.layers.values()
+        ):
+            raise ValueError(f"duplicate memory entry id: {resolved_entry_id}")
         entry = MemoryEntry(
-            id=entry_id or self._new_entry_id(),
+            id=resolved_entry_id,
             content=content,
             layer=layer_type,
             importance=float(importance),
@@ -470,5 +477,4 @@ class MemoryService:
         }
 
     def _new_entry_id(self) -> str:
-        total = sum(len(layer) for layer in self.layers.values())
-        return f"mem_{int(time.time() * 1000)}_{total}"
+        return f"mem_{uuid4().hex}"

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from pathlib import Path
 
 from .interface import MemoryEntry, MemoryLayerType
@@ -19,7 +21,23 @@ class MemoryPersistence:
         """保存记忆条目"""
         file_path = self._get_file_path(layer_type)
         data = [self._entry_to_dict(entry) for entry in entries]
-        file_path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+        serialized = json.dumps(data, ensure_ascii=False, indent=2)
+        descriptor, temporary_name = tempfile.mkstemp(
+            dir=self.storage_path,
+            prefix=f".{file_path.name}.",
+            suffix=".tmp",
+            text=True,
+        )
+        temporary_path = Path(temporary_name)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+                output.write(serialized)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary_path, file_path)
+        except Exception:
+            temporary_path.unlink(missing_ok=True)
+            raise
 
     def load(self, layer_type: MemoryLayerType) -> list[MemoryEntry]:
         """加载记忆条目"""
@@ -28,10 +46,10 @@ class MemoryPersistence:
             return []
 
         try:
-            data = json.loads(file_path.read_text())
+            data = json.loads(file_path.read_text(encoding="utf-8"))
             return [self._dict_to_entry(d) for d in data]
-        except (json.JSONDecodeError, KeyError):
-            return []
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"corrupt memory file: {file_path}") from exc
 
     def save_all(self, layers: dict[MemoryLayerType, list[MemoryEntry]]) -> None:
         """保存所有层"""

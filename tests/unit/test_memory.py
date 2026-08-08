@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import tempfile
 import time
 from pathlib import Path
@@ -297,6 +298,34 @@ class TestMemoryPersistence:
             persistence = MemoryPersistence(Path(tmpdir))
             loaded = persistence.load(MemoryLayerType.L1_CURRENT)
             assert len(loaded) == 0
+
+    def test_load_corrupt_file_raises_instead_of_returning_false_empty(self, tmp_path: Path):
+        persistence = MemoryPersistence(tmp_path)
+        corrupt_path = tmp_path / "l1_current.json"
+        corrupt_path.write_text('{"truncated":', encoding="utf-8")
+
+        with pytest.raises(ValueError, match="l1_current.json"):
+            persistence.load(MemoryLayerType.L1_CURRENT)
+
+    def test_failed_atomic_replace_preserves_previous_file(self, tmp_path: Path, monkeypatch):
+        persistence = MemoryPersistence(tmp_path)
+        persistence.save([create_entry("old", "Old content")], MemoryLayerType.L1_CURRENT)
+        file_path = tmp_path / "l1_current.json"
+        original = file_path.read_text(encoding="utf-8")
+
+        def fail_replace(source, destination):
+            raise OSError("synthetic replace failure")
+
+        monkeypatch.setattr(os, "replace", fail_replace)
+
+        with pytest.raises(OSError, match="synthetic replace failure"):
+            persistence.save(
+                [create_entry("new", "New content")],
+                MemoryLayerType.L1_CURRENT,
+            )
+
+        assert file_path.read_text(encoding="utf-8") == original
+        assert list(tmp_path.glob("*.tmp")) == []
 
     def test_clear(self):
         """测试清除"""

@@ -21,6 +21,7 @@ from api import server as api_server
 from api.server import UAEKHandler
 from mcp.server import create_server as create_mcp_server
 from src.cli import main
+from src.memory.interface import MemoryLayerType
 from src.memory.service import MemoryService
 from src.skills.service import SkillService
 from src.workflow.runtime import execute_workflow_config, load_workflow_config
@@ -164,6 +165,24 @@ def test_memory_service_add_query_compress_and_restore(tmp_path: Path):
     restored_result = restored.query("workflow", layer="l3")
     assert restored_result["total"] == 1
     assert restored_result["results"][0]["content"].startswith("Architecture decision")
+
+
+def test_memory_service_rejects_duplicate_explicit_ids(tmp_path: Path) -> None:
+    service = MemoryService(tmp_path / "memory", autoload=False)
+    service.add("first", entry_id="duplicate")
+
+    with pytest.raises(ValueError, match="duplicate memory entry id"):
+        service.add("second", entry_id="duplicate")
+
+
+def test_generated_memory_ids_do_not_repeat_after_eviction(tmp_path: Path, monkeypatch) -> None:
+    service = MemoryService(tmp_path / "memory", autoload=False)
+    service.layers[MemoryLayerType.L1_CURRENT].max_size = 1
+    monkeypatch.setattr("src.memory.service.time.time", lambda: 1.234)
+
+    ids = [service.add(f"entry-{index}")["id"] for index in range(3)]
+
+    assert len(set(ids)) == 3
 
 
 def test_skill_service_discovers_flat_markdown_skills():
