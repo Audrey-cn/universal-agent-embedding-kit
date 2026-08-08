@@ -9,6 +9,8 @@ from typing import Any
 
 import yaml
 
+from src.version import __version__
+
 
 @dataclass(frozen=True)
 class MemoryConfig:
@@ -56,7 +58,7 @@ class LoggingConfig:
 class UAEKConfig:
     """Top-level UAEK configuration."""
 
-    version: str = "0.1.0-alpha"
+    version: str = __version__
     memory: MemoryConfig = field(default_factory=MemoryConfig)
     workflow: WorkflowConfig = field(default_factory=WorkflowConfig)
     skills: SkillsConfig = field(default_factory=SkillsConfig)

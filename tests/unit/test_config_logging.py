@@ -16,7 +16,7 @@ def test_load_config_reads_default_yaml():
 
     config = load_config(Path("config/default.yaml"))
 
-    assert config.version == "0.1.0-alpha"
+    assert config.version == "0.2.0rc1"
     assert config.memory.storage_path == ".uaek/memory"
     assert config.memory.default_layer == "l2"
     assert "effort" in config.workflow.safe_actions

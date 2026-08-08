@@ -8,6 +8,8 @@ import sys
 from collections.abc import Awaitable, Callable
 from typing import Any, TextIO
 
+from src.version import __version__
+
 from .access import ToolAccessControl
 from .auth import MCPAuth, MCPRateLimiter
 
@@ -25,7 +27,7 @@ class MCPServer:
     def __init__(
         self,
         name: str = "uaek",
-        version: str = "1.0.0",
+        version: str = __version__,
         auth: MCPAuth | None = None,
         rate_limiter: MCPRateLimiter | None = None,
         access_control: ToolAccessControl | None = None,
@@ -278,7 +280,7 @@ def create_server() -> MCPServer:
     from .tools.verify import register_verify_tool
     from .tools.workflow import register_workflow_tool
 
-    server = MCPServer(name="uaek", version="1.0.0")
+    server = MCPServer(name="uaek")
 
     # 注册工具
     register_verify_tool(server)

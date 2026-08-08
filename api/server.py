@@ -10,8 +10,25 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.memory import MemoryService
+from src.version import __version__
 
 MEMORY_SERVICE = MemoryService(Path(".uaek/api-memory"))
+
+
+def api_root_payload() -> dict[str, Any]:
+    """Return versioned API discovery metadata."""
+    return {
+        "name": "UAEK API",
+        "version": __version__,
+        "endpoints": [
+            "GET /",
+            "GET /health",
+            "POST /verify",
+            "POST /effort",
+            "POST /workflow",
+            "POST /memory",
+        ],
+    }
 
 
 class UAEKHandler(BaseHTTPRequestHandler):
@@ -23,21 +40,7 @@ class UAEKHandler(BaseHTTPRequestHandler):
         path = parsed.path
 
         if path == "/":
-            self._respond(
-                200,
-                {
-                    "name": "UAEK API",
-                    "version": "1.0.0",
-                    "endpoints": [
-                        "GET /",
-                        "GET /health",
-                        "POST /verify",
-                        "POST /effort",
-                        "POST /workflow",
-                        "POST /memory",
-                    ],
-                },
-            )
+            self._respond(200, api_root_payload())
         elif path == "/health":
             self._respond(200, {"status": "ok"})
         else:

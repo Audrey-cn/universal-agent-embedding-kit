@@ -1,6 +1,6 @@
 {
   "name": "uaek",
-  "version": "1.0.0",
+  "version": "0.2.0rc1",
   "description": "Universal Agent Enhancement Kit MCP Server",
   "type": "stdio",
   "command": "/Users/audrey/项目/fable-research/.venv/bin/python",
