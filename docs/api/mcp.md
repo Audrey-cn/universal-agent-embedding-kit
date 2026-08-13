@@ -23,6 +23,7 @@ Registered tools:
 - `uaek_workflow_execute`
 - `uaek_memory_add`
 - `uaek_memory_query`
+- `uaek_memory_delete`
 - `uaek_memory_compress`
 
 Workflow tools are stateful within one `MCPServer` instance:

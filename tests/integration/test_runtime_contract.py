@@ -76,3 +76,22 @@ def test_package_mcp_entrypoint_rejects_malformed_json() -> None:
     responses = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
     assert responses[0]["error"]["code"] == -32700
     assert responses[1]["id"] == 2
+
+
+def test_package_mcp_entrypoint_keeps_notifications_silent() -> None:
+    requests = [
+        {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+        {"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}},
+    ]
+    completed = subprocess.run(
+        [sys.executable, "-m", "mcp"],
+        input="\n".join(json.dumps(request) for request in requests) + "\n",
+        text=True,
+        capture_output=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    responses = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
+    assert responses == [{"jsonrpc": "2.0", "id": 3, "result": {}}]
