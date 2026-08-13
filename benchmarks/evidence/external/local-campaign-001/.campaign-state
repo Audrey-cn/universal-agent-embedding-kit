@@ -1,0 +1,16 @@
+{
+  "campaign_id": "uaek-local-available-001",
+  "completed_sample_ids": [
+    "hermes-001",
+    "hermes-002",
+    "hermes-003",
+    "codex-001",
+    "codex-002",
+    "codex-003",
+    "claude_code-001",
+    "claude_code-002",
+    "claude_code-003"
+  ],
+  "schema": "evidence_campaign_state_v1",
+  "status": "completed"
+}

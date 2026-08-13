@@ -1,0 +1,23 @@
+{
+  "schema": "evidence_campaign_v1",
+  "campaign_id": "uaek-hermes-external-001",
+  "task_set_digest": "6893b7a9320c61482b1dcf5b60c6a32df1e804cb146f309c2559c6709419a522",
+  "grader_version": "capability-grader-v1",
+  "artifact_dir": "benchmarks/evidence/external/hermes-campaign-001",
+  "providers": [
+    {
+      "provider": "hermes",
+      "backend_family": "hermes",
+      "command": [
+        "hermes",
+        "--safe-mode",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "-z"
+      ],
+      "output_mode": "plain",
+      "sample_count": 3,
+      "seed_start": 301
+    }
+  ]
+}

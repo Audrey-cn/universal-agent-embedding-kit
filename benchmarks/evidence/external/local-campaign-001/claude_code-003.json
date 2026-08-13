@@ -23,20 +23,35 @@
   },
   "provenance": {
     "command": [
-      "codex",
-      "exec",
-      "--skip-git-repo-check",
-      "--sandbox",
-      "read-only"
+      "env",
+      "-u",
+      "ANTHROPIC_AUTH_TOKEN",
+      "-u",
+      "ANTHROPIC_BASE_URL",
+      "-u",
+      "ANTHROPIC_MODEL",
+      "-u",
+      "ANTHROPIC_API_KEY",
+      "claude",
+      "-p"
     ],
     "output_mode": "plain",
     "provider_home": null,
     "provider_home_seed_paths": [],
-    "source": "uaek capability run"
+    "source": "evidence campaign:uaek-local-available-001"
   },
-  "provider": "codex",
-  "recorded_at": "2026-08-13T12:49:14.231151+00:00",
-  "run_id": "capability-8a376430-e265-4c34-a03b-db2c71447826",
+  "provider": "claude_code",
+  "recorded_at": "2026-08-13T13:14:12.578224+00:00",
+  "run_id": "capability-b6e94c77-89c5-416b-bda1-c5059c805cda",
+  "sample": {
+    "backend_family": "claude_code",
+    "campaign_id": "uaek-local-available-001",
+    "grader_version": "capability-grader-v1",
+    "provider": "claude_code",
+    "sample_id": "claude_code-003",
+    "seed": 503,
+    "task_set_digest": "6893b7a9320c61482b1dcf5b60c6a32df1e804cb146f309c2559c6709419a522"
+  },
   "schema": "capability_run_v1",
   "status": "completed",
   "suite": {
@@ -54,7 +69,7 @@
       "calculator"
     ]
   },
-  "task": "codex capability suite (10 code tasks)",
+  "task": "claude_code capability suite (10 code tasks)",
   "task_results": [
     {
       "cases": [
@@ -154,9 +169,9 @@
           "ok": true
         }
       ],
-      "code": "def two_sum(nums, target):\n    seen = {}\n    for j, val in enumerate(nums):\n        complement = target - val\n        if complement in seen:\n            return [seen[complement], j]\n        seen[val] = j",
+      "code": "def two_sum(nums, target):\n    seen = {}\n    for j, num in enumerate(nums):\n        i = seen.get(target - num)\n        if i is not None and i != j:\n            return [min(i, j), max(i, j)]\n        seen.setdefault(num, j)\n    return None",
       "difficulty": "easy",
-      "duration_ms": 13878.0647,
+      "duration_ms": 7996.0245,
       "entrypoint": "two_sum",
       "error": null,
       "pass_rate": 1.0,
@@ -265,7 +280,7 @@
       ],
       "code": "def is_palindrome(s):\n    cleaned = [c.lower() for c in s if c.isalnum()]\n    return cleaned == cleaned[::-1]",
       "difficulty": "easy",
-      "duration_ms": 11557.8846,
+      "duration_ms": 6042.7665,
       "entrypoint": "is_palindrome",
       "error": null,
       "pass_rate": 1.0,
@@ -377,9 +392,9 @@
           "ok": true
         }
       ],
-      "code": "def fizzbuzz(n):\n    if n % 15 == 0:\n        return 'FizzBuzz'\n    if n % 3 == 0:\n        return 'Fizz'\n    if n % 5 == 0:\n        return 'Buzz'\n    return str(n)",
+      "code": "def fizzbuzz(n):\n    if n % 15 == 0:\n        return \"FizzBuzz\"\n    if n % 3 == 0:\n        return \"Fizz\"\n    if n % 5 == 0:\n        return \"Buzz\"\n    return str(n)",
       "difficulty": "easy",
-      "duration_ms": 10365.336,
+      "duration_ms": 7968.3701,
       "entrypoint": "fizzbuzz",
       "error": null,
       "pass_rate": 1.0,
@@ -491,9 +506,9 @@
           "ok": true
         }
       ],
-      "code": "def max_subarray(nums):\n    best = float('-inf')\n    current = 0\n    for x in nums:\n        current = max(x, current + x)\n        best = max(best, current)\n    return best",
+      "code": "def max_subarray(nums):\n    best = cur = nums[0]\n    for x in nums[1:]:\n        cur = max(x, cur + x)\n        best = max(best, cur)\n    return best",
       "difficulty": "easy",
-      "duration_ms": 23567.6376,
+      "duration_ms": 6096.7182,
       "entrypoint": "max_subarray",
       "error": null,
       "pass_rate": 1.0,
@@ -610,9 +625,9 @@
           "ok": true
         }
       ],
-      "code": "def roman_to_int(s):\n    values = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}\n    total = 0\n    prev = 0\n    for c in reversed(s):\n        cur = values[c]\n        if cur < prev:\n            total -= cur\n        else:\n            total += cur\n        prev = cur\n    return total",
+      "code": "def roman_to_int(s):\n    values = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}\n    total = 0\n    for i in range(len(s)):\n        if i + 1 < len(s) and values[s[i]] < values[s[i + 1]]:\n            total -= values[s[i]]\n        else:\n            total += values[s[i]]\n    return total",
       "difficulty": "medium",
-      "duration_ms": 23568.898,
+      "duration_ms": 7120.0645,
       "entrypoint": "roman_to_int",
       "error": null,
       "pass_rate": 1.0,
@@ -739,9 +754,9 @@
           "ok": true
         }
       ],
-      "code": "def valid_parentheses(s):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for ch in s:\n        if ch in pairs:\n            if not stack or stack[-1] != pairs[ch]:\n                return False\n            stack.pop()\n        else:\n            stack.append(ch)\n    return not stack",
+      "code": "def valid_parentheses(s):\n    stack = []\n    pairs = {')': '(', ']': '[', '}': '{'}\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n        else:\n            return False\n    return not stack",
       "difficulty": "medium",
-      "duration_ms": 16638.6693,
+      "duration_ms": 6131.9723,
       "entrypoint": "valid_parentheses",
       "error": null,
       "pass_rate": 1.0,
@@ -863,9 +878,9 @@
           "ok": true
         }
       ],
-      "code": "def longest_unique_substring(s):\n    char_index = {}\n    start = 0\n    max_len = 0\n    for i, c in enumerate(s):\n        if c in char_index and char_index[c] >= start:\n            start = char_index[c] + 1\n        char_index[c] = i\n        current_len = i - start + 1\n        if current_len > max_len:\n            max_len = current_len\n    return max_len",
+      "code": "def longest_unique_substring(s):\n    last_seen = {}\n    start = 0\n    best = 0\n    for i, ch in enumerate(s):\n        if ch in last_seen and last_seen[ch] >= start:\n            start = last_seen[ch] + 1\n        last_seen[ch] = i\n        best = max(best, i - start + 1)\n    return best",
       "difficulty": "medium",
-      "duration_ms": 17991.8107,
+      "duration_ms": 6778.583,
       "entrypoint": "longest_unique_substring",
       "error": null,
       "pass_rate": 1.0,
@@ -982,9 +997,9 @@
           "ok": true
         }
       ],
-      "code": "def edit_distance(a, b):\n    m, n = len(a), len(b)\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n    for i in range(m + 1):\n        dp[i][0] = i\n    for j in range(n + 1):\n        dp[0][j] = j\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            cost = 0 if a[i - 1] == b[j - 1] else 1\n            dp[i][j] = min(\n                dp[i - 1][j] + 1,\n                dp[i][j - 1] + 1,\n                dp[i - 1][j - 1] + cost\n            )\n    return dp[m][n]",
+      "code": "def edit_distance(a, b):\n    if len(a) < len(b):\n        a, b = b, a\n    prev = list(range(len(b) + 1))\n    for i, ca in enumerate(a, 1):\n        curr = [i] + [0] * len(b)\n        for j, cb in enumerate(b, 1):\n            curr[j] = min(\n                prev[j] + 1,\n                curr[j - 1] + 1,\n                prev[j - 1] + (ca != cb),\n            )\n        prev = curr\n    return prev[-1]",
       "difficulty": "hard",
-      "duration_ms": 19690.2975,
+      "duration_ms": 7990.8616,
       "entrypoint": "edit_distance",
       "error": null,
       "pass_rate": 1.0,
@@ -1091,9 +1106,9 @@
           "ok": true
         }
       ],
-      "code": "def lru_cache_sim(capacity, ops):\n    cache = {}\n    order = []\n    result = []\n    for op in ops:\n        if op[0] == 'put':\n            key, value = op[1], op[2]\n            if key in cache:\n                order.remove(key)\n            elif len(cache) >= capacity:\n                evict = order.pop(0)\n                del cache[evict]\n            cache[key] = value\n            order.append(key)\n        else:\n            key = op[1]\n            if key in cache:\n                result.append(cache[key])\n                order.remove(key)\n                order.append(key)\n            else:\n                result.append(-1)\n    return result",
+      "code": "def lru_cache_sim(capacity, ops):\n    from collections import OrderedDict\n    cache = OrderedDict()\n    results = []\n    for op in ops:\n        if op[0] == 'get':\n            key = op[1]\n            if key in cache:\n                cache.move_to_end(key)\n                results.append(cache[key])\n            else:\n                results.append(-1)\n        elif op[0] == 'put':\n            key, value = op[1], op[2]\n            if key in cache:\n                cache.move_to_end(key)\n            cache[key] = value\n            if len(cache) > capacity:\n                cache.popitem(last=False)\n    return results",
       "difficulty": "hard",
-      "duration_ms": 16264.1317,
+      "duration_ms": 7652.0417,
       "entrypoint": "lru_cache_sim",
       "error": null,
       "pass_rate": 1.0,
@@ -1220,9 +1235,9 @@
           "ok": true
         }
       ],
-      "code": "def calculator(expr):\n    expr = expr.replace(' ', '')\n    nums = []\n    ops = []\n    i = 0\n    while i < len(expr):\n        if expr[i].isdigit():\n            num = 0\n            while i < len(expr) and expr[i].isdigit():\n                num = num * 10 + int(expr[i])\n                i += 1\n            nums.append(num)\n        else:\n            ops.append(expr[i])\n            i += 1\n    i = 0\n    while i < len(ops):\n        if ops[i] == '*':\n            nums[i] = nums[i] * nums[i + 1]\n            nums.pop(i + 1)\n            ops.pop(i)\n        else:\n            i += 1\n    result = nums[0]\n    for i, op in enumerate(ops):\n        if op == '+':\n            result += nums[i + 1]\n        elif op == '-':\n            result -= nums[i + 1]\n    return result",
+      "code": "def calculator(expr):\n    nums = []\n    ops = []\n    i = 0\n    n = len(expr)\n    while i < n:\n        if expr[i].isspace():\n            i += 1\n        elif expr[i].isdigit():\n            j = i\n            while j < n and expr[j].isdigit():\n                j += 1\n            nums.append(int(expr[i:j]))\n            i = j\n        else:\n            ops.append(expr[i])\n            i += 1\n    terms = [nums[0]]\n    term_ops = []\n    for k, op in enumerate(ops):\n        if op == '*':\n            terms[-1] *= nums[k + 1]\n        else:\n            terms.append(nums[k + 1])\n            term_ops.append(op)\n    result = terms[0]\n    for op, val in zip(term_ops, terms[1:]):\n        if op == '+':\n            result += val\n        else:\n            result -= val\n    return result",
       "difficulty": "hard",
-      "duration_ms": 26194.5631,
+      "duration_ms": 14140.5325,
       "entrypoint": "calculator",
       "error": null,
       "pass_rate": 1.0,

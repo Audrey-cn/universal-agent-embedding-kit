@@ -63,9 +63,10 @@ def test_audit_run_all_suites():
     assert evidence["capability"]["held_out"]["held_out_count_per_task"] == 16
     assert evidence["headline"]["p4_real_scenario_benchmark"]["scenario_count"] >= 1
 
-    # Limitations should list known caveats
+    # Limitations should list known caveats, including the current graded-live count
     assert len(result["limitations"]) >= 6
-    assert any("2/4" in item for item in result["limitations"])
+    assert any("full-suite graded-live" in item for item in result["limitations"])
+    assert any("3/4" in item for item in result["limitations"])
     assert not any("4/4 graded-live" in item for item in result["limitations"])
 
     # External baseline should be not_configured when no path given
