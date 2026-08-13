@@ -4,9 +4,14 @@
   "description": "Universal Agent Enhancement Kit MCP Server",
   "type": "stdio",
   "command": "/Users/audrey/项目/fable-research/.venv/bin/python",
-  "args": ["-m", "mcp.server"],
+  "args": [
+    "-m",
+    "mcp.server"
+  ],
   "cwd": "/Users/audrey/项目/fable-research",
   "env": {
-    "PYTHONPATH": "/Users/audrey/项目/fable-research/src"
-  }
+    "PYTHONPATH": "/Users/audrey/项目/fable-research/src",
+    "UAEK_MCP_IDLE_TIMEOUT": "300"
+  },
+  "_note": "Idle timeout in seconds. Set UAEK_MCP_IDLE_TIMEOUT env var or use --idle-timeout CLI arg. Default: 300s (5 min). Set to 0 to disable."
 }

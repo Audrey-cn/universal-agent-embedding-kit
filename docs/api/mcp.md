@@ -32,3 +32,35 @@ Workflow tools are stateful within one `MCPServer` instance:
 3. `uaek_workflow_execute`
 
 Memory tools are also stateful within one server instance and use the shared `MemoryService` facade.
+
+## Idle timeout (automatic release)
+
+The server automatically exits after a configurable period of inactivity to prevent
+memory leaks from orphaned processes:
+
+| Setting | Mechanism | Default |
+|---|---|---|
+| `--idle-timeout SECONDS` | CLI argument to `python -m mcp.server` | `300` (5 minutes) |
+| `UAEK_MCP_IDLE_TIMEOUT` | Environment variable | `300` (5 minutes) |
+| `idle_timeout=0` | Disables idle timeout | — |
+
+The server exits on the first idle check that exceeds the timeout (1-second polling
+granularity). The exit reason is logged to stderr (`[uaek-mcp] shutdown: ...`) for
+diagnosis.
+
+### Exit paths (in priority order)
+
+1. `shutdown` method (MCP JSON-RPC request, with or without `id`)
+2. SIGTERM / SIGINT signal (graceful shutdown)
+3. Idle timeout (no requests received within the configured window)
+4. stdin EOF (pipe closed by host)
+
+### Example
+
+```bash
+# 30-second idle timeout
+UAEK_MCP_IDLE_TIMEOUT=30 python -m mcp.server
+
+# Disable idle timeout
+python -m mcp.server --idle-timeout 0
+```

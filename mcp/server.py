@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import io
+import os
+import select
+import signal
 import sys
+import time
 from collections.abc import Awaitable, Callable
 from typing import Any, TextIO
 
@@ -300,45 +305,119 @@ async def run_stdio(
     input_stream: TextIO | None = None,
     output_stream: TextIO | None = None,
     server: MCPServer | None = None,
+    idle_timeout: float | None = None,
 ) -> None:
-    """Run a newline-delimited JSON-RPC loop for stdio MCP hosts."""
+    """Run a newline-delimited JSON-RPC loop for stdio MCP hosts.
+
+    Args:
+        idle_timeout: Seconds of inactivity before graceful shutdown.
+            Defaults to UAEK_MCP_IDLE_TIMEOUT env var (or 300s).
+            Set to 0 to disable.
+    """
     input_stream = input_stream or sys.stdin
     output_stream = output_stream or sys.stdout
     server = server or create_server()
 
-    while True:
-        line = input_stream.readline()
-        if not line:
-            break
-        if not line.strip():
-            continue
-        request_id = None
-        method = None
-        try:
-            request = json.loads(line)
-            if not isinstance(request, dict):
-                raise ValueError("JSON-RPC request must be an object")
-            request_id = request.get("id")
-            method = request.get("method")
-            response = await server.handle_request(request)
-        except json.JSONDecodeError as exc:
-            response = server._error_response(request_id, -32700, f"Parse error: {exc.msg}")
-        except Exception as exc:
-            response = server._error_response(request_id, -32600, str(exc))
+    # Resolve idle timeout
+    if idle_timeout is None:
+        env_timeout = os.environ.get("UAEK_MCP_IDLE_TIMEOUT")
+        idle_timeout = float(env_timeout) if env_timeout else 300.0
 
-        if response is None:
-            continue
-        output_stream.write(json.dumps(response, ensure_ascii=False) + "\n")
-        output_stream.flush()
+    # Signal handling for graceful shutdown
+    shutdown_flag = False
 
-        if isinstance(request_id, (int, str)) and response.get("id") == request_id:
-            if method == "shutdown":
-                break
+    def _signal_handler(signum, frame):
+        nonlocal shutdown_flag
+        shutdown_flag = True
+
+    original_sigterm = signal.signal(signal.SIGTERM, _signal_handler)
+    original_sigint = signal.signal(signal.SIGINT, _signal_handler)
+
+    # Track idle time
+    last_activity = time.monotonic()
+    poll_interval = 1.0
+    shutdown_reason = None
+
+    # Check if the input stream supports select (needs real fileno)
+    # Check if the input stream supports select (needs a real file descriptor)
+    try:
+        input_stream.fileno()
+        _select_supported = True
+    except (io.UnsupportedOperation, AttributeError, OSError):
+        _select_supported = False
+    try:
+        while not shutdown_flag:
+            # Poll stdin with timeout for idle detection
+            if _select_supported:
+                try:
+                    readable, _, _ = select.select([input_stream], [], [], poll_interval)
+                except InterruptedError:
+                    if shutdown_flag:
+                        break
+                    continue
+            else:
+                # Fallback for in-memory streams (StringIO, etc.)
+                readable = True
+
+            if readable:
+                line = input_stream.readline()
+                if not line:
+                    shutdown_reason = "stdin EOF"
+                    break
+                if not line.strip():
+                    continue
+
+                last_activity = time.monotonic()
+
+                request_id = None
+                method = None
+                try:
+                    request = json.loads(line)
+                    if not isinstance(request, dict):
+                        raise ValueError("JSON-RPC request must be an object")
+                    request_id = request.get("id")
+                    method = request.get("method")
+                    response = await server.handle_request(request)
+                except json.JSONDecodeError as exc:
+                    response = server._error_response(request_id, -32700, f"Parse error: {exc.msg}")
+                except Exception as exc:
+                    response = server._error_response(request_id, -32600, str(exc))
+
+                if response is None:
+                    continue
+                output_stream.write(json.dumps(response, ensure_ascii=False) + "\n")
+                output_stream.flush()
+
+                if method == "shutdown":
+                    shutdown_reason = "shutdown request"
+                    break
+            else:
+                # No data available - check idle timeout
+                if idle_timeout and idle_timeout > 0:
+                    idle_seconds = time.monotonic() - last_activity
+                    if idle_seconds > idle_timeout:
+                        shutdown_reason = f"idle timeout ({idle_timeout}s)"
+                        break
+    finally:
+        signal.signal(signal.SIGTERM, original_sigterm)
+        signal.signal(signal.SIGINT, original_sigint)
+
+    if shutdown_reason:
+        print(f"[uaek-mcp] shutdown: {shutdown_reason}", file=sys.stderr, flush=True)
 
 
 def main() -> None:
     """Console entrypoint for `python -m mcp.server`."""
-    asyncio.run(run_stdio())
+    import argparse
+    parser = argparse.ArgumentParser(description="UAEK MCP Server")
+    parser.add_argument(
+        "--idle-timeout",
+        type=float,
+        default=None,
+        help="Idle timeout in seconds (default: 300, 0 to disable)",
+    )
+    args = parser.parse_args()
+    asyncio.run(run_stdio(idle_timeout=args.idle_timeout))
 
 
 if __name__ == "__main__":
