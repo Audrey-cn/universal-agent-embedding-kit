@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import argparse
 import asyncio
-import json
 import io
+import json
 import os
 import select
 import signal
@@ -301,6 +302,20 @@ def create_server() -> MCPServer:
     return server
 
 
+def _resolve_idle_timeout(value: float | None) -> float:
+    if value is not None:
+        timeout = value
+    else:
+        raw = os.environ.get("UAEK_MCP_IDLE_TIMEOUT", "300")
+        try:
+            timeout = float(raw)
+        except ValueError as exc:
+            raise ValueError("UAEK_MCP_IDLE_TIMEOUT must be a number") from exc
+    if timeout < 0:
+        raise ValueError("idle timeout must be non-negative")
+    return timeout
+
+
 async def run_stdio(
     input_stream: TextIO | None = None,
     output_stream: TextIO | None = None,
@@ -318,15 +333,12 @@ async def run_stdio(
     output_stream = output_stream or sys.stdout
     server = server or create_server()
 
-    # Resolve idle timeout
-    if idle_timeout is None:
-        env_timeout = os.environ.get("UAEK_MCP_IDLE_TIMEOUT")
-        idle_timeout = float(env_timeout) if env_timeout else 300.0
+    idle_timeout = _resolve_idle_timeout(idle_timeout)
 
     # Signal handling for graceful shutdown
     shutdown_flag = False
 
-    def _signal_handler(signum, frame):
+    def _signal_handler(signum: int, frame: object) -> None:
         nonlocal shutdown_flag
         shutdown_flag = True
 
@@ -338,7 +350,6 @@ async def run_stdio(
     poll_interval = 1.0
     shutdown_reason = None
 
-    # Check if the input stream supports select (needs real fileno)
     # Check if the input stream supports select (needs a real file descriptor)
     try:
         input_stream.fileno()
@@ -350,16 +361,17 @@ async def run_stdio(
             # Poll stdin with timeout for idle detection
             if _select_supported:
                 try:
-                    readable, _, _ = select.select([input_stream], [], [], poll_interval)
+                    ready_streams, _, _ = select.select([input_stream], [], [], poll_interval)
+                    is_readable = bool(ready_streams)
                 except InterruptedError:
                     if shutdown_flag:
                         break
                     continue
             else:
                 # Fallback for in-memory streams (StringIO, etc.)
-                readable = True
+                is_readable = True
 
-            if readable:
+            if is_readable:
                 line = input_stream.readline()
                 if not line:
                     shutdown_reason = "stdin EOF"
@@ -408,7 +420,6 @@ async def run_stdio(
 
 def main() -> None:
     """Console entrypoint for `python -m mcp.server`."""
-    import argparse
     parser = argparse.ArgumentParser(description="UAEK MCP Server")
     parser.add_argument(
         "--idle-timeout",

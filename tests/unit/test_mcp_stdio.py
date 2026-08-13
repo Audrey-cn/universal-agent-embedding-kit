@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import io
 import json
 import os
 import signal
@@ -11,10 +13,7 @@ import time
 
 import pytest
 
-from mcp.server import run_stdio, create_server
-import asyncio
-import io
-
+from mcp.server import create_server, run_stdio
 
 # =========================================================================
 # Subprocess-level tests (real stdio pipe, full process lifecycle)
@@ -118,7 +117,10 @@ class TestShutdown:
 
     def test_shutdown_request_exits(self):
         """shutdown request should cause server to exit immediately."""
-        requests = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "shutdown", "params": {}}) + "\n"
+        requests = (
+            json.dumps({"jsonrpc": "2.0", "id": 1, "method": "shutdown", "params": {}})
+            + "\n"
+        )
 
         completed = subprocess.run(
             [sys.executable, "-m", "mcp.server", "--idle-timeout", "10"],
@@ -273,55 +275,93 @@ class TestMultiRequestFlow:
 class TestRunStdioUnit:
     """run_stdio behavior with in-memory streams (no subprocess)."""
 
-    @pytest.mark.asyncio
-    async def test_idle_timeout_in_memory(self):
-        """Idle timeout should work with a real pipe (not StringIO)."""
-        # Use a real pipe so select.select works
-        r_fd, w_fd = os.pipe()
-        stdin = io.TextIOWrapper(os.fdopen(r_fd, "rb"), encoding="utf-8")
-        stdout = io.StringIO()
+    def test_invalid_idle_timeout_env_fails_before_signal_handlers(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("UAEK_MCP_IDLE_TIMEOUT", "invalid")
+        installed: list[int] = []
 
-        start = time.monotonic()
-        # Keep the write end open so the server doesn't see EOF
-        task = asyncio.create_task(
-            run_stdio(input_stream=stdin, output_stream=stdout, idle_timeout=0.5)
+        async def exercise() -> None:
+            with monkeypatch.context() as signal_patch:
+                signal_patch.setattr(
+                    signal, "signal", lambda signum, handler: installed.append(signum)
+                )
+                with pytest.raises(ValueError, match="UAEK_MCP_IDLE_TIMEOUT"):
+                    await run_stdio(input_stream=io.StringIO(""), output_stream=io.StringIO())
+
+        asyncio.run(exercise())
+
+        assert installed == []
+
+    def test_signal_handlers_are_restored_when_read_fails(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class BrokenInput(io.StringIO):
+            def readline(self, *args: object, **kwargs: object) -> str:
+                raise RuntimeError("read failed")
+
+        calls: list[tuple[int, object]] = []
+        monkeypatch.setattr(
+            signal,
+            "signal",
+            lambda signum, handler: calls.append((signum, handler)) or f"old-{signum}",
         )
-        await asyncio.sleep(1.0)
-        os.close(w_fd)
-        await task
-        elapsed = time.monotonic() - start
+
+        with pytest.raises(RuntimeError, match="read failed"):
+            asyncio.run(
+                run_stdio(input_stream=BrokenInput(), output_stream=io.StringIO(), idle_timeout=0)
+            )
+
+        assert calls[-2:] == [
+            (signal.SIGTERM, f"old-{signal.SIGTERM}"),
+            (signal.SIGINT, f"old-{signal.SIGINT}"),
+        ]
+
+    def test_idle_timeout_in_memory(self) -> None:
+        """Idle timeout should work with a real pipe (not StringIO)."""
+        async def exercise() -> float:
+            r_fd, w_fd = os.pipe()
+            stdin = io.TextIOWrapper(os.fdopen(r_fd, "rb"), encoding="utf-8")
+            stdout = io.StringIO()
+            start = time.monotonic()
+            task = asyncio.create_task(
+                run_stdio(input_stream=stdin, output_stream=stdout, idle_timeout=0.5)
+            )
+            await asyncio.sleep(1.0)
+            os.close(w_fd)
+            await task
+            return time.monotonic() - start
+
+        elapsed = asyncio.run(exercise())
         # Should have exited via idle timeout, taking ~0.5s
         assert elapsed < 2.0, f"Took too long: {elapsed:.2f}s"
 
-    @pytest.mark.asyncio
-    async def test_shutdown_via_handle_request(self):
+    def test_shutdown_via_handle_request(self) -> None:
         """Shutdown method should be handled by MCPServer.handle_request."""
         server = create_server()
         request = {"jsonrpc": "2.0", "id": 1, "method": "shutdown", "params": {}}
-        response = await server.handle_request(request)
+        response = asyncio.run(server.handle_request(request))
         assert response is not None
         assert "result" in response
 
-    @pytest.mark.asyncio
-    async def test_notification_shutdown_handled(self):
+    def test_notification_shutdown_handled(self) -> None:
         """Shutdown as notification (no id) should still return a response."""
         server = create_server()
         request = {"jsonrpc": "2.0", "method": "shutdown", "params": {}}
-        response = await server.handle_request(request)
+        response = asyncio.run(server.handle_request(request))
         # MCP spec says notifications should not receive a response
         # But our shutdown handler always returns a response regardless
         # (the loop handles the shutdown logic, not the handler)
         assert response is not None
         assert "result" in response
 
-    @pytest.mark.asyncio
-    async def test_initialize_then_shutdown(self):
+    def test_initialize_then_shutdown(self) -> None:
         """Initialize followed by shutdown should work."""
         server = create_server()
         req1 = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
-        resp1 = await server.handle_request(req1)
+        resp1 = asyncio.run(server.handle_request(req1))
         assert resp1["result"]["serverInfo"]["name"] == "uaek"
 
         req2 = {"jsonrpc": "2.0", "id": 2, "method": "shutdown", "params": {}}
-        resp2 = await server.handle_request(req2)
+        resp2 = asyncio.run(server.handle_request(req2))
         assert "result" in resp2
