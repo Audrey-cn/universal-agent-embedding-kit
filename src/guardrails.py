@@ -317,68 +317,26 @@ class GuardrailsSystem:
 class SemanticInputFilter:
     """语义级输入过滤器——包装 SemanticGuard 实现多层防护
 
-    保留原有 InputFilter 作为回退，同时使用 SemanticGuard 进行语义级检测。
+    使用 SemanticGuard 进行语义级检测。
     """
 
-    def __init__(self):
-        self._legacy_filter = InputFilter()
+    def __init__(self) -> None:
         self._semantic_guard = SemanticGuard()
 
     def check(self, text: str) -> GuardResult:
-        """语义级输入检查
-
-        先尝试语义级检测，如果通过则回退到原有规则进行二次确认。
-        """
-        # 语义级多层检测
-        result = self._semantic_guard.check_injection(text)
-        if result.blocked:
-            return result
-
-        # 原有规则作为二次确认
-        legacy_violations = self._legacy_filter.check(text)
-        if legacy_violations:
-            violation = legacy_violations[0]
-            return GuardResult(
-                blocked=True,
-                reason=f"原有规则匹配({violation.name}): {violation.description}",
-                severity=violation.severity,
-                matched_pattern=violation.name,
-                layer="keyword",
-            )
-
-        return GuardResult(blocked=False, reason="输入安全检测通过", severity="low", layer="none")
+        """语义级输入检查。"""
+        return self._semantic_guard.check_injection(text)
 
 
 class SemanticOutputFilter:
     """语义级输出过滤器——包装 SemanticGuard 实现多层防护+数据泄露检测
 
-    保留原有 OutputFilter 作为回退，同时使用 SemanticGuard 进行语义级检测和数据泄露检测。
+    使用 SemanticGuard 进行语义级检测和数据泄露检测。
     """
 
-    def __init__(self):
-        self._legacy_filter = OutputFilter()
+    def __init__(self) -> None:
         self._semantic_guard = SemanticGuard()
 
     def check(self, text: str) -> GuardResult:
-        """语义级输出检查
-
-        先尝试语义级检测（含数据泄露），如果通过则回退到原有规则进行二次确认。
-        """
-        # 语义级完整检测（注入+数据泄露）
-        result = self._semantic_guard.full_check(text, check_output=True)
-        if result.blocked:
-            return result
-
-        # 原有规则作为二次确认
-        legacy_violations = self._legacy_filter.check(text)
-        if legacy_violations:
-            violation = legacy_violations[0]
-            return GuardResult(
-                blocked=True,
-                reason=f"原有规则匹配({violation.name}): {violation.description}",
-                severity=violation.severity,
-                matched_pattern=violation.name,
-                layer="keyword",
-            )
-
-        return GuardResult(blocked=False, reason="输出安全检测通过", severity="low", layer="none")
+        """语义级输出检查。"""
+        return self._semantic_guard.full_check(text, check_output=True)
