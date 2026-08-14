@@ -166,9 +166,12 @@ def test_evidence_cost_and_baseline_validation_commands(tmp_path: Path) -> None:
     baseline = _write(
         tmp_path / "baseline.json",
         {
+            "schema": "external_baseline_v1",
             "status": "not_configured",
             "name": "external",
             "reason": "No authorized baseline is available.",
+            "metrics": {},
+            "limitations": ["No external comparison is claimed."],
         },
     )
     cost_result = CliRunner().invoke(

@@ -53,14 +53,17 @@ def validate_external_baseline(
     """Classify a baseline as provided, incompatible, invalid, or not configured."""
 
     baseline = load_json_object(source)
-    if baseline.get("status") == "not_configured":
+    if (
+        baseline.get("schema") == EXTERNAL_BASELINE_SCHEMA
+        and baseline.get("status") == "not_configured"
+    ):
         return {
             "status": "not_configured",
             "compatible": False,
             "name": baseline.get("name", "external"),
-            "reason": baseline.get("reason") or baseline.get("source") or "Not configured.",
+            "reason": baseline.get("reason") or "Not configured.",
             "metrics": baseline.get("metrics", {}),
-            "limitations": baseline.get("limitations", baseline.get("notes", [])),
+            "limitations": baseline.get("limitations", []),
             "errors": [],
         }
 

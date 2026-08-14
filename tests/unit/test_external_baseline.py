@@ -64,17 +64,26 @@ def test_baseline_rejects_incomplete_or_secret_material() -> None:
     assert any("secret material" in error for error in result["errors"])
 
 
-def test_legacy_not_configured_example_remains_readable() -> None:
+def test_current_not_configured_baseline_remains_readable() -> None:
     result = validate_external_baseline(
         {
-            "schema_version": "1.0",
-            "name": "fable5",
+            "schema": "external_baseline_v1",
+            "name": "external",
             "status": "not_configured",
-            "source": "Example schema only.",
+            "reason": "No approved baseline supplied.",
             "metrics": {},
-            "notes": ["This file is not benchmark evidence."],
+            "limitations": ["No external comparison is claimed."],
         }
     )
 
     assert result["status"] == "not_configured"
-    assert result["compatible"] is False
+    assert result["reason"] == "No approved baseline supplied."
+
+
+def test_pre_03_not_configured_shape_is_invalid() -> None:
+    result = validate_external_baseline(
+        {"schema_version": "1.0", "status": "not_configured", "source": "legacy"}
+    )
+
+    assert result["status"] == "invalid"
+    assert any("schema" in error for error in result["errors"])

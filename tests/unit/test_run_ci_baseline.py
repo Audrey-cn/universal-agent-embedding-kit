@@ -53,10 +53,12 @@ def test_benchmark_accepts_external_baseline_file(tmp_path: Path):
     baseline_path.write_text(
         json.dumps(
             {
+                "schema": "external_baseline_v1",
                 "name": "fable5",
                 "status": "not_configured",
-                "source": "example schema only",
+                "reason": "Example schema only.",
                 "metrics": {},
+                "limitations": ["This file is not benchmark evidence."],
             }
         ),
         encoding="utf-8",
