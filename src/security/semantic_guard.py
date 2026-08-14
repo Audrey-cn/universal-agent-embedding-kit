@@ -127,6 +127,11 @@ MALICIOUS_COMMAND_REGEX: list[tuple[str, str]] = [
     (r"\beval\s*\(\s*(?:__import__|base64|exec|compile)", "代码执行: 危险的eval调用"),
 ]
 
+# 输入敏感信息正则
+INPUT_SENSITIVE_REGEX_PATTERNS: list[tuple[str, str]] = [
+    (r"\b\d{3}-\d{2}-\d{4}\b", "SSN"),
+]
+
 # 敏感信息泄露正则
 SENSITIVE_REGEX_PATTERNS: list[tuple[str, str]] = [
     # OpenAI API密钥
@@ -144,7 +149,7 @@ SENSITIVE_REGEX_PATTERNS: list[tuple[str, str]] = [
     # 通用API密钥模式
     (
         r"(?:api[_-]?key|api[_-]?secret|auth[_-]?token|access[_-]?key|secret[_-]?key)"
-        r"\s*[=:]\s*['\"][^'\"]{8,}['\"]",
+        r"\s*[=:]\s*['\"][^'\"]+['\"]",
         "通用API密钥赋值",
     ),
     (
@@ -157,7 +162,7 @@ SENSITIVE_REGEX_PATTERNS: list[tuple[str, str]] = [
     # JWT Token
     (r"eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+", "JWT令牌"),
     # 密码模式
-    (r"(?:password|passwd|pwd|secret)\s*[=:]\s*['\"][^'\"]{4,}['\"]", "密码明文"),
+    (r"(?:password|passwd|pwd|secret)\s*[=:]\s*['\"][^'\"]+['\"]", "密码明文"),
     (r"(?:password|passwd|pwd|secret)\s*[=:]\s*\S{4,}(?:\s|$)", "密码(无引号)"),
     # 信用卡号
     (r"\b(?:\d{4}[- ]){3}\d{4}\b", "信用卡号"),
@@ -253,6 +258,17 @@ class SemanticGuard:
                     reason=f"检测到恶意命令模式({description}): {match.group(0)[:80]}",
                     severity="critical",
                     matched_pattern=match.group(0),
+                    layer="regex",
+                )
+
+        for pattern, description in INPUT_SENSITIVE_REGEX_PATTERNS:
+            match = re.search(pattern, text)
+            if match:
+                return GuardResult(
+                    blocked=True,
+                    reason=f"检测到敏感输入({description}): {match.group(0)}",
+                    severity="medium",
+                    matched_pattern=description,
                     layer="regex",
                 )
 
