@@ -45,13 +45,16 @@ class TestIdleTimeout:
 
     def test_idle_timeout_not_triggered_by_active_requests(self):
         """Active requests should reset the idle timer — server stays alive."""
-        requests = "\n".join(
-            [
-                json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
-                json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
-                json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
-            ]
-        ) + "\n"
+        requests = (
+            "\n".join(
+                [
+                    json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+                    json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+                    json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
+                ]
+            )
+            + "\n"
+        )
 
         completed = subprocess.run(
             [sys.executable, "-m", "mcp.server", "--idle-timeout", "10"],
@@ -91,12 +94,15 @@ class TestIdleTimeout:
 
     def test_idle_timeout_disabled(self):
         """Setting idle_timeout=0 should disable idle timeout."""
-        requests = "\n".join(
-            [
-                json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
-                json.dumps({"jsonrpc": "2.0", "id": 2, "method": "shutdown", "params": {}}),
-            ]
-        ) + "\n"
+        requests = (
+            "\n".join(
+                [
+                    json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+                    json.dumps({"jsonrpc": "2.0", "id": 2, "method": "shutdown", "params": {}}),
+                ]
+            )
+            + "\n"
+        )
 
         completed = subprocess.run(
             [sys.executable, "-m", "mcp.server", "--idle-timeout", "0"],
@@ -118,8 +124,7 @@ class TestShutdown:
     def test_shutdown_request_exits(self):
         """shutdown request should cause server to exit immediately."""
         requests = (
-            json.dumps({"jsonrpc": "2.0", "id": 1, "method": "shutdown", "params": {}})
-            + "\n"
+            json.dumps({"jsonrpc": "2.0", "id": 1, "method": "shutdown", "params": {}}) + "\n"
         )
 
         completed = subprocess.run(
@@ -186,9 +191,7 @@ class TestSignalHandling:
             time.sleep(0.3)
             proc.send_signal(signal.SIGTERM)
             stdout, stderr = proc.communicate(timeout=3)
-            assert proc.returncode == 0, (
-                f"Expected exit 0, got {proc.returncode}. stderr: {stderr}"
-            )
+            assert proc.returncode == 0, f"Expected exit 0, got {proc.returncode}. stderr: {stderr}"
             # The server should exit due to signal
             # (check only that it exited, as the exact message depends on timing)
             assert "shutdown" in stderr.lower() or stderr.strip() == "", (
@@ -205,13 +208,16 @@ class TestMultiRequestFlow:
 
     def test_initialize_tools_list_shutdown(self):
         """Standard init -> tools/list -> shutdown should work."""
-        requests = "\n".join(
-            [
-                json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
-                json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
-                json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
-            ]
-        ) + "\n"
+        requests = (
+            "\n".join(
+                [
+                    json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+                    json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+                    json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
+                ]
+            )
+            + "\n"
+        )
 
         completed = subprocess.run(
             [sys.executable, "-m", "mcp.server"],
@@ -223,11 +229,7 @@ class TestMultiRequestFlow:
         )
 
         assert completed.returncode == 0
-        responses = [
-            json.loads(line)
-            for line in completed.stdout.splitlines()
-            if line.strip()
-        ]
+        responses = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
         assert len(responses) == 3
         assert responses[0]["id"] == 1
         assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
@@ -237,12 +239,15 @@ class TestMultiRequestFlow:
 
     def test_malformed_json_returns_error_and_continues(self):
         """Malformed JSON should return error, not crash the server."""
-        requests = "\n".join(
-            [
-                'not valid json',
-                json.dumps({"jsonrpc": "2.0", "id": 1, "method": "shutdown", "params": {}}),
-            ]
-        ) + "\n"
+        requests = (
+            "\n".join(
+                [
+                    "not valid json",
+                    json.dumps({"jsonrpc": "2.0", "id": 1, "method": "shutdown", "params": {}}),
+                ]
+            )
+            + "\n"
+        )
 
         completed = subprocess.run(
             [sys.executable, "-m", "mcp.server"],
@@ -254,11 +259,7 @@ class TestMultiRequestFlow:
         )
 
         assert completed.returncode == 0
-        responses = [
-            json.loads(line)
-            for line in completed.stdout.splitlines()
-            if line.strip()
-        ]
+        responses = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
         # First response should be parse error, second should be shutdown response
         assert len(responses) == 2
         assert "error" in responses[0]
@@ -319,6 +320,7 @@ class TestRunStdioUnit:
 
     def test_idle_timeout_in_memory(self) -> None:
         """Idle timeout should work with a real pipe (not StringIO)."""
+
         async def exercise() -> float:
             r_fd, w_fd = os.pipe()
             stdin = io.TextIOWrapper(os.fdopen(r_fd, "rb"), encoding="utf-8")

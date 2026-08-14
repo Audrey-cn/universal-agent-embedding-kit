@@ -130,6 +130,13 @@ runtime dependency, or speculative large-module split was added.
 
 ## Residual risks
 
+- **Approved baseline formatting debt:** the repository-wide `ruff format --check src
+  api mcp tests scripts` gate reports 62 files needing reformatting, 56 of which were
+  pre-existing and outside this hardening plan. Approval for Task 7 limits mechanical
+  formatting to the six changed files reported by that gate and uses a format check of
+  every Python file changed by the plan as its acceptance criterion. The remaining
+  repository-wide drift is technical debt; a separate, dedicated formatting change is
+  required before restoring the broad format gate.
 - **Deferred documentation inconsistency:** `docs/api/mcp.md` says every input line
   receives a response, but the retained JSON-RPC notification contract deliberately
   emits no response for a line without an `id`. The subprocess contract test is the
@@ -147,6 +154,23 @@ not establish mixed responsibilities in an untouched large module.
 
 ## Verification evidence
 
+- Final Task 7 adjusted format gate: `uv run ruff format --check` over all 13 Python
+  files changed by this plan passed after formatting only `mcp/server.py`,
+  `src/evidence/baseline.py`, `src/security/semantic_guard.py`,
+  `tests/unit/test_mcp_stdio.py`, `tests/unit/test_run_ci_baseline.py`, and
+  `tests/unit/test_security.py`. The repository-wide format check remains intentionally
+  out of scope under the approved baseline-debt exception above.
+- Final Task 7 static gates: `uv run ruff check src api mcp tests scripts` passed, and
+  `uv run mypy src api mcp` passed with no issues in 107 source files.
+- Final Task 7 focused suites: MCP/runtime passed 19 tests; external-baseline,
+  evidence-CLI, CI-baseline, and audit passed 32 tests; security passed 90 tests.
+- Final Task 7 complete suite: `uv run pytest -q --cov=src --cov=api --cov=mcp
+  --cov-report=term-missing` passed 721 tests in 78.52 seconds with 77.44% aggregate
+  coverage, exceeding the 75% requirement.
+- Final Task 7 packaging: `uv lock --check` passed, `uv build --wheel` produced
+  `dist/uaek-0.3.0.dev1-py3-none-any.whl`, and a fresh temporary venv installed that
+  wheel successfully. Installed `uaek --help` passed; installed `python -m mcp`
+  returned two validated JSON-RPC 2.0 response lines for initialize and shutdown.
 - Public-contract characterization: `uv run pytest tests/unit/test_public_contract.py
   tests/integration/test_runtime_contract.py -q` passed 7 tests; its full suite passed
   712 tests.

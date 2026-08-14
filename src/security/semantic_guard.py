@@ -292,9 +292,13 @@ class SemanticGuard:
                 matched = match.group(0)
                 if len(matched) > 20:
                     matched = matched[:10] + "..." + matched[-6:]
-                severity = "critical" if any(
-                    kw in description for kw in ["API", "私钥", "Key", "Secret", "Token", "JWT"]
-                ) else "high"
+                severity = (
+                    "critical"
+                    if any(
+                        kw in description for kw in ["API", "私钥", "Key", "Secret", "Token", "JWT"]
+                    )
+                    else "high"
+                )
                 return GuardResult(
                     blocked=True,
                     reason=f"检测到敏感信息泄露({description}): {matched}",

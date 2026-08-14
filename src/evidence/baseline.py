@@ -36,9 +36,7 @@ def current_task_set_digest() -> str:
                 "prompt": task.prompt,
                 "entrypoint": task.entrypoint,
                 "difficulty": task.difficulty,
-                "cases": [
-                    {"args": case.args, "expected": case.expected} for case in task.cases
-                ],
+                "cases": [{"args": case.args, "expected": case.expected} for case in task.cases],
             }
             for task in CAPABILITY_TASKS
         ]
@@ -85,8 +83,10 @@ def validate_external_baseline(
         structural_errors.append("metrics must be a non-empty object")
         metrics = {}
     limitations = baseline.get("limitations")
-    if not isinstance(limitations, list) or not limitations or any(
-        not isinstance(item, str) or not item.strip() for item in limitations
+    if (
+        not isinstance(limitations, list)
+        or not limitations
+        or any(not isinstance(item, str) or not item.strip() for item in limitations)
     ):
         structural_errors.append("limitations must be a non-empty string list")
         limitations = []
@@ -96,10 +96,7 @@ def validate_external_baseline(
     compatibility_errors: list[str] = []
     if expected_task_digest is not None and values["task_set_digest"] != expected_task_digest:
         compatibility_errors.append("task_set_digest does not match the current task set")
-    if (
-        expected_grader_version is not None
-        and values["grader_version"] != expected_grader_version
-    ):
+    if expected_grader_version is not None and values["grader_version"] != expected_grader_version:
         compatibility_errors.append("grader_version does not match the current grader")
 
     if structural_errors:

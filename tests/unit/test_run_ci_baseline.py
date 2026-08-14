@@ -110,10 +110,7 @@ def test_ci_workflow_uses_current_node24_actions():
     """CI should avoid action majors that emit GitHub's Node 20 deprecation warning."""
     data = yaml.safe_load(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))
     uses = [
-        step["uses"]
-        for job in data["jobs"].values()
-        for step in job["steps"]
-        if "uses" in step
+        step["uses"] for job in data["jobs"].values() for step in job["steps"] if "uses" in step
     ]
 
     assert "actions/checkout@v7" in uses
@@ -135,9 +132,7 @@ def test_ci_workflow_matches_supported_python_versions():
     data = yaml.safe_load(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))
     quality = data["jobs"]["quality"]
     setup_steps = [
-        step
-        for step in quality["steps"]
-        if step.get("uses") == "actions/setup-python@v6"
+        step for step in quality["steps"] if step.get("uses") == "actions/setup-python@v6"
     ]
 
     assert quality["strategy"]["fail-fast"] is False

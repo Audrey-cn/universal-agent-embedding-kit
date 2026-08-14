@@ -22,9 +22,9 @@ from .auth import MCPAuth, MCPRateLimiter
 # JSON-RPC 标准错误码
 # -32000 以下为 JSON-RPC 规范保留码
 # 自定义错误码使用 -32000 以上
-ERR_AUTH_FAILED = -32001       # 认证失败
-ERR_RATE_LIMITED = -32002      # 被限流
-ERR_ACCESS_DENIED = -32003     # 工具访问被拒绝
+ERR_AUTH_FAILED = -32001  # 认证失败
+ERR_RATE_LIMITED = -32002  # 被限流
+ERR_ACCESS_DENIED = -32003  # 工具访问被拒绝
 
 
 class MCPServer:
@@ -295,9 +295,7 @@ def create_server() -> MCPServer:
     register_memory_tool(server)
 
     # 授予默认客户端所有工具的访问权限
-    server._access_control.allow_all_tools_for_client(
-        list(server.tools.keys()), "default"
-    )
+    server._access_control.allow_all_tools_for_client(list(server.tools.keys()), "default")
 
     return server
 
