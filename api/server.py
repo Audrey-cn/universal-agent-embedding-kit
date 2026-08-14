@@ -12,6 +12,7 @@ from src.memory import MemoryService
 from src.version import __version__
 
 MEMORY_SERVICE = MemoryService(Path(".uaek/api-memory"))
+MAX_REQUEST_BODY_BYTES = 1_048_576
 
 
 def api_root_payload() -> dict[str, Any]:
@@ -50,15 +51,12 @@ class UAEKHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        # 读取请求体
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
-
-        try:
-            data = json.loads(body) if body else {}
-        except json.JSONDecodeError:
-            self._respond(400, {"error": "Invalid JSON"})
+        data, error = self._read_json_object()
+        if error is not None:
+            status, message = error
+            self._respond(status, {"error": message})
             return
+        assert data is not None
 
         if path == "/verify":
             self._handle_verify(data)
@@ -70,6 +68,32 @@ class UAEKHandler(BaseHTTPRequestHandler):
             self._handle_memory(data)
         else:
             self._respond(404, {"error": "Not found"})
+
+    def _read_json_object(self) -> tuple[dict[str, Any] | None, tuple[int, str] | None]:
+        """Read a bounded JSON object from the request body."""
+        content_length = self.headers.get("Content-Length")
+        if content_length is None:
+            length = 0
+        else:
+            try:
+                length = int(content_length)
+            except (TypeError, ValueError):
+                return None, (400, "Invalid Content-Length")
+
+        if length < 0:
+            return None, (400, "Invalid Content-Length")
+        if length > MAX_REQUEST_BODY_BYTES:
+            return None, (413, "Request body too large")
+
+        try:
+            body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
+            data = json.loads(body)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return None, (400, "Invalid JSON")
+
+        if not isinstance(data, dict):
+            return None, (400, "JSON body must be an object")
+        return data, None
 
     def _handle_verify(self, data: dict[str, Any]):
         """处理验证请求"""

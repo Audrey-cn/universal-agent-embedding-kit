@@ -1,8 +1,54 @@
 """Tests for API server"""
 
+import io
 import tempfile
 
-from api.server import UAEKHandler, create_server
+from api.server import MAX_REQUEST_BODY_BYTES, UAEKHandler, create_server
+
+
+def make_post_handler(
+    path: str, body: bytes, content_length: str | int | None = None
+) -> tuple[UAEKHandler, list[tuple[int, dict[str, object]]]]:
+    """Create a POST handler with an in-memory request body and captured responses."""
+    handler = UAEKHandler.__new__(UAEKHandler)
+    handler.path = path
+    handler.command = "POST"
+    handler.headers = {
+        "Content-Length": str(len(body)) if content_length is None else str(content_length)
+    }
+    handler.rfile = io.BytesIO(body)
+    responses: list[tuple[int, dict[str, object]]] = []
+    handler._respond = lambda status, data: responses.append((status, data))
+    return handler, responses
+
+
+def test_post_rejects_non_object_json() -> None:
+    """POST bodies that are JSON arrays must not reach endpoint handlers."""
+    handler, responses = make_post_handler("/effort", b"[]")
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "JSON body must be an object"})]
+
+
+def test_post_rejects_invalid_content_length() -> None:
+    """Malformed Content-Length values return a client error instead of raising."""
+    handler, responses = make_post_handler("/effort", b"{}", content_length="invalid")
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid Content-Length"})]
+
+
+def test_post_rejects_body_over_limit() -> None:
+    """Declared request bodies over 1 MiB are rejected before they are read."""
+    handler, responses = make_post_handler(
+        "/effort", b"{}", content_length=MAX_REQUEST_BODY_BYTES + 1
+    )
+
+    handler.do_POST()
+
+    assert responses == [(413, {"error": "Request body too large"})]
 
 
 class TestAPIEndpoints:

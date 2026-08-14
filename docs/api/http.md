@@ -6,6 +6,10 @@ Start locally:
 .venv/bin/python -m api.server localhost 8000
 ```
 
+## Request limits
+
+POST request bodies must be JSON objects and are limited to 1 MiB.
+
 ## Endpoints
 
 ### `GET /health`
