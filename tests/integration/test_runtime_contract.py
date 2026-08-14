@@ -78,8 +78,10 @@ def test_package_mcp_entrypoint_rejects_malformed_json() -> None:
     assert responses[1]["id"] == 2
 
 
-def test_package_mcp_entrypoint_keeps_notifications_silent() -> None:
+def test_package_mcp_entrypoint_preserves_method_dependent_no_id_behavior() -> None:
     requests = [
+        {"jsonrpc": "2.0", "method": "initialize", "params": {}},
+        {"jsonrpc": "2.0", "method": "tools/list", "params": {}},
         {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
         {"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}},
     ]
@@ -94,4 +96,7 @@ def test_package_mcp_entrypoint_keeps_notifications_silent() -> None:
 
     assert completed.returncode == 0, completed.stderr
     responses = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
-    assert responses == [{"jsonrpc": "2.0", "id": 3, "result": {}}]
+    assert [response["id"] for response in responses] == [None, None, 3]
+    assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
+    assert "tools" in responses[1]["result"]
+    assert responses[2] == {"jsonrpc": "2.0", "id": 3, "result": {}}

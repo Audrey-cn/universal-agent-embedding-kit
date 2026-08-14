@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import io
 import json
+import math
 import os
 import select
 import signal
@@ -69,7 +70,7 @@ class MCPServer:
         params = request.get("params", {})
         request_id = request.get("id")
 
-        # JSON-RPC notifications (no id) must not receive a response
+        # Retained 0.3 behavior is method-dependent for requests without an id.
         is_notification = request_id is None
 
         # 1. 认证检查
@@ -309,6 +310,8 @@ def _resolve_idle_timeout(value: float | None) -> float:
             timeout = float(raw)
         except ValueError as exc:
             raise ValueError("UAEK_MCP_IDLE_TIMEOUT must be a number") from exc
+    if not math.isfinite(timeout):
+        raise ValueError("idle timeout must be finite")
     if timeout < 0:
         raise ValueError("idle timeout must be non-negative")
     return timeout
@@ -340,21 +343,23 @@ async def run_stdio(
         nonlocal shutdown_flag
         shutdown_flag = True
 
-    original_sigterm = signal.signal(signal.SIGTERM, _signal_handler)
-    original_sigint = signal.signal(signal.SIGINT, _signal_handler)
-
-    # Track idle time
-    last_activity = time.monotonic()
-    poll_interval = 1.0
-    shutdown_reason = None
-
-    # Check if the input stream supports select (needs a real file descriptor)
+    original_handlers: list[tuple[int, Any]] = []
     try:
-        input_stream.fileno()
-        _select_supported = True
-    except (io.UnsupportedOperation, AttributeError, OSError):
-        _select_supported = False
-    try:
+        original_handlers.append((signal.SIGTERM, signal.signal(signal.SIGTERM, _signal_handler)))
+        original_handlers.append((signal.SIGINT, signal.signal(signal.SIGINT, _signal_handler)))
+
+        # Track idle time
+        last_activity = time.monotonic()
+        poll_interval = 1.0
+        shutdown_reason = None
+
+        # Check if the input stream supports select (needs a real file descriptor)
+        try:
+            input_stream.fileno()
+            _select_supported = True
+        except (io.UnsupportedOperation, AttributeError, OSError):
+            _select_supported = False
+
         while not shutdown_flag:
             # Poll stdin with timeout for idle detection
             if _select_supported:
@@ -409,8 +414,8 @@ async def run_stdio(
                         shutdown_reason = f"idle timeout ({idle_timeout}s)"
                         break
     finally:
-        signal.signal(signal.SIGTERM, original_sigterm)
-        signal.signal(signal.SIGINT, original_sigint)
+        for signum, original_handler in original_handlers:
+            signal.signal(signum, original_handler)
 
     if shutdown_reason:
         print(f"[uaek-mcp] shutdown: {shutdown_reason}", file=sys.stderr, flush=True)

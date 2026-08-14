@@ -3,6 +3,8 @@
 import io
 import tempfile
 
+import pytest
+
 from api.server import MAX_REQUEST_BODY_BYTES, UAEKHandler, create_server
 
 
@@ -45,6 +47,87 @@ def test_post_rejects_body_over_limit() -> None:
     handler, responses = make_post_handler(
         "/effort", b"{}", content_length=MAX_REQUEST_BODY_BYTES + 1
     )
+
+    handler.do_POST()
+
+    assert responses == [(413, {"error": "Request body too large"})]
+
+
+def test_post_rejects_negative_content_length() -> None:
+    """Negative body lengths are invalid client input."""
+    handler, responses = make_post_handler("/effort", b"{}", content_length=-1)
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid Content-Length"})]
+
+
+def test_post_rejects_invalid_utf8() -> None:
+    """Request bodies must be valid UTF-8 before JSON decoding."""
+    handler, responses = make_post_handler("/effort", b"\xff")
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid JSON"})]
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_post_rejects_non_finite_json_numbers(constant: str) -> None:
+    """Non-standard non-finite constants are not valid request JSON."""
+    handler, responses = make_post_handler("/effort", f'{{"value":{constant}}}'.encode())
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid JSON"})]
+
+
+def test_post_maps_oversized_json_integer_to_invalid_json() -> None:
+    """Python's integer conversion limit remains inside the 400 boundary."""
+    handler, responses = make_post_handler("/effort", b'{"value":' + b"1" * 5000 + b"}")
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid JSON"})]
+
+
+def test_post_maps_deep_json_nesting_to_invalid_json() -> None:
+    """Decoder recursion failures remain inside the 400 boundary."""
+    depth = 10_000
+    body = b'{"value":' + b"[" * depth + b"0" + b"]" * depth + b"}"
+    handler, responses = make_post_handler("/effort", body)
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid JSON"})]
+
+
+def test_post_accepts_json_object_at_exact_body_limit() -> None:
+    """A valid JSON object exactly at 1 MiB remains within the request contract."""
+    prefix = b'{"padding":"'
+    suffix = b'"}'
+    padding_size = MAX_REQUEST_BODY_BYTES - len(prefix) - len(suffix)
+    body = prefix + b"x" * padding_size + suffix
+    handler, _ = make_post_handler("/effort", body)
+
+    data, error = handler._read_json_object()
+
+    assert len(body) == MAX_REQUEST_BODY_BYTES
+    assert error is None
+    assert data is not None
+    assert data["padding"] == "x" * padding_size
+
+
+def test_post_rejects_oversized_body_before_reading() -> None:
+    """The declared-size guard runs before any request-body read."""
+
+    class ReadRaisingStream(io.BytesIO):
+        def read(self, size: int = -1) -> bytes:
+            raise AssertionError("oversized body must not be read")
+
+    handler, responses = make_post_handler(
+        "/effort", b"", content_length=MAX_REQUEST_BODY_BYTES + 1
+    )
+    handler.rfile = ReadRaisingStream()
 
     handler.do_POST()
 

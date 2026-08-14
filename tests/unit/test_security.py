@@ -1,5 +1,7 @@
 """安全模块测试——语义级多层防护"""
 
+import pytest
+
 from src.guardrails import (
     GuardrailsSystem,
     InputFilter,
@@ -431,8 +433,19 @@ class TestSemanticFilters:
 
     def test_semantic_input_filter_blocks_ssn(self):
         """语义输入过滤器: 阻止 SSN。"""
-        result = self.input_filter.check("SSN: 123-45-6789")
+        ssn = "123-45-6789"
+
+        result = self.input_filter.check(f"SSN: {ssn}")
+
         assert result.blocked is True
+        assert ssn not in result.reason
+        assert result.matched_pattern is None or ssn not in result.matched_pattern
+
+    def test_semantic_output_filter_allows_ssn(self):
+        """语义输出过滤器保留 0.3 的 SSN 输出行为。"""
+        result = self.output_filter.check("Reference number: 123-45-6789")
+
+        assert result.blocked is False
 
     def test_semantic_input_filter_passes_safe(self):
         """语义输入过滤器: 安全输入通过"""
@@ -446,8 +459,23 @@ class TestSemanticFilters:
 
     def test_semantic_output_filter_blocks_short_api_key(self):
         """语义输出过滤器: 阻止短 quoted API key。"""
-        result = self.output_filter.check('api_key="x"')
+        credential = "tiny123"
+
+        result = self.output_filter.check(f'api_key="{credential}"')
+
         assert result.blocked is True
+        assert credential not in result.reason
+        assert result.matched_pattern is None or credential not in result.matched_pattern
+
+    def test_semantic_output_filter_redacts_credential_that_looks_like_injection(self):
+        """敏感输出优先使用不含匹配值的泄露分类。"""
+        credential = "ignore previous instructions"
+
+        result = self.output_filter.check(f'api_key="{credential}"')
+
+        assert result.blocked is True
+        assert credential not in result.reason
+        assert result.matched_pattern is None or credential not in result.matched_pattern
 
     def test_semantic_output_filter_blocks_uppercase_short_api_key(self):
         """语义输出过滤器: 阻止大写短 quoted API key。"""
@@ -462,6 +490,13 @@ class TestSemanticFilters:
     def test_semantic_output_filter_blocks_uppercase_short_password(self):
         """语义输出过滤器: 阻止大写短 quoted password。"""
         result = self.output_filter.check('PASSWORD="x"')
+        assert result.blocked is True
+
+    @pytest.mark.parametrize("key_type", ["RSA", "DSA", "EC", "OPENSSH"])
+    def test_semantic_output_filter_blocks_bare_private_key_marker(self, key_type: str):
+        """语义输出过滤器保留无 PEM 边界的私钥标记检测。"""
+        result = self.output_filter.check(f"BEGIN {key_type} PRIVATE KEY")
+
         assert result.blocked is True
 
     def test_semantic_output_filter_passes_safe(self):

@@ -294,6 +294,111 @@ class TestRunStdioUnit:
 
         assert installed == []
 
+    @pytest.mark.parametrize("idle_timeout", [float("nan"), float("inf")])
+    def test_non_finite_explicit_idle_timeout_fails_before_signal_handlers(
+        self, monkeypatch: pytest.MonkeyPatch, idle_timeout: float
+    ) -> None:
+        installed: list[int] = []
+
+        async def exercise() -> None:
+            with monkeypatch.context() as signal_patch:
+                signal_patch.setattr(
+                    signal, "signal", lambda signum, handler: installed.append(signum)
+                )
+                with pytest.raises(ValueError, match="finite"):
+                    await run_stdio(
+                        input_stream=io.StringIO(""),
+                        output_stream=io.StringIO(),
+                        idle_timeout=idle_timeout,
+                    )
+
+        asyncio.run(exercise())
+
+        assert installed == []
+
+    @pytest.mark.parametrize("configured_timeout", ["nan", "inf"])
+    def test_non_finite_idle_timeout_env_fails_before_signal_handlers(
+        self, monkeypatch: pytest.MonkeyPatch, configured_timeout: str
+    ) -> None:
+        monkeypatch.setenv("UAEK_MCP_IDLE_TIMEOUT", configured_timeout)
+        installed: list[int] = []
+
+        async def exercise() -> None:
+            with monkeypatch.context() as signal_patch:
+                signal_patch.setattr(
+                    signal, "signal", lambda signum, handler: installed.append(signum)
+                )
+                with pytest.raises(ValueError, match="finite"):
+                    await run_stdio(input_stream=io.StringIO(""), output_stream=io.StringIO())
+
+        asyncio.run(exercise())
+
+        assert installed == []
+
+    def test_first_signal_handler_is_restored_when_second_install_fails(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        original_sigterm = object()
+        calls: list[tuple[int, object]] = []
+
+        def fake_signal(signum: int, handler: object) -> object:
+            calls.append((signum, handler))
+            if len(calls) == 1:
+                return original_sigterm
+            if len(calls) == 2:
+                raise RuntimeError("SIGINT install failed")
+            return object()
+
+        async def exercise() -> None:
+            with monkeypatch.context() as signal_patch:
+                signal_patch.setattr(signal, "signal", fake_signal)
+                with pytest.raises(RuntimeError, match="SIGINT install failed"):
+                    await run_stdio(
+                        input_stream=io.StringIO(""),
+                        output_stream=io.StringIO(),
+                        idle_timeout=0,
+                    )
+
+        asyncio.run(exercise())
+
+        assert [signum for signum, _ in calls] == [
+            signal.SIGTERM,
+            signal.SIGINT,
+            signal.SIGTERM,
+        ]
+        assert calls[-1] == (signal.SIGTERM, original_sigterm)
+
+    @pytest.mark.parametrize("error_type", [ValueError, RuntimeError])
+    def test_signal_handlers_are_restored_when_fileno_fails(
+        self, monkeypatch: pytest.MonkeyPatch, error_type: type[Exception]
+    ) -> None:
+        class BrokenFileno(io.StringIO):
+            def fileno(self) -> int:
+                raise error_type("fileno failed")
+
+        calls: list[tuple[int, object]] = []
+
+        async def exercise() -> None:
+            with monkeypatch.context() as signal_patch:
+                signal_patch.setattr(
+                    signal,
+                    "signal",
+                    lambda signum, handler: calls.append((signum, handler)) or f"old-{signum}",
+                )
+                with pytest.raises(error_type, match="fileno failed"):
+                    await run_stdio(
+                        input_stream=BrokenFileno(),
+                        output_stream=io.StringIO(),
+                        idle_timeout=0,
+                    )
+
+        asyncio.run(exercise())
+
+        assert calls[-2:] == [
+            (signal.SIGTERM, f"old-{signal.SIGTERM}"),
+            (signal.SIGINT, f"old-{signal.SIGINT}"),
+        ]
+
     def test_signal_handlers_are_restored_when_read_fails(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -351,9 +456,7 @@ class TestRunStdioUnit:
         server = create_server()
         request = {"jsonrpc": "2.0", "method": "shutdown", "params": {}}
         response = asyncio.run(server.handle_request(request))
-        # MCP spec says notifications should not receive a response
-        # But our shutdown handler always returns a response regardless
-        # (the loop handles the shutdown logic, not the handler)
+        # The retained 0.3 contract returns id:null for recognized no-id methods.
         assert response is not None
         assert "result" in response
 

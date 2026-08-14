@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from src.evidence.baseline import validate_external_baseline
 
 
@@ -76,8 +78,63 @@ def test_current_not_configured_baseline_remains_readable() -> None:
         }
     )
 
-    assert result["status"] == "not_configured"
-    assert result["reason"] == "No approved baseline supplied."
+    assert result == {
+        "status": "not_configured",
+        "compatible": False,
+        "name": "external",
+        "reason": "No approved baseline supplied.",
+        "metrics": {},
+        "limitations": ["No external comparison is claimed."],
+        "errors": [],
+    }
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("name", 42),
+        ("reason", []),
+        ("metrics", []),
+        ("limitations", "No comparison"),
+        ("limitations", [42]),
+    ],
+)
+def test_current_not_configured_baseline_rejects_invalid_field_types(
+    field: str, value: object
+) -> None:
+    baseline: dict[str, object] = {
+        "schema": "external_baseline_v1",
+        "name": "external",
+        "status": "not_configured",
+        "reason": "No approved baseline supplied.",
+        "metrics": {},
+        "limitations": ["No external comparison is claimed."],
+    }
+    baseline[field] = value
+
+    result = validate_external_baseline(baseline)
+
+    assert result["status"] == "invalid"
+    assert result["compatible"] is False
+    assert any(field in error for error in result["errors"])
+
+
+def test_current_not_configured_baseline_rejects_secret_material() -> None:
+    result = validate_external_baseline(
+        {
+            "schema": "external_baseline_v1",
+            "name": "external",
+            "status": "not_configured",
+            "reason": "No approved baseline supplied.",
+            "metrics": {},
+            "limitations": ["No external comparison is claimed."],
+            "api_key": "placeholder",
+        }
+    )
+
+    assert result["status"] == "invalid"
+    assert result["compatible"] is False
+    assert any("secret material" in error for error in result["errors"])
 
 
 def test_pre_03_not_configured_shape_is_invalid() -> None:

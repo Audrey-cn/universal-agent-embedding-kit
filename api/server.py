@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 from urllib.parse import urlparse
 
 from src.memory import MemoryService
@@ -13,6 +13,10 @@ from src.version import __version__
 
 MEMORY_SERVICE = MemoryService(Path(".uaek/api-memory"))
 MAX_REQUEST_BODY_BYTES = 1_048_576
+
+
+def _reject_non_finite_json_number(value: str) -> NoReturn:
+    raise ValueError(f"non-finite JSON number: {value}")
 
 
 def api_root_payload() -> dict[str, Any]:
@@ -87,8 +91,8 @@ class UAEKHandler(BaseHTTPRequestHandler):
 
         try:
             body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
-            data = json.loads(body)
-        except (UnicodeDecodeError, json.JSONDecodeError):
+            data = json.loads(body, parse_constant=_reject_non_finite_json_number)
+        except (UnicodeDecodeError, ValueError, RecursionError):
             return None, (400, "Invalid JSON")
 
         if not isinstance(data, dict):

@@ -8,7 +8,8 @@ Start locally:
 
 ## Request limits
 
-POST request bodies must be JSON objects and are limited to 1 MiB.
+POST request bodies must be UTF-8 JSON objects and are limited to 1 MiB. Malformed
+JSON, including non-finite numeric constants such as `NaN` and `Infinity`, returns 400.
 
 ## Endpoints
 

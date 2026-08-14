@@ -12,7 +12,10 @@ printf '%s\n' \
   | python -m mcp.server
 ```
 
-Each input line receives one JSON response line on stdout. The server exits after `shutdown`.
+Requests with an `id` receive one JSON response line on stdout. The retained 0.3
+behavior for no-id inputs is method-dependent: recognized methods emit their usual
+response with `"id": null`, while an unknown no-id method is silent. The server exits
+after `shutdown`, including a no-id `shutdown` after writing its `id:null` response.
 
 Registered tools:
 

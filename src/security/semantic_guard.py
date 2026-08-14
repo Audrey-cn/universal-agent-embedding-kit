@@ -158,7 +158,7 @@ SENSITIVE_REGEX_PATTERNS: list[tuple[str, str]] = [
         "通用API密钥(无引号)",
     ),
     # 私钥
-    (r"-----BEGIN\s+(?:RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY", "私钥(PEM格式)"),
+    (r"\bBEGIN\s+(?:RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY\b", "私钥(PEM格式)"),
     # JWT Token
     (r"eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+", "JWT令牌"),
     # 密码模式
@@ -209,6 +209,10 @@ class SemanticGuard:
     """语义级安全检测——不依赖外部LLM，使用本地规则+启发式"""
 
     def check_injection(self, text: str) -> GuardResult:
+        """检测提示注入和输入敏感信息。"""
+        return self._check_injection(text, check_sensitive_input=True)
+
+    def _check_injection(self, text: str, *, check_sensitive_input: bool) -> GuardResult:
         """检测提示注入（多层检测）
 
         层1: 快速关键词匹配
@@ -261,16 +265,16 @@ class SemanticGuard:
                     layer="regex",
                 )
 
-        for pattern, description in INPUT_SENSITIVE_REGEX_PATTERNS:
-            match = re.search(pattern, text)
-            if match:
-                return GuardResult(
-                    blocked=True,
-                    reason=f"检测到敏感输入({description}): {match.group(0)}",
-                    severity="medium",
-                    matched_pattern=description,
-                    layer="regex",
-                )
+        if check_sensitive_input:
+            for pattern, description in INPUT_SENSITIVE_REGEX_PATTERNS:
+                if re.search(pattern, text):
+                    return GuardResult(
+                        blocked=True,
+                        reason=f"检测到敏感输入({description})",
+                        severity="medium",
+                        matched_pattern=description,
+                        layer="regex",
+                    )
 
         # ---- 层3: 启发式检测 ----
         heuristic_result = self._heuristic_check(text, text_lower)
@@ -286,12 +290,7 @@ class SemanticGuard:
         """
         # 检查API密钥和私钥
         for pattern, description in SENSITIVE_REGEX_PATTERNS:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                # 对匹配内容进行脱敏处理后再显示
-                matched = match.group(0)
-                if len(matched) > 20:
-                    matched = matched[:10] + "..." + matched[-6:]
+            if re.search(pattern, text, re.IGNORECASE):
                 severity = (
                     "critical"
                     if any(
@@ -301,7 +300,7 @@ class SemanticGuard:
                 )
                 return GuardResult(
                     blocked=True,
-                    reason=f"检测到敏感信息泄露({description}): {matched}",
+                    reason=f"检测到敏感信息泄露({description})",
                     severity=severity,
                     matched_pattern=description,
                     layer="regex",
@@ -364,21 +363,19 @@ class SemanticGuard:
         return None
 
     def full_check(self, text: str, check_output: bool = False) -> GuardResult:
-        """完整安全检查: 先检测注入，再检测数据泄露
+        """完整安全检查: 输出优先检测数据泄露
 
-        对于输入: 只检测注入和恶意命令
-        对于输出: 检测注入、恶意命令和数据泄露
+        对于输入: 检测注入、恶意命令和输入敏感信息
+        对于输出: 先检测数据泄露，再检测注入和恶意命令
         """
-        # 始终检测注入
-        result = self.check_injection(text)
-        if result.blocked:
-            return result
-
-        # 如果是输出检查，额外检测数据泄露
         if check_output:
             result = self.check_data_leak(text)
             if result.blocked:
                 return result
+
+        result = self._check_injection(text, check_sensitive_input=not check_output)
+        if result.blocked:
+            return result
 
         return GuardResult(
             blocked=False,

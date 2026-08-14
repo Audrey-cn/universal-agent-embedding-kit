@@ -55,13 +55,36 @@ def validate_external_baseline(
         baseline.get("schema") == EXTERNAL_BASELINE_SCHEMA
         and baseline.get("status") == "not_configured"
     ):
+        abbreviated_errors: list[str] = []
+        name = baseline.get("name", "external")
+        reason = baseline.get("reason", "Not configured.")
+        metrics = baseline.get("metrics", {})
+        limitations = baseline.get("limitations", [])
+        if not isinstance(name, str):
+            abbreviated_errors.append("name must be a string")
+        if not isinstance(reason, str):
+            abbreviated_errors.append("reason must be a string")
+        if not isinstance(metrics, dict):
+            abbreviated_errors.append("metrics must be an object")
+        if not isinstance(limitations, list) or any(
+            not isinstance(item, str) for item in limitations
+        ):
+            abbreviated_errors.append("limitations must be a string list")
+        if contains_secret_material(baseline):
+            abbreviated_errors.append("baseline contains secret material")
+        if abbreviated_errors:
+            return {
+                "status": "invalid",
+                "compatible": False,
+                "errors": abbreviated_errors,
+            }
         return {
             "status": "not_configured",
             "compatible": False,
-            "name": baseline.get("name", "external"),
-            "reason": baseline.get("reason") or "Not configured.",
-            "metrics": baseline.get("metrics", {}),
-            "limitations": baseline.get("limitations", []),
+            "name": name,
+            "reason": reason or "Not configured.",
+            "metrics": metrics,
+            "limitations": limitations,
             "errors": [],
         }
 
