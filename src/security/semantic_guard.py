@@ -286,7 +286,7 @@ class SemanticGuard:
         """
         # 检查API密钥和私钥
         for pattern, description in SENSITIVE_REGEX_PATTERNS:
-            match = re.search(pattern, text)
+            match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 # 对匹配内容进行脱敏处理后再显示
                 matched = match.group(0)

@@ -461,9 +461,19 @@ class TestSemanticFilters:
         result = self.output_filter.check('api_key="x"')
         assert result.blocked is True
 
+    def test_semantic_output_filter_blocks_uppercase_short_api_key(self):
+        """语义输出过滤器: 阻止大写短 quoted API key。"""
+        result = self.output_filter.check('API_KEY="x"')
+        assert result.blocked is True
+
     def test_semantic_output_filter_blocks_short_password(self):
         """语义输出过滤器: 阻止短 quoted password。"""
         result = self.output_filter.check('password="x"')
+        assert result.blocked is True
+
+    def test_semantic_output_filter_blocks_uppercase_short_password(self):
+        """语义输出过滤器: 阻止大写短 quoted password。"""
+        result = self.output_filter.check('PASSWORD="x"')
         assert result.blocked is True
 
     def test_semantic_output_filter_passes_safe(self):
