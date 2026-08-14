@@ -81,6 +81,17 @@ def test_post_rejects_non_finite_json_numbers(constant: str) -> None:
     assert responses == [(400, {"error": "Invalid JSON"})]
 
 
+@pytest.mark.parametrize("number", ["1e9999", "-1e9999"])
+def test_post_rejects_exponent_overflow_json_floats(number: str) -> None:
+    """Finite JSON syntax must not decode into an infinite request value."""
+    body = f'{{"task_description":"check parser","ambiguity":{number}}}'.encode()
+    handler, responses = make_post_handler("/effort", body)
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid JSON"})]
+
+
 def test_post_maps_oversized_json_integer_to_invalid_json() -> None:
     """Python's integer conversion limit remains inside the 400 boundary."""
     handler, responses = make_post_handler("/effort", b'{"value":' + b"1" * 5000 + b"}")

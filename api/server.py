@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from math import isfinite
 from pathlib import Path
 from typing import Any, NoReturn
 from urllib.parse import urlparse
@@ -17,6 +18,13 @@ MAX_REQUEST_BODY_BYTES = 1_048_576
 
 def _reject_non_finite_json_number(value: str) -> NoReturn:
     raise ValueError(f"non-finite JSON number: {value}")
+
+
+def _parse_finite_json_float(value: str) -> float:
+    number = float(value)
+    if not isfinite(number):
+        _reject_non_finite_json_number(value)
+    return number
 
 
 def api_root_payload() -> dict[str, Any]:
@@ -91,7 +99,11 @@ class UAEKHandler(BaseHTTPRequestHandler):
 
         try:
             body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
-            data = json.loads(body, parse_constant=_reject_non_finite_json_number)
+            data = json.loads(
+                body,
+                parse_float=_parse_finite_json_float,
+                parse_constant=_reject_non_finite_json_number,
+            )
         except (UnicodeDecodeError, ValueError, RecursionError):
             return None, (400, "Invalid JSON")
 

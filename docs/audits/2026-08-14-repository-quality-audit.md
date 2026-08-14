@@ -23,20 +23,24 @@ finding, and no unrelated large module was split.
   declared number of bytes without a repository-defined limit, and allowed malformed
   roots and decoding failures to escape the JSON error boundary. Final review also
   found that Python accepted `NaN` and `Infinity`, while a 5,000-digit integer or deep
-  nesting raised uncaught `ValueError` or `RecursionError`.
+  nesting raised uncaught `ValueError` or `RecursionError`. A follow-up review found
+  that syntactically valid exponent-overflow floats such as `1e9999` and `-1e9999`
+  still decoded to positive or negative infinity and reached `/effort`.
 - **Reproduction/test:** the original parser-boundary RED run established the size,
   length, and root defects. In the final-review RED run, five focused cases failed:
   three non-finite constants reached the endpoint, and oversized-integer and deeply
   nested payloads raised instead of returning 400. Negative length, invalid UTF-8,
   exact-limit acceptance, and pre-read 413 behavior were also characterized directly.
+  Both exponent-overflow signs returned 200 in their follow-up RED run.
 - **Correction:** all POST routes now use one JSON-object parser. It rejects invalid
   or negative lengths with 400, rejects declared bodies above 1 MiB with 413 before
   reading, rejects non-finite constants through `parse_constant`, maps JSON
-  `ValueError` and `RecursionError` to 400, and rejects non-object roots with 400.
-  Successful endpoint response shapes were not changed.
-- **Verification:** the final parser edge set passed 9 tests; `tests/unit/test_api.py`
-  plus `tests/integration/test_integration.py` passed 37 tests; the complete suite
-  passed 749 tests with 77.53% aggregate coverage.
+  `ValueError` and `RecursionError` to 400, validates `parse_float` results are finite,
+  and rejects non-object roots with 400. Successful endpoint response shapes were not
+  changed.
+- **Verification:** the final parser edge set passed 11 tests; `tests/unit/test_api.py`
+  plus `tests/integration/test_integration.py` passed 39 tests; the complete suite
+  passed 751 tests with 77.53% aggregate coverage.
 
 ### Medium
 
@@ -190,16 +194,17 @@ not establish mixed responsibilities in an untouched large module.
   7 passes, and the reviewer-found overlap went from 1 failure to 1 pass;
   abbreviated-baseline validation went from 6 failures and 1 pass to 7 passes; MCP
   lifecycle went from 7 failures to 7 passes; and HTTP parsing went from 5 failures
-  and 4 passes to 9 passes. The no-id MCP integration characterization passed without
-  a production dispatcher change.
+  and 4 passes to 9 passes. The HTTP exponent-overflow follow-up then went from 2
+  focused failures to 2 passes. The no-id MCP integration characterization passed
+  without a production dispatcher change.
 - The changed-file format gate passed for all 13 Python files changed since
   `0d4de16`. `uv run ruff check src api mcp tests scripts` passed, and `uv run mypy
   src api mcp` passed with no issues in 107 source files.
 - Final focused suites passed: MCP/runtime 62 tests, security 132 tests,
-  baseline/evidence/audit 68 tests, and API/integration 37 tests. The supported-module
+  baseline/evidence/audit 68 tests, and API/integration 39 tests. The supported-module
   coverage gate passed 3 tests.
 - `uv run pytest -q --cov=src --cov=api --cov=mcp --cov-report=term-missing` passed
-  749 tests in 79.36 seconds with 77.53% aggregate coverage, exceeding the 75% floor.
+  751 tests in 76.33 seconds with 77.53% aggregate coverage, exceeding the 75% floor.
 - `uv lock --check` and `uv build --wheel` passed; the latter produced
   `dist/uaek-0.3.0.dev1-py3-none-any.whl`. A fresh temporary venv installed that wheel
   successfully. Installed `uaek --help` passed; installed `python -m mcp`
