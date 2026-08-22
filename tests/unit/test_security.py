@@ -68,6 +68,24 @@ def test_candidate_policy_returns_syntax_diagnostic():
     assert "syntax" in diagnostics[0].lower()
 
 
+@pytest.mark.parametrize(
+    "definition",
+    [
+        "def two_sum(nums, target=helper()):\n    return []\n",
+        "def two_sum(nums: helper(), target):\n    return []\n",
+        "def two_sum(nums, target) -> helper():\n    return []\n",
+    ],
+)
+def test_candidate_policy_rejects_definition_time_evaluation(definition: str):
+    from src.security.python_policy import validate_candidate_code
+
+    code = "def helper():\n    return 1\n" + definition
+
+    diagnostics = validate_candidate_code(code, "two_sum")
+
+    assert any("definition-time" in diagnostic.lower() for diagnostic in diagnostics)
+
+
 def test_run_candidate_cases_returns_one_result_per_case():
     from src.security.python_policy import run_candidate_cases
 

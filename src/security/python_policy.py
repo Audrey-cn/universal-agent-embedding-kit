@@ -139,6 +139,30 @@ def validate_candidate_code(code: str, entrypoint: str) -> list[str]:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.decorator_list:
             _append_once(diagnostics, "function decorators are not allowed")
 
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            parameters = [
+                *node.args.posonlyargs,
+                *node.args.args,
+                *node.args.kwonlyargs,
+            ]
+            annotations = [parameter.annotation for parameter in parameters]
+            if node.args.vararg is not None:
+                annotations.append(node.args.vararg.annotation)
+            if node.args.kwarg is not None:
+                annotations.append(node.args.kwarg.annotation)
+            has_definition_time_expression = (
+                bool(node.args.defaults)
+                or any(default is not None for default in node.args.kw_defaults)
+                or any(annotation is not None for annotation in annotations)
+                or node.returns is not None
+                or bool(getattr(node, "type_params", ()))
+            )
+            if has_definition_time_expression:
+                _append_once(
+                    diagnostics,
+                    "definition-time defaults and annotations are not allowed",
+                )
+
         if isinstance(node, ast.Call):
             call_name: str | None = None
             if isinstance(node.func, ast.Name):
