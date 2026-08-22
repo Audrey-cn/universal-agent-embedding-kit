@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+import os
+import sys
+import time
+from pathlib import Path
+
 import pytest
 
-from src.security.sandbox import SandboxedExecutor, SandboxPolicy, SandboxResult
+from src.security.sandbox import (
+    SandboxedExecutor,
+    SandboxPolicy,
+    SandboxResult,
+    run_bounded_process,
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -14,6 +24,106 @@ from src.security.sandbox import SandboxedExecutor, SandboxPolicy, SandboxResult
 def executor() -> SandboxedExecutor:
     """创建沙箱执行器实例"""
     return SandboxedExecutor()
+
+
+def test_bounded_process_caps_combined_output_bytes() -> None:
+    """stdout/stderr 应共享同一个按字节计算的输出上限。"""
+    policy = SandboxPolicy(max_runtime_sec=5, max_output_bytes=64)
+    result = run_bounded_process(
+        [
+            sys.executable,
+            "-c",
+            "import sys; print('界' * 1000); sys.stderr.write('x' * 1000)",
+        ],
+        policy=policy,
+    )
+
+    assert len(result.stdout.encode()) + len(result.stderr.encode()) <= 64
+    assert result.output_truncated is True
+
+
+def test_bounded_process_decodes_invalid_output_with_replacement() -> None:
+    """非 UTF-8 子进程输出应以替换字符解码。"""
+    result = run_bounded_process(
+        [sys.executable, "-c", "import os; os.write(1, b'\\xff')"],
+        policy=SandboxPolicy(max_output_bytes=64),
+    )
+
+    assert result.stdout == "\ufffd"
+    assert result.output_truncated is False
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("max_runtime_sec", 0), ("max_memory_mb", -1), ("max_output_bytes", 0)],
+)
+def test_bounded_process_rejects_invalid_limits(field: str, value: int) -> None:
+    """子进程启动前应拒绝非正数资源限制。"""
+    policy = SandboxPolicy()
+    setattr(policy, field, value)
+
+    with pytest.raises(ValueError, match=field):
+        run_bounded_process([sys.executable, "-c", "pass"], policy=policy)
+
+
+def test_bounded_process_uses_supplied_environment_and_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """调用者传入的环境是完整环境，且工作目录应原样传递。"""
+    monkeypatch.setenv("UAEK_PARENT_ONLY", "secret")
+    result = run_bounded_process(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import os; "
+                "print(os.environ.get('UAEK_CHILD_ONLY')); "
+                "print(os.environ.get('UAEK_PARENT_ONLY')); "
+                "print(os.getcwd())"
+            ),
+        ],
+        env={"UAEK_CHILD_ONLY": "visible"},
+        cwd=tmp_path,
+    )
+
+    assert result.success is True
+    assert result.stdout.splitlines() == ["visible", "None", str(tmp_path)]
+
+
+@pytest.mark.skipif(os.name != "posix", reason="requires POSIX PID inspection")
+def test_bounded_process_timeout_kills_child_process_group(tmp_path: Path) -> None:
+    """超时应清理同一进程组中由命令启动的子进程。"""
+    pid_path = tmp_path / "child.pid"
+    helper_path = tmp_path / "spawn_child.py"
+    helper_path.write_text(
+        "import subprocess\n"
+        "import sys\n"
+        "import time\n"
+        "from pathlib import Path\n"
+        "child = subprocess.Popen([sys.executable, '-c', "
+        "'import time; time.sleep(60)'])\n"
+        "Path(sys.argv[1]).write_text(str(child.pid), encoding='utf-8')\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+
+    result = run_bounded_process(
+        [sys.executable, str(helper_path), str(pid_path)],
+        policy=SandboxPolicy(max_runtime_sec=1),
+        cwd=tmp_path,
+    )
+
+    assert result.timed_out is True
+    child_pid = int(pid_path.read_text(encoding="utf-8"))
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        try:
+            os.kill(child_pid, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.02)
+    else:
+        pytest.fail(f"child process {child_pid} survived timeout")
 
 
 # --------------------------------------------------------------------------- #
