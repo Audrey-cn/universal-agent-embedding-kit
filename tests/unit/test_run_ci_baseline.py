@@ -145,8 +145,10 @@ def test_ci_workflow_uses_current_node24_actions():
 
     assert "actions/checkout@v7" in uses
     assert "actions/setup-python@v6" in uses
+    assert "actions/upload-artifact@v7" in uses
     assert "actions/checkout@v4" not in uses
     assert "actions/setup-python@v5" not in uses
+    assert "actions/upload-artifact@v4" not in uses
 
 
 def test_ci_workflow_matches_supported_python_versions():
