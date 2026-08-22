@@ -40,17 +40,27 @@ configure commands they trust.
 
 ### Restricted candidate execution
 
-Benchmark candidate Python is checked against a restrictive AST policy, receives
-a limited builtins set, and runs in a child process with a temporary working
-directory, a reduced environment, and resource, time, and output limits. These
-controls reduce accidental and straightforward abuse while preserving the
-benchmark API.
+The restricted language policy applies to candidate code routed through
+`src.security.python_policy`: capability grading, scenario verification, and
+property verification. In those paths, UAEK checks a restrictive AST policy,
+provides limited builtins, and runs the candidate in a child process with a
+temporary working directory, a reduced environment, and resource, time, and
+output limits.
+
+### Adversarial verification
+
+Adversarial verification currently evaluates Python read from result artifacts
+through a bounded subprocess with timeout, resource, output, and
+temporary-directory controls. It does not use the restricted AST or limited-builtins policy.
+Treat such artifacts as hostile: they require OS-level isolation, such as a
+disposable container or virtual machine, with no credentials, sensitive mounts,
+or network access.
 
 ### Residual isolation boundary
 
 This subprocess isolation is **not a kernel-level sandbox**. In particular, the
 current `allow_network` and `allow_filesystem_write` policy fields are metadata;
 they do not enforce OS-level network or filesystem isolation, and resource-limit
-support varies by platform. Run untrusted scenario packs in a disposable
-container or virtual machine with no credentials, sensitive mounts, or network
-access. Reports about the verification or isolation path are especially welcome.
+support varies by platform. Run other untrusted candidate inputs under the same
+disposable OS-level isolation described above. Reports about the verification or
+isolation path are especially welcome.

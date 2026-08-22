@@ -228,6 +228,28 @@ def test_security_policy_describes_supported_version_and_execution_boundaries() 
     assert "not a kernel-level sandbox" in policy
 
 
+def test_security_policy_distinguishes_restricted_and_bounded_only_candidate_paths() -> None:
+    """Security guidance should not apply the restricted policy to every candidate path."""
+    policy = Path("SECURITY.md").read_text(encoding="utf-8").lower()
+
+    assert "benchmark candidate python is checked" not in policy
+    restricted = policy.split("### restricted candidate execution", 1)[1].split(
+        "### adversarial verification", 1
+    )[0]
+    assert "capability grading" in restricted
+    assert "scenario verification" in restricted
+    assert "property verification" in restricted
+    assert "restrictive ast policy" in restricted
+    assert "limited builtins" in restricted
+
+    adversarial = policy.split("### adversarial verification", 1)[1].split(
+        "### residual isolation boundary", 1
+    )[0]
+    assert "bounded subprocess" in adversarial
+    assert "does not use the restricted ast or limited-builtins policy" in adversarial
+    assert "container or virtual machine" in adversarial
+
+
 def test_mcp_module_runs_stdio_initialize_and_tools_list():
     """`python -m mcp.server` should be a real stdio JSON-RPC MCP server."""
     requests = (
