@@ -22,6 +22,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from src.security.python_policy import run_restricted_harness
+
 from .interface import VerificationResult, VerificationType
 
 
@@ -477,6 +479,45 @@ class PropertyTester:
 # 与验证框架的集成
 # --------------------------------------------------------------------------- #
 
+_PROPERTY_HARNESS = '''
+from src.verify.property_test import PropertyTester, PropertyType
+
+def safe_counterexample(value):
+    if value is None or type(value) in (bool, int, float, str):
+        return repr(value)[:1000]
+    if type(value) in (list, tuple, dict, set):
+        return repr(value)[:1000]
+    return f"<{type(value).__name__}>"
+
+try:
+    namespace = {"__builtins__": SAFE_BUILTINS}
+    exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
+    function = namespace[ENTRYPOINT]
+    if not callable(function):
+        raise TypeError("candidate entrypoint is not callable")
+except Exception as exc:
+    print(json.dumps({"load_error": f"{type(exc).__name__}: {exc}"}))
+else:
+    tester = PropertyTester(trials=PAYLOAD["trials"], seed=PAYLOAD["seed"])
+    results = []
+    for requested_type in PAYLOAD["property_types"]:
+        if requested_type == PropertyType.IDEMPOTENT.value:
+            result = tester.test_idempotent(function)
+        elif requested_type == PropertyType.NO_CRASH.value:
+            result = tester.test_no_crash(function)
+        else:
+            continue
+        results.append({
+            "passed": result.passed,
+            "property_type": result.property_type.value,
+            "total_trials": result.total_trials,
+            "failed_trial": result.failed_trial,
+            "counterexample": safe_counterexample(result.counterexample),
+            "shrunk_counterexample": safe_counterexample(result.shrunk_counterexample),
+        })
+    print(json.dumps({"results": results}))
+'''
+
 
 def property_test_verify(
     artifact_path: Path,
@@ -501,57 +542,67 @@ def property_test_verify(
             notes=f"Artifact read error: {e}",
         )
 
-    # 动态加载函数
-    namespace: dict[str, Any] = {}
-    try:
-        exec(compile(code, str(artifact_path), "exec"), namespace)
-    except Exception as e:
-        return VerificationResult(
-            passed=False,
-            verdict="FAIL",
-            evidence=f"Cannot compile code: {e}",
-            verification_type=VerificationType.TEST,
-            artifact_path=artifact_path,
-            notes=f"Compile error: {e}",
-        )
-
-    if func_name not in namespace:
-        return VerificationResult(
-            passed=False,
-            verdict="INDETERMINATE",
-            evidence=f"Function '{func_name}' not found in {artifact_path}",
-            verification_type=VerificationType.TEST,
-            artifact_path=artifact_path,
-            notes=f"Available: {[k for k in namespace if callable(namespace[k])]}",
-        )
-
-    func = namespace[func_name]
-    if not callable(func):
-        return VerificationResult(
-            passed=False,
-            verdict="FAIL",
-            evidence=f"'{func_name}' is not callable",
-            verification_type=VerificationType.TEST,
-            artifact_path=artifact_path,
-        )
-
-    # 运行属性测试
-    tester = PropertyTester(trials=trials, seed=seed)
-    results: list[PropertyTestResult] = []
-
+    property_types = []
     if property_type is None or property_type == PropertyType.IDEMPOTENT:
-        results.append(tester.test_idempotent(func))
+        property_types.append(PropertyType.IDEMPOTENT.value)
     if property_type is None or property_type == PropertyType.NO_CRASH:
-        results.append(tester.test_no_crash(func))
+        property_types.append(PropertyType.NO_CRASH.value)
+    process_result = run_restricted_harness(
+        code,
+        func_name,
+        _PROPERTY_HARNESS,
+        {"property_types": property_types, "trials": trials, "seed": seed},
+        timeout=5.0,
+    )
+    if not process_result.success:
+        diagnostic = process_result.error or "unknown grader failure"
+        return VerificationResult(
+            passed=False,
+            verdict="FAIL",
+            evidence=f"Property test policy rejected or execution failed: {diagnostic}",
+            verification_type=VerificationType.TEST,
+            artifact_path=artifact_path,
+            notes=diagnostic,
+        )
 
-    all_passed = all(r.passed for r in results)
-    failed = [r for r in results if not r.passed]
+    payload = process_result.result if isinstance(process_result.result, dict) else {}
+    load_error = payload.get("load_error")
+    if isinstance(load_error, str):
+        return VerificationResult(
+            passed=False,
+            verdict="FAIL",
+            evidence=f"Cannot compile code: {load_error}",
+            verification_type=VerificationType.TEST,
+            artifact_path=artifact_path,
+            notes=f"Compile error: {load_error}",
+        )
+
+    raw_results = payload.get("results", [])
+    results = raw_results if isinstance(raw_results, list) else []
+    all_passed = all(
+        isinstance(result, dict) and result.get("passed") is True
+        for result in results
+    )
+    failed = [
+        result
+        for result in results
+        if isinstance(result, dict) and result.get("passed") is not True
+    ]
+    passed_count = sum(
+        1
+        for result in results
+        if isinstance(result, dict) and result.get("passed") is True
+    )
 
     return VerificationResult(
         passed=all_passed,
         verdict="PASS" if all_passed else "FAIL",
-        evidence=f"Property tests: {sum(1 for r in results if r.passed)}/{len(results)} passed",
+        evidence=f"Property tests: {passed_count}/{len(results)} passed",
         verification_type=VerificationType.TEST,
         artifact_path=artifact_path,
-        notes=f"Failed: {[r.property_type.value for r in failed]}" if failed else "All passed",
+        notes=(
+            f"Failed: {[result.get('property_type') for result in failed]}"
+            if failed
+            else "All passed"
+        ),
     )

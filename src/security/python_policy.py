@@ -176,6 +176,31 @@ def validate_candidate_code(code: str, entrypoint: str) -> list[str]:
 
 
 def _trusted_harness() -> str:
+    return '''
+try:
+    namespace = {"__builtins__": SAFE_BUILTINS}
+    exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
+    function = namespace[ENTRYPOINT]
+    if not callable(function):
+        raise TypeError("candidate entrypoint is not callable")
+except Exception as exc:
+    print(json.dumps({"load_error": f"{type(exc).__name__}: {exc}"}))
+else:
+    results = []
+    for index, args in enumerate(PAYLOAD["cases"]):
+        try:
+            value = function(*args)
+            json.dumps(value)
+            results.append({"index": index, "status": "ok", "value": value})
+        except Exception as exc:
+            results.append(
+                {"index": index, "status": "error", "error": f"{type(exc).__name__}: {exc}"}
+            )
+    print(json.dumps(results))
+'''
+
+
+def _harness_prelude() -> str:
     builtin_entries = "\n".join(
         f"    {name!r}: {name}," for name in SAFE_BUILTINS
     )
@@ -186,31 +211,11 @@ SAFE_BUILTINS = {{
 {builtin_entries}
 }}
 
-try:
-    with open(sys.argv[1], encoding="utf-8") as source_handle:
-        source_payload = json.load(source_handle)
-    with open(sys.argv[2], encoding="utf-8") as cases_handle:
-        cases = json.load(cases_handle)
-    namespace = {{"__builtins__": SAFE_BUILTINS}}
-    exec(compile(source_payload["code"], "candidate.py", "exec"), namespace)
-    function = namespace[source_payload["entrypoint"]]
-    if not callable(function):
-        raise TypeError("candidate entrypoint is not callable")
-except Exception as exc:
-    print(json.dumps({{"load_error": f"{{type(exc).__name__}}: {{exc}}"}}))
-    sys.exit(0)
-
-results = []
-for index, args in enumerate(cases):
-    try:
-        value = function(*args)
-        json.dumps(value)
-        results.append({{"index": index, "status": "ok", "value": value}})
-    except Exception as exc:
-        results.append(
-            {{"index": index, "status": "error", "error": f"{{type(exc).__name__}}: {{exc}}"}}
-        )
-print(json.dumps(results))
+with open(sys.argv[1], encoding="utf-8") as context_handle:
+    CONTEXT = json.load(context_handle)
+SOURCE_CODE = CONTEXT["code"]
+ENTRYPOINT = CONTEXT["entrypoint"]
+PAYLOAD = CONTEXT["payload"]
 '''
 
 
@@ -230,6 +235,99 @@ def _failure_result(
         timed_out=process_result.timed_out,
         output_truncated=process_result.output_truncated,
     )
+
+
+def run_restricted_harness(
+    code: str,
+    entrypoint: str,
+    harness: str,
+    payload: dict[str, Any],
+    *,
+    timeout: float,
+) -> SandboxResult:
+    """Run a repository-owned harness around validated candidate code."""
+    diagnostics = validate_candidate_code(code, entrypoint)
+    if diagnostics:
+        return _failure_result(f"candidate policy rejected: {'; '.join(diagnostics)}")
+    return _run_harness(code, entrypoint, harness, payload, timeout=timeout)
+
+
+def run_repository_harness(
+    code: str,
+    entrypoint: str,
+    harness: str,
+    payload: dict[str, Any],
+    *,
+    timeout: float,
+) -> SandboxResult:
+    """Run source whose repository ownership was established by the caller."""
+    return _run_harness(code, entrypoint, harness, payload, timeout=timeout)
+
+
+def _run_harness(
+    code: str,
+    entrypoint: str,
+    harness: str,
+    payload: dict[str, Any],
+    *,
+    timeout: float,
+) -> SandboxResult:
+    """Execute a trusted harness without duplicating process setup."""
+
+    try:
+        with tempfile.TemporaryDirectory(prefix="uaek-grade-") as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            context_path = tmp_path / "context.json"
+            harness_path = tmp_path / "harness.py"
+            context_path.write_text(
+                json.dumps(
+                    {"code": code, "entrypoint": entrypoint, "payload": payload}
+                ),
+                encoding="utf-8",
+            )
+            harness_path.write_text(_harness_prelude() + harness, encoding="utf-8")
+            environment = {
+                "HOME": tmp_dir,
+                "TMPDIR": tmp_dir,
+                "PYTHONHASHSEED": "0",
+                "PYTHONIOENCODING": "utf-8",
+                "PYTHONPATH": str(Path(__file__).resolve().parents[2]),
+            }
+            process_result = run_bounded_process(
+                [sys.executable, str(harness_path), str(context_path)],
+                policy=SandboxPolicy(
+                    max_runtime_sec=cast(Any, timeout),
+                    max_memory_mb=256,
+                    max_output_bytes=1024 * 1024,
+                ),
+                env=environment,
+                cwd=tmp_path,
+            )
+    except Exception as exc:
+        return _failure_result(f"grader setup failed: {type(exc).__name__}: {exc}")
+
+    if process_result.timed_out:
+        return _failure_result(
+            f"grading timed out after {timeout:g}s",
+            process_result=process_result,
+        )
+    if process_result.output_truncated:
+        return _failure_result("grader output limit exceeded", process_result=process_result)
+    if not process_result.success:
+        detail = process_result.error or process_result.stderr.strip()[:200]
+        error = f"grader process failed with exit code {process_result.exit_code}"
+        if detail:
+            error += f": {detail}"
+        return _failure_result(error, process_result=process_result)
+
+    try:
+        result = json.loads(process_result.stdout)
+    except (json.JSONDecodeError, TypeError) as exc:
+        return _failure_result(
+            f"grader produced invalid JSON: {exc}", process_result=process_result
+        )
+    process_result.result = result
+    return process_result
 
 
 def _parse_case_results(process_result: SandboxResult) -> list[SandboxResult]:
@@ -288,59 +386,13 @@ def run_candidate_cases(
     timeout: float,
 ) -> list[SandboxResult]:
     """Validate and run candidate calls in a bounded process and isolated temp home."""
-    diagnostics = validate_candidate_code(code, entrypoint)
-    if diagnostics:
-        return [_failure_result(f"candidate policy rejected: {'; '.join(diagnostics)}")]
-
-    try:
-        with tempfile.TemporaryDirectory(prefix="uaek-grade-") as tmp_dir:
-            tmp_path = Path(tmp_dir)
-            source_path = tmp_path / "source.json"
-            cases_path = tmp_path / "cases.json"
-            harness_path = tmp_path / "harness.py"
-            source_path.write_text(
-                json.dumps({"code": code, "entrypoint": entrypoint}),
-                encoding="utf-8",
-            )
-            cases_path.write_text(json.dumps(args_list), encoding="utf-8")
-            harness_path.write_text(_trusted_harness(), encoding="utf-8")
-            environment = {
-                "HOME": tmp_dir,
-                "TMPDIR": tmp_dir,
-                "PYTHONHASHSEED": "0",
-                "PYTHONIOENCODING": "utf-8",
-            }
-            process_result = run_bounded_process(
-                [sys.executable, str(harness_path), str(source_path), str(cases_path)],
-                policy=SandboxPolicy(
-                    max_runtime_sec=cast(Any, timeout),
-                    max_memory_mb=256,
-                    max_output_bytes=1024 * 1024,
-                ),
-                env=environment,
-                cwd=tmp_path,
-            )
-    except Exception as exc:
-        return [_failure_result(f"grader setup failed: {type(exc).__name__}: {exc}")]
-
-    if process_result.timed_out:
-        return [
-            _failure_result(
-                f"grading timed out after {timeout:g}s",
-                process_result=process_result,
-            )
-        ]
-    if process_result.output_truncated:
-        return [
-            _failure_result(
-                "grader output limit exceeded",
-                process_result=process_result,
-            )
-        ]
+    process_result = run_restricted_harness(
+        code,
+        entrypoint,
+        _trusted_harness(),
+        {"cases": args_list},
+        timeout=timeout,
+    )
     if not process_result.success:
-        detail = process_result.error or process_result.stderr.strip()[:200]
-        error = f"grader process failed with exit code {process_result.exit_code}"
-        if detail:
-            error += f": {detail}"
-        return [_failure_result(error, process_result=process_result)]
+        return [process_result]
     return _parse_case_results(process_result)

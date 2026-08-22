@@ -68,6 +68,28 @@ def test_genuine_reuse_passes_context_retention():
     assert report["dimensions"]["context_retention"] == 1.0
 
 
+def test_scenario_evaluation_isolation_rejects_parent_filesystem_side_effect(
+    tmp_path: Path,
+):
+    """A policy regression would let candidate module code overwrite the sentinel."""
+    from src.scenario_benchmark import evaluate_scenario, get_scenario
+
+    sentinel = tmp_path / "parent-sentinel.txt"
+    sentinel.write_text("unchanged", encoding="utf-8")
+    code = (
+        f"open({str(sentinel)!r}, 'w').write('changed')\n"
+        "def discount(price, code):\n"
+        "    return price\n"
+    )
+
+    report = evaluate_scenario(get_scenario("discount_feature"), code)
+
+    assert report["overall"] == 0.0
+    assert report["checks_passed"] == 0
+    assert "policy rejected" in str(report["load_error"]).lower()
+    assert sentinel.read_text(encoding="utf-8") == "unchanged"
+
+
 def test_scenarios_are_multistep_and_multidimensional():
     from src.scenario_benchmark import DIMENSIONS, SCENARIOS
 

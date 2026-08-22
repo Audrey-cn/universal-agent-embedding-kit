@@ -24,6 +24,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from src.security.python_policy import run_repository_harness, run_restricted_harness
+
 DIMENSIONS = ("correctness", "completeness", "context_retention", "robustness")
 LIVE_MEASUREMENT_PATH = Path("benchmarks/results/scenario-live-measurement.json")
 
@@ -478,69 +480,167 @@ FLAWED_SOLUTIONS: dict[str, str] = {
     ),
 }
 
-
-
 def get_scenario(scenario_id: str) -> RealScenario:
     if scenario_id not in _SCENARIOS_BY_ID:
         raise KeyError(f"unknown scenario: {scenario_id}")
     return _SCENARIOS_BY_ID[scenario_id]
 
 
-def _reuse_detected(namespace: dict[str, Any], probe: ReuseProbe) -> bool:
-    """True iff swapping the dependency changes the caller's output (genuine reuse)."""
-    caller = namespace.get(probe.caller)
-    if not callable(caller):
-        return False
-    try:
-        baseline = caller(probe.probe_input)
-    except Exception:  # noqa: BLE001
-        return False
-    # Swap the dependency in-place with a valid-but-different implementation.
-    exec(compile(probe.swapped_code, "<reuse-probe>", "exec"), namespace)  # noqa: S102
-    swapped_caller = namespace.get(probe.caller)
-    if not callable(swapped_caller):
-        return False
-    try:
-        swapped = swapped_caller(probe.probe_input)
-    except Exception:  # noqa: BLE001
-        return False
-    return bool(swapped != baseline)
+_SCENARIO_HARNESS = '''
+def decode_value(value):
+    if not isinstance(value, dict) or "__uaek_type__" not in value:
+        return value
+    kind = value["__uaek_type__"]
+    items = value.get("items", [])
+    if kind == "tuple":
+        return tuple(decode_value(item) for item in items)
+    if kind == "list":
+        return [decode_value(item) for item in items]
+    if kind == "dict":
+        return {decode_value(item[0]): decode_value(item[1]) for item in items}
+    return value
+
+per_dimension_pass = {}
+per_dimension_total = {}
+load_error = None
+try:
+    namespace = {"__builtins__": SAFE_BUILTINS}
+    exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
+except Exception as exc:
+    load_error = f"{type(exc).__name__}: {exc}"
+
+for check in PAYLOAD["checks"]:
+    dimension = check["dimension"]
+    per_dimension_total[dimension] = per_dimension_total.get(dimension, 0) + 1
+    passed = False
+    if load_error is None:
+        function = namespace.get(check["entrypoint"])
+        if callable(function):
+            try:
+                args = decode_value(check["args"])
+                expected = decode_value(check["expected"])
+                passed = function(*args) == expected
+            except Exception:
+                passed = False
+    if passed:
+        per_dimension_pass[dimension] = per_dimension_pass.get(dimension, 0) + 1
+
+probe = PAYLOAD.get("reuse_probe")
+if probe is not None:
+    dimension = "context_retention"
+    per_dimension_total[dimension] = per_dimension_total.get(dimension, 0) + 1
+    passed = False
+    if load_error is None:
+        caller = namespace.get(probe["caller"])
+        if callable(caller):
+            try:
+                probe_input = decode_value(probe["probe_input"])
+                baseline = caller(probe_input)
+                exec(compile(probe["swapped_code"], "reuse_probe.py", "exec"), namespace)
+                swapped_caller = namespace.get(probe["caller"])
+                if callable(swapped_caller):
+                    swapped = swapped_caller(probe_input)
+                    passed = swapped != baseline
+            except Exception:
+                passed = False
+    if passed:
+        per_dimension_pass[dimension] = per_dimension_pass.get(dimension, 0) + 1
+
+print(json.dumps({
+    "per_dimension_pass": per_dimension_pass,
+    "per_dimension_total": per_dimension_total,
+    "load_error": load_error,
+}))
+'''
+_TRUSTED_SCENARIO_HARNESS = _SCENARIO_HARNESS.replace(
+    'namespace = {"__builtins__": SAFE_BUILTINS}',
+    "namespace = {}",
+    1,
+)
+
+
+def _encode_scenario_value(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return {
+            "__uaek_type__": "tuple",
+            "items": [_encode_scenario_value(item) for item in value],
+        }
+    if isinstance(value, list):
+        return {
+            "__uaek_type__": "list",
+            "items": [_encode_scenario_value(item) for item in value],
+        }
+    if isinstance(value, dict):
+        return {
+            "__uaek_type__": "dict",
+            "items": [
+                [_encode_scenario_value(key), _encode_scenario_value(item)]
+                for key, item in value.items()
+            ],
+        }
+    return value
 
 
 def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
     """Score a solution across the scenario's dimensions."""
-    namespace: dict[str, Any] = {}
-    load_error: str | None = None
-    try:
-        exec(compile(code, f"<{scenario.scenario_id}>", "exec"), namespace)  # noqa: S102
-    except Exception as exc:  # noqa: BLE001
-        load_error = f"{type(exc).__name__}: {exc}"
-
-    per_dimension_pass: dict[str, int] = {}
-    per_dimension_total: dict[str, int] = {}
-    for check in scenario.checks:
-        per_dimension_total[check.dimension] = per_dimension_total.get(check.dimension, 0) + 1
-        passed = False
-        if load_error is None:
-            fn = namespace.get(check.entrypoint)
-            if callable(fn):
-                try:
-                    passed = fn(*check.args) == check.expected
-                except Exception:  # noqa: BLE001
-                    passed = False
-        if passed:
-            per_dimension_pass[check.dimension] = per_dimension_pass.get(check.dimension, 0) + 1
-
-    # Genuine context_retention: the reuse probe (swap the dependency, require the
-    # caller's output to track it). An inline reimplementation fails this.
+    checks = [
+        {
+            "dimension": check.dimension,
+            "entrypoint": check.entrypoint,
+            "args": _encode_scenario_value(check.args),
+            "expected": _encode_scenario_value(check.expected),
+        }
+        for check in scenario.checks
+    ]
+    reuse_probe = None
     if scenario.reuse_probe is not None:
-        per_dimension_total["context_retention"] = per_dimension_total.get(
-            "context_retention", 0
-        ) + 1
-        if load_error is None and _reuse_detected(namespace, scenario.reuse_probe):
-            per_dimension_pass["context_retention"] = per_dimension_pass.get(
-                "context_retention", 0
-            ) + 1
+        reuse_probe = {
+            "caller": scenario.reuse_probe.caller,
+            "dependency": scenario.reuse_probe.dependency,
+            "swapped_code": scenario.reuse_probe.swapped_code,
+            "probe_input": _encode_scenario_value(scenario.reuse_probe.probe_input),
+        }
+    entrypoint = scenario.checks[0].entrypoint if scenario.checks else ""
+    process_result = run_restricted_harness(
+        code,
+        entrypoint,
+        _SCENARIO_HARNESS,
+        {"checks": checks, "reuse_probe": reuse_probe},
+        timeout=5.0,
+    )
+    repository_owned = (
+        code in REFERENCE_SOLUTIONS.values() or code in FLAWED_SOLUTIONS.values()
+    )
+    if (
+        repository_owned
+        and not process_result.success
+        and str(process_result.error).startswith("candidate policy rejected:")
+    ):
+        process_result = run_repository_harness(
+            code,
+            entrypoint,
+            _TRUSTED_SCENARIO_HARNESS,
+            {"checks": checks, "reuse_probe": reuse_probe},
+            timeout=5.0,
+        )
+
+    payload = process_result.result if isinstance(process_result.result, dict) else {}
+    raw_pass = payload.get("per_dimension_pass", {})
+    raw_total = payload.get("per_dimension_total", {})
+    per_dimension_pass = raw_pass if isinstance(raw_pass, dict) else {}
+    per_dimension_total = raw_total if isinstance(raw_total, dict) else {}
+    load_error = payload.get("load_error")
+    if not isinstance(load_error, str):
+        load_error = process_result.error if not process_result.success else None
+    if not per_dimension_total:
+        for check in scenario.checks:
+            per_dimension_total[check.dimension] = (
+                per_dimension_total.get(check.dimension, 0) + 1
+            )
+        if scenario.reuse_probe is not None:
+            per_dimension_total["context_retention"] = (
+                per_dimension_total.get("context_retention", 0) + 1
+            )
 
     dimensions = {
         dim: round(per_dimension_pass.get(dim, 0) / total, 4)

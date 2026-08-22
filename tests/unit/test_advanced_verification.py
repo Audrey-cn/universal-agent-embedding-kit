@@ -13,7 +13,13 @@ from src.verify.multi_perspective import (
     Perspective,
     PerspectiveResult,
 )
-from src.verify.property_test import InputGenerator, PropertyTester, Shrinker
+from src.verify.property_test import (
+    InputGenerator,
+    PropertyTester,
+    PropertyType,
+    Shrinker,
+    property_test_verify,
+)
 
 
 def test_diff_runner_returns_failure_for_incompatible_json_shapes(tmp_path: Path) -> None:
@@ -111,6 +117,59 @@ def test_input_generator_is_reproducible_for_a_fixed_seed() -> None:
     assert [left.random_int() for _ in range(5)] == [right.random_int() for _ in range(5)]
     assert left.random_choice(["a"]) == "a"
     assert isinstance(left.random_dict(lambda: "k", lambda: 1), dict)
+
+
+def test_property_verify_rejects_parent_environment_side_effect(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A policy regression would mutate the parent before property checks run."""
+    artifact = tmp_path / "candidate.py"
+    artifact.write_text(
+        "import os\n"
+        "os.environ['UAEK_PROPERTY_SENTINEL'] = 'changed'\n"
+        "def normalize(value):\n"
+        "    return value\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("UAEK_PROPERTY_SENTINEL", "unchanged")
+
+    result = property_test_verify(
+        artifact,
+        "normalize",
+        property_type=PropertyType.IDEMPOTENT,
+        trials=3,
+        seed=1,
+    )
+
+    assert result.passed is False
+    assert result.verdict == "FAIL"
+    assert "policy rejected" in result.evidence.lower()
+    assert "imports" in result.evidence.lower()
+    assert __import__("os").environ["UAEK_PROPERTY_SENTINEL"] == "unchanged"
+
+
+def test_property_verify_preserves_verification_result_contract(tmp_path: Path) -> None:
+    artifact = tmp_path / "candidate.py"
+    artifact.write_text(
+        "def increment(value):\n"
+        "    return value + 1\n",
+        encoding="utf-8",
+    )
+
+    result = property_test_verify(
+        artifact,
+        "increment",
+        property_type=PropertyType.IDEMPOTENT,
+        trials=3,
+        seed=1,
+    )
+
+    assert result.passed is False
+    assert result.verdict == "FAIL"
+    assert result.evidence == "Property tests: 0/1 passed"
+    assert result.notes == "Failed: ['idempotent']"
+    assert result.artifact_path == artifact
 
 
 def test_multi_perspective_checker_uses_weights_and_strict_consensus(tmp_path: Path) -> None:
