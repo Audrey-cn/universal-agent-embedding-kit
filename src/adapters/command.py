@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import json
+import math
 import os
-import resource
-import subprocess
 import time
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from src.logger import JsonlLogger
+from src.security import SandboxPolicy, SandboxResult, run_bounded_process
 
 from .interface import AdapterRequest, AdapterRunResult
 
@@ -39,6 +38,9 @@ class CommandAgentAdapter:
     ):
         if not command:
             raise ValueError("CommandAgentAdapter requires at least one command token")
+        _validate_limit("timeout_seconds", timeout_seconds)
+        _validate_limit("max_memory_mb", max_memory_mb)
+        _validate_limit("max_output_bytes", max_output_bytes)
         self.command = list(command)
         self.provider = provider
         self.timeout_seconds = timeout_seconds
@@ -51,25 +53,25 @@ class CommandAgentAdapter:
         trace_id = str(request.metadata.get("trace_id") or uuid4())
         payload = request.to_payload(trace_id=trace_id)
         started = time.perf_counter()
-        try:
-            completed = subprocess.run(
-                self.command,
-                input=json.dumps(payload, ensure_ascii=False),
-                text=True,
-                capture_output=True,
-                timeout=self.timeout_seconds,
-                check=False,
-                preexec_fn=self._make_preexec(),
-            )
-        except subprocess.TimeoutExpired as exc:
+        completed = run_bounded_process(
+            self.command,
+            input_text=json.dumps(payload, ensure_ascii=False),
+            policy=SandboxPolicy(
+                max_runtime_sec=cast(int, self.timeout_seconds),
+                max_memory_mb=self.max_memory_mb,
+                max_output_bytes=self.max_output_bytes,
+            ),
+            env=os.environ.copy(),
+        )
+        if completed.timed_out:
             result = self._failure_result(
                 request=request,
                 payload=payload,
                 trace_id=trace_id,
                 started=started,
                 error=f"Adapter command timed out after {self.timeout_seconds:g}s",
-                stdout=_coerce_output(exc.stdout),
-                stderr=_coerce_output(exc.stderr),
+                stdout=completed.stdout,
+                stderr=completed.stderr,
                 return_code=None,
             )
             self._record_trace(result)
@@ -79,57 +81,27 @@ class CommandAgentAdapter:
         self._record_trace(result)
         return result
 
-    @staticmethod
-    def _make_preexec() -> Callable[[], None]:
-        """构建 preexec_fn，在子进程中设置资源限制（CPU/内存/进程数/文件大小）"""
-        # 捕获当前实例的资源限制配置
-        # 注意：preexec_fn 在子进程中执行，不能访问 self
-        def _set_limits() -> None:
-            # 内存限制 —— 尝试多种方式以兼容不同平台（macOS 不支持 RLIMIT_AS）
-            mem_bytes = 512 * 1024 * 1024  # 512MB
-            for rlimit_attr in ("RLIMIT_AS", "RLIMIT_DATA", "RLIMIT_RSS"):
-                try:
-                    attr = getattr(resource, rlimit_attr, None)
-                    if attr is not None:
-                        resource.setrlimit(attr, (mem_bytes, mem_bytes))
-                except (OSError, ValueError):
-                    continue
-
-            # CPU 时间限制
-            try:
-                resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
-            except (OSError, ValueError):
-                pass
-
-            # 进程数限制（防止 fork 炸弹）
-            try:
-                resource.setrlimit(resource.RLIMIT_NPROC, (128, 128))
-            except (OSError, ValueError):
-                pass
-
-            # 文件大小限制
-            try:
-                resource.setrlimit(
-                    resource.RLIMIT_FSIZE, (_MAX_OUTPUT_BYTES, _MAX_OUTPUT_BYTES)
-                )
-            except (OSError, ValueError):
-                pass
-
-            # 创建新的进程组，便于超时杀灭
-            os.setpgrp()
-
-        return _set_limits
-
     def _result_from_completed(
         self,
         request: AdapterRequest,
         payload: dict[str, Any],
         trace_id: str,
         started: float,
-        completed: subprocess.CompletedProcess[str],
+        completed: SandboxResult,
     ) -> AdapterRunResult:
-        stdout = (completed.stdout or "")[:self.max_output_bytes]
-        stderr = (completed.stderr or "")[:self.max_output_bytes]
+        stdout = completed.stdout
+        stderr = completed.stderr
+        if completed.output_truncated:
+            return self._failure_result(
+                request=request,
+                payload=payload,
+                trace_id=trace_id,
+                started=started,
+                error=f"Adapter command output exceeded {self.max_output_bytes} bytes",
+                stdout=stdout,
+                stderr=stderr,
+                return_code=completed.exit_code,
+            )
         try:
             data = json.loads(stdout)
         except json.JSONDecodeError as exc:
@@ -141,7 +113,7 @@ class CommandAgentAdapter:
                 error=f"Invalid JSON from adapter stdout: {exc.msg}",
                 stdout=stdout,
                 stderr=stderr,
-                return_code=completed.returncode,
+                return_code=completed.exit_code,
             )
 
         if not isinstance(data, dict):
@@ -153,14 +125,14 @@ class CommandAgentAdapter:
                 error="Adapter stdout JSON must be an object",
                 stdout=stdout,
                 stderr=stderr,
-                return_code=completed.returncode,
+                return_code=completed.exit_code,
             )
 
-        adapter_success = bool(data.get("success", completed.returncode == 0))
-        success = adapter_success and completed.returncode == 0
+        adapter_success = bool(data.get("success", completed.exit_code == 0))
+        success = adapter_success and completed.exit_code == 0
         error = data.get("error")
-        if completed.returncode != 0 and not error:
-            error = f"Adapter command exited with return code {completed.returncode}"
+        if completed.exit_code != 0 and not error:
+            error = f"Adapter command exited with return code {completed.exit_code}"
         artifacts = _dict_or_empty(data.get("artifacts"))
         metrics = _dict_or_empty(data.get("metrics"))
 
@@ -172,7 +144,7 @@ class CommandAgentAdapter:
             artifacts=artifacts,
             metrics=metrics,
             trace_id=trace_id,
-            return_code=completed.returncode,
+            return_code=completed.exit_code,
             duration_ms=_duration_ms(started),
             stdout=stdout,
             stderr=stderr,
@@ -226,12 +198,14 @@ def _duration_ms(started: float) -> float:
     return round((time.perf_counter() - started) * 1000, 4)
 
 
-def _coerce_output(value: str | bytes | None) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, bytes):
-        return value.decode("utf-8", errors="replace")
-    return value
+def _validate_limit(field_name: str, value: object) -> None:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        or value <= 0
+    ):
+        raise ValueError(f"{field_name} must be finite and positive")
 
 
 def _dict_or_empty(value: Any) -> dict[str, Any]:
