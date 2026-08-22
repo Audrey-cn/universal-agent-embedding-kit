@@ -107,10 +107,12 @@ portable contract; host-specific GUI configuration remains the host's responsibi
 
 ### 5. Evidence consistency authority
 
-The current capability matrix artifact is authoritative for the headline full-suite provider count.
-A small validator will compare its derived `graded_live_provider_count/expected_provider_count`
-against active README files and the current scorecard summary. Historical changelog entries and
-dated design documents are excluded.
+The versioned capability run artifacts under `benchmarks/results/capability-runs/`, interpreted by
+the current `run_capability_readiness` aggregator, are authoritative for the headline full-suite
+provider count. A small validator will compare the derived
+`graded_live_provider_count/expected_provider_count` against the checked-in capability matrix,
+active README files, and the current scorecard summary. Historical changelog entries and dated
+design documents are excluded.
 
 The immediate active value is `3/4`. English and Chinese README text will be corrected. The validator
 will fail CI when an active headline drifts. Historical held-out regrade artifacts retain their own
