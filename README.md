@@ -88,7 +88,7 @@ Every number below is the result of a deliberate **red-team round** (independent
 | Context utilization | adaptive **0.85** expected acc. @70% util vs naive 0.57 | ③ | live needle test recalled 6/6 @31K tokens — validates retrieval, not the adaptive advantage live |
 | Cost reduction | modeled −43% (−49% w/ 1h tier); warm live spot-check **−82%, 92% hit** | ④ partial | warm-only best case; a fully-cold session is modeled **22% more expensive** than baseline |
 | Real-scenario benchmark | multi-dimensional; flags a feature-complete-but-**regressing** solution | ③ | 40 scenarios / 38 categories — not yet 100+ live multi-hour sessions |
-| Cross-platform matrix | **2/4** providers pass the full graded live suite; partial Mimo/Hermes artifacts retained | ④ partial | full-suite means 10/10 tasks; partial 8/10 or 9/10 evidence is not counted as graded-live success |
+| Cross-platform matrix | **3/4** providers pass the full graded live suite; partial Mimo evidence retained | ④ partial | full-suite means 10/10 tasks; Mimo's 9/10 evidence is not counted as graded-live success |
 
 <a id="status"></a>**Gates:** tests pass · ruff + mypy clean · global and supported-module coverage floors enforced · audit semantics pass locally. See the [latest `main` CI runs](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml?query=branch%3Amain); fixed run provenance lives in [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md).
 

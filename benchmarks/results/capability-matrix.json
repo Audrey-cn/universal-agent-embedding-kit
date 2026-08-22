@@ -2,13 +2,13 @@
   "artifact_dir": "benchmarks/results/capability-runs",
   "checks": [
     {
-      "evidence": "2/4 providers passed the full graded live suite",
+      "evidence": "3/4 providers passed the full graded live suite",
       "id": "graded_live_capability_matrix",
       "required": true,
       "status": "fail"
     },
     {
-      "evidence": "2 partial (ran, missed a task), 0 blocked (no passing task), 0 missing diagnostics",
+      "evidence": "1 partial (ran, missed a task), 0 blocked (no passing task), 0 missing diagnostics",
       "id": "blocked_attempt_diagnostics",
       "required": true,
       "status": "pass"
@@ -48,10 +48,10 @@
     "capability_score_min": 1.0,
     "capability_score_spread": 0.0,
     "expected_provider_count": 4,
-    "graded_live_pass_rate": 0.5,
-    "graded_live_provider_count": 2,
+    "graded_live_pass_rate": 0.75,
+    "graded_live_provider_count": 3,
     "missing_provider_count": 0,
-    "partial_provider_count": 2,
+    "partial_provider_count": 1,
     "suite_difficulty_tiers": {
       "easy": 4,
       "hard": 3,
@@ -87,19 +87,16 @@
       "tasks_total": 10
     },
     {
-      "capability_score": 0.8947,
-      "errors": [
-        "live_external attempt did not produce graded capability evidence"
-      ],
+      "capability_score": 1.0,
+      "errors": [],
       "evidence_paths": [
-        "benchmarks/results/capability-runs/hermes-capability-run.json",
-        "benchmarks/results/capability-runs/hermes-seeded-capability-run.json"
+        "benchmarks/results/capability-runs/hermes-capability-run.json"
       ],
       "hardest_tier_passed": "hard",
       "provider": "hermes",
-      "status": "partial",
-      "suite_pass_rate": 0.8,
-      "tasks_passed": 8,
+      "status": "graded_live",
+      "suite_pass_rate": 1.0,
+      "tasks_passed": 10,
       "tasks_total": 10
     },
     {
@@ -132,19 +129,26 @@
       "provider": "codex",
       "tasks_passed": 10,
       "tasks_total": 10
+    },
+    {
+      "capability_score": 1.0,
+      "hardest_tier_passed": "hard",
+      "provider": "hermes",
+      "tasks_passed": 10,
+      "tasks_total": 10
     }
   ],
-  "recommended_score": 98,
+  "recommended_score": 99,
   "remaining_findings": [
     "DIRECT_RETIRED_MODEL_UNAVAILABLE",
     "CI_REMOTE_UNVERIFIED",
-    "FULL_GRADED_CAPABILITY_MATRIX",
-    "MULTI_PLATFORM_CAPABILITY_MATRIX"
+    "FULL_GRADED_CAPABILITY_MATRIX"
   ],
   "resolved_findings": [
     "F022_LIVE_MATRIX_PARTIAL",
-    "F024_GRADED_CAPABILITY_EVIDENCE"
+    "F024_GRADED_CAPABILITY_EVIDENCE",
+    "F025_MULTI_PLATFORM_CAPABILITY_MATRIX"
   ],
-  "score_delta": 1,
+  "score_delta": 2,
   "status": "partial"
 }

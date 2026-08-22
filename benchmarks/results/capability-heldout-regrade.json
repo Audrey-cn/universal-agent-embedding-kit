@@ -1,6 +1,7 @@
 {
   "schema": "capability_heldout_regrade_v1",
-  "description": "Re-grade of captured provider solutions with held-out/metamorphic cases added to grade_code. Inputs are deterministic-per-task and never shown to the provider; a solution that overfits the public cases fails. Captured solutions are fixed code, so this is a valid generalization test (a provider cannot retroactively overfit code it already emitted).",
+  "description": "Historical re-grade of captured provider solutions with held-out/metamorphic cases added to grade_code. Inputs are deterministic-per-task and never shown to the provider; a solution that overfits the public cases fails. Captured solutions are fixed code, so this is a valid generalization test (a provider cannot retroactively overfit code it already emitted). The recorded scores remain historical and do not override newer live run artifacts.",
+  "historical": true,
   "held_out_count_per_task": 16,
   "public_cases_per_task": {
     "two_sum": 3,

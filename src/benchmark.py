@@ -14,6 +14,7 @@ from typing import Any
 
 from src.effort import classify
 from src.harness import AgentHarness, HarnessRequest
+from src.headline_consistency import validate_headline_consistency
 from src.memory import MemoryService
 from src.workflow import execute_workflow_config
 
@@ -994,7 +995,11 @@ def _build_evidence_consistency(
     scenario: dict[str, Any],
     held_out: dict[str, Any],
 ) -> dict[str, Any]:
-    errors: list[str] = []
+    artifact_dir = Path(
+        capability.get("artifact_dir") or "benchmarks/results/capability-runs"
+    )
+    headline_validation = validate_headline_consistency(artifact_dir, Path("."))
+    errors: list[str] = list(headline_validation["errors"])
     warnings: list[str] = []
 
     cap_limitations = capability.get("limitations", [])

@@ -67,6 +67,37 @@ def test_active_release_docs_use_current_setup_and_portable_paths() -> None:
         assert "/Users/audrey" not in content, name
 
 
+def test_active_headline_surfaces_match_versioned_capability_runs() -> None:
+    """Active docs and generated summaries must agree with versioned raw run evidence."""
+    from scripts.check_headline_consistency import (
+        derive_headline,
+        validate_headline_consistency,
+    )
+
+    artifact_dir = Path("benchmarks/results/capability-runs")
+    assert derive_headline(artifact_dir) == "3/4"
+
+    validation = validate_headline_consistency(artifact_dir, Path("."))
+    assert validation == {
+        "expected_headline": "3/4",
+        "stale_paths": [],
+        "errors": [],
+    }
+
+    matrix = json.loads(
+        Path("benchmarks/results/capability-matrix.json").read_text(encoding="utf-8")
+    )
+    benchmark = json.loads(
+        Path("benchmarks/results/benchmark-capability.json").read_text(encoding="utf-8")
+    )
+    assert matrix["metrics"]["graded_live_provider_count"] == 3
+    assert matrix["metrics"]["expected_provider_count"] == 4
+    assert benchmark["capability_readiness"]["metrics"][
+        "graded_live_provider_count"
+    ] == 3
+    assert benchmark["capability_readiness"]["metrics"]["expected_provider_count"] == 4
+
+
 def test_cli_reports_release_version():
     """The installed command should report the shared release version."""
     result = CliRunner().invoke(main, ["--version"])

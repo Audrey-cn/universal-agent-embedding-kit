@@ -62,6 +62,9 @@ jobs:
           uaek evidence baseline validate benchmarks/evidence/fixtures/baseline.json \
             --output /tmp/uaek-evidence-baseline-validation.json
 
+      - name: Validate active headline consistency
+        run: python scripts/check_headline_consistency.py
+
       - name: Lint
         run: python -m ruff check src api mcp tests scripts
 

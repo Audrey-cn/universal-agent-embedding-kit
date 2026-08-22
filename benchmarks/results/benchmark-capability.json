@@ -3,13 +3,13 @@
     "artifact_dir": "benchmarks/results/capability-runs",
     "checks": [
       {
-        "evidence": "2/4 providers passed the full graded live suite",
+        "evidence": "3/4 providers passed the full graded live suite",
         "id": "graded_live_capability_matrix",
         "required": true,
         "status": "fail"
       },
       {
-        "evidence": "2 partial (ran, missed a task), 0 blocked (no passing task), 0 missing diagnostics",
+        "evidence": "1 partial (ran, missed a task), 0 blocked (no passing task), 0 missing diagnostics",
         "id": "blocked_attempt_diagnostics",
         "required": true,
         "status": "pass"
@@ -49,10 +49,10 @@
       "capability_score_min": 1.0,
       "capability_score_spread": 0.0,
       "expected_provider_count": 4,
-      "graded_live_pass_rate": 0.5,
-      "graded_live_provider_count": 2,
+      "graded_live_pass_rate": 0.75,
+      "graded_live_provider_count": 3,
       "missing_provider_count": 0,
-      "partial_provider_count": 2,
+      "partial_provider_count": 1,
       "suite_difficulty_tiers": {
         "easy": 4,
         "hard": 3,
@@ -88,19 +88,16 @@
         "tasks_total": 10
       },
       {
-        "capability_score": 0.8947,
-        "errors": [
-          "live_external attempt did not produce graded capability evidence"
-        ],
+        "capability_score": 1.0,
+        "errors": [],
         "evidence_paths": [
-          "benchmarks/results/capability-runs/hermes-capability-run.json",
-          "benchmarks/results/capability-runs/hermes-seeded-capability-run.json"
+          "benchmarks/results/capability-runs/hermes-capability-run.json"
         ],
         "hardest_tier_passed": "hard",
         "provider": "hermes",
-        "status": "partial",
-        "suite_pass_rate": 0.8,
-        "tasks_passed": 8,
+        "status": "graded_live",
+        "suite_pass_rate": 1.0,
+        "tasks_passed": 10,
         "tasks_total": 10
       },
       {
@@ -133,32 +130,49 @@
         "provider": "codex",
         "tasks_passed": 10,
         "tasks_total": 10
+      },
+      {
+        "capability_score": 1.0,
+        "hardest_tier_passed": "hard",
+        "provider": "hermes",
+        "tasks_passed": 10,
+        "tasks_total": 10
       }
     ],
-    "recommended_score": 98,
+    "recommended_score": 99,
     "remaining_findings": [
       "DIRECT_RETIRED_MODEL_UNAVAILABLE",
       "CI_REMOTE_UNVERIFIED",
-      "FULL_GRADED_CAPABILITY_MATRIX",
-      "MULTI_PLATFORM_CAPABILITY_MATRIX"
+      "FULL_GRADED_CAPABILITY_MATRIX"
     ],
     "resolved_findings": [
       "F022_LIVE_MATRIX_PARTIAL",
-      "F024_GRADED_CAPABILITY_EVIDENCE"
+      "F024_GRADED_CAPABILITY_EVIDENCE",
+      "F025_MULTI_PLATFORM_CAPABILITY_MATRIX"
     ],
-    "score_delta": 1,
+    "score_delta": 2,
     "status": "partial"
   },
   "external_baseline": {
-    "reason": "No authorized external Fable 5 baseline run is available in this repo.",
+    "compatible": false,
+    "errors": [],
+    "limitations": [
+      "This file is not benchmark evidence.",
+      "Use it to document the expected shape for external baseline ingestion.",
+      "Do not convert status to completed until the underlying run artifact is available."
+    ],
+    "metrics": {},
+    "name": "fable5",
+    "path": "benchmarks/baselines/fable5.example.json",
+    "reason": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
     "status": "not_configured"
   },
-  "generated_at": "2026-06-30T09:00:58.698213+00:00",
+  "generated_at": "2026-08-22T08:21:33.391693+00:00",
   "iterations": 1,
   "metrics": {
-    "effort_latency_ms": 0.6737,
-    "harness_latency_ms": 1.9299,
-    "workflow_latency_ms": 0.0359
+    "effort_latency_ms": 0.6151,
+    "harness_latency_ms": 2.8659,
+    "workflow_latency_ms": 2.6901
   },
   "scorecard": {
     "basis": [
@@ -167,19 +181,19 @@
       "two graded-live providers with blocked diagnostics can support 98/100",
       "three graded-live providers can support 99/100; four close the full matrix"
     ],
-    "current_score": 98,
+    "current_score": 99,
     "previous_score": 97,
     "remaining_findings": [
       "DIRECT_RETIRED_MODEL_UNAVAILABLE",
       "CI_REMOTE_UNVERIFIED",
-      "FULL_GRADED_CAPABILITY_MATRIX",
-      "MULTI_PLATFORM_CAPABILITY_MATRIX"
+      "FULL_GRADED_CAPABILITY_MATRIX"
     ],
     "resolved_findings": [
       "F022_LIVE_MATRIX_PARTIAL",
-      "F024_GRADED_CAPABILITY_EVIDENCE"
+      "F024_GRADED_CAPABILITY_EVIDENCE",
+      "F025_MULTI_PLATFORM_CAPABILITY_MATRIX"
     ],
-    "score_delta": 1
+    "score_delta": 2
   },
   "status": "completed",
   "suite": "capability"
