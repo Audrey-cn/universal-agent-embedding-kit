@@ -49,6 +49,13 @@ def test_packaging_uses_non_deprecated_license_metadata():
     )
 
 
+def test_supported_extras_do_not_include_chromadb() -> None:
+    project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]
+    memory = project["optional-dependencies"]["memory"]
+
+    assert all(not item.startswith("chromadb") for item in memory)
+
+
 def test_development_dependencies_and_ci_use_one_lock_contract() -> None:
     data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     dev_dependencies = "\n".join(data["project"]["optional-dependencies"]["dev"])

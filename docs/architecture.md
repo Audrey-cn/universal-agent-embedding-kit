@@ -35,5 +35,5 @@ real billing histories, and independent baseline artifacts remains outside the l
 
 - Workflow actions are allowlisted before execution.
 - MCP authentication, rate limiting, argument validation, and tool authorization run before handlers.
-- Optional ChromaDB, sentence-transformers, and Z3 integrations are lazy and must not be required for the base install.
+- Vector retrieval uses the in-memory `SimpleBackend`; optional sentence-transformers and Z3 integrations are lazy and must not be required for the base install.
 - Credentialed provider runs, remote pushes, and package publication are external operations and require explicit authorization.

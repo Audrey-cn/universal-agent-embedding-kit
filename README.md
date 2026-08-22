@@ -75,6 +75,8 @@ python -m pytest -q                  # full test suite
 
 Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** (`mcp/`). See the
 [`0.3 support matrix`](docs/support-matrix.md) for supported versus experimental capabilities.
+Vector memory uses the built-in `SimpleBackend`; install `uaek[memory]` only to enable optional
+sentence-transformers embeddings.
 
 ## 🔬 Honest evidence
 

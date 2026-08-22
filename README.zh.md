@@ -74,6 +74,7 @@ python -m pytest -q                  # 完整测试套件
 | 🔧 工作流 / 记忆 / 技能 / Harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | 编排原语 |
 
 三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。稳定能力与实验能力的边界见 [`0.3 支持矩阵`](docs/support-matrix.md)。
+向量记忆使用内置 `SimpleBackend`；仅在需要可选的 sentence-transformers 嵌入时安装 `uaek[memory]`。
 
 ## 🔬 诚实证据
 
