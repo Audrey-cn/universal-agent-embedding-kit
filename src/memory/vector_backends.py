@@ -114,6 +114,7 @@ def detect_sentence_transformers() -> bool:
     """检测 sentence-transformers 是否可用"""
     try:
         import sentence_transformers  # noqa: F401
+
         return True
     except ImportError:
         return False

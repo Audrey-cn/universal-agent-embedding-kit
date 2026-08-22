@@ -259,13 +259,7 @@ def test_execute_python_timeout(executor: SandboxedExecutor):
 def test_execute_python_with_inputs_timeout(executor: SandboxedExecutor):
     """execute_python_with_inputs 中超时函数应被捕获"""
     policy = SandboxPolicy(max_runtime_sec=2, max_memory_mb=128)
-    code = (
-        "def slow():\n"
-        "    x = 0\n"
-        "    while True:\n"
-        "        x += 1\n"
-        "    return x\n"
-    )
+    code = "def slow():\n    x = 0\n    while True:\n        x += 1\n    return x\n"
     args_list = [()]
 
     results = executor.execute_python_with_inputs(code, "slow", args_list, policy=policy)
@@ -513,11 +507,7 @@ def test_adversarial_verify_uses_sandbox():
     assert verdict["accepted"] is True
 
     # 错误代码应被拒绝
-    buggy_code = (
-        "def is_palindrome(s):\n"
-        "    t = s.lower()\n"
-        "    return t == t[::-1]\n"
-    )
+    buggy_code = "def is_palindrome(s):\n    t = s.lower()\n    return t == t[::-1]\n"
     verdict = adversarial_verify("is_palindrome", buggy_code, trials=200, seed=0)
     assert verdict["accepted"] is False
 
@@ -558,11 +548,7 @@ def test_sandbox_cannot_access_caller_globals(executor: SandboxedExecutor):
 def test_sandbox_isolated_filesystem_temp(executor: SandboxedExecutor):
     """沙箱应使用隔离的临时目录"""
     policy = SandboxPolicy(max_runtime_sec=5)
-    code = (
-        "import tempfile\n"
-        "import os\n"
-        "print(tempfile.gettempdir())\n"
-    )
+    code = "import tempfile\nimport os\nprint(tempfile.gettempdir())\n"
     result = executor.execute_python(code, policy=policy)
 
     assert result.success is True

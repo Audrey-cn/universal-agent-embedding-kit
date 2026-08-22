@@ -117,9 +117,7 @@ def validate_candidate_code(code: str, entrypoint: str) -> list[str]:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == entrypoint
     ]
     top_level_entrypoints = [
-        node
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name == entrypoint
+        node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == entrypoint
     ]
     if len(entrypoint_definitions) != 1 or len(top_level_entrypoints) != 1:
         _append_once(
@@ -176,7 +174,7 @@ def validate_candidate_code(code: str, entrypoint: str) -> list[str]:
 
 
 def _trusted_harness() -> str:
-    return '''
+    return """
 try:
     namespace = {"__builtins__": SAFE_BUILTINS}
     exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
@@ -197,14 +195,12 @@ else:
                 {"index": index, "status": "error", "error": f"{type(exc).__name__}: {exc}"}
             )
     print(json.dumps(results))
-'''
+"""
 
 
 def _harness_prelude() -> str:
-    builtin_entries = "\n".join(
-        f"    {name!r}: {name}," for name in SAFE_BUILTINS
-    )
-    return f'''import json
+    builtin_entries = "\n".join(f"    {name!r}: {name}," for name in SAFE_BUILTINS)
+    return f"""import json
 import sys
 
 SAFE_BUILTINS = {{
@@ -216,7 +212,7 @@ with open(sys.argv[1], encoding="utf-8") as context_handle:
 SOURCE_CODE = CONTEXT["code"]
 ENTRYPOINT = CONTEXT["entrypoint"]
 PAYLOAD = CONTEXT["payload"]
-'''
+"""
 
 
 def _failure_result(
@@ -265,11 +261,7 @@ def run_restricted_module_harness(
     except (SyntaxError, ValueError) as exc:
         return _failure_result(f"candidate policy rejected: syntax error: {exc}")
     validation_entrypoint = next(
-        (
-            statement.name
-            for statement in tree.body
-            if isinstance(statement, ast.FunctionDef)
-        ),
+        (statement.name for statement in tree.body if isinstance(statement, ast.FunctionDef)),
         "__uaek_missing_entrypoint__",
     )
     diagnostics = [
@@ -319,9 +311,7 @@ def _run_harness(
             context_path = tmp_path / "context.json"
             harness_path = tmp_path / "harness.py"
             context_path.write_text(
-                json.dumps(
-                    {"code": code, "entrypoint": entrypoint, "payload": payload}
-                ),
+                json.dumps({"code": code, "entrypoint": entrypoint, "payload": payload}),
                 encoding="utf-8",
             )
             harness_path.write_text(_harness_prelude() + harness, encoding="utf-8")

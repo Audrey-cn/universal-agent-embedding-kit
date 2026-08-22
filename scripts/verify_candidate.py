@@ -70,11 +70,7 @@ def main() -> int:
     # Illusory flaw: the "flawed" solution actually behaves like the reference, so
     # the corpus would not discriminate it. This is the exact defect that bit pack 2.
     illusory_flaw = flawed["overall"] >= 1.0
-    numeric_keep = (
-        ref["overall"] == 1.0
-        and ref["load_error"] is None
-        and flawed["overall"] < 1.0
-    )
+    numeric_keep = ref["overall"] == 1.0 and ref["load_error"] is None and flawed["overall"] < 1.0
 
     verdict = {
         "scenario_id": data["scenario_id"],

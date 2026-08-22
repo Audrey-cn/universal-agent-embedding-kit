@@ -88,9 +88,7 @@ class ToolAccessControl:
             "tool": tool_name,
             "restricted": tool_name in self._tool_policies,
             "allowed_clients": (
-                sorted(self._tool_policies[tool_name])
-                if tool_name in self._tool_policies
-                else None
+                sorted(self._tool_policies[tool_name]) if tool_name in self._tool_policies else None
             ),
             "default_allow": self._default_allow,
         }

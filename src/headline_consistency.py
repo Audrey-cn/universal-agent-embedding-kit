@@ -73,8 +73,7 @@ def _text_surface_matches(path: Path, relative_path: Path, expected: str) -> boo
         table_candidates = [
             line
             for line in current_summary.splitlines()
-            if "Capability matrix CLI" in line
-            or "Capability benchmark CLI" in line
+            if "Capability matrix CLI" in line or "Capability benchmark CLI" in line
         ]
         summary_candidates = [
             line.partition("因此当前是")[2]
@@ -99,9 +98,7 @@ def _json_surface_matches(path: Path, relative_path: Path, expected: str) -> boo
         return False
 
     readiness = (
-        data.get("capability_readiness")
-        if relative_path.name.startswith("benchmark-")
-        else data
+        data.get("capability_readiness") if relative_path.name.startswith("benchmark-") else data
     )
     if not isinstance(readiness, dict):
         return False

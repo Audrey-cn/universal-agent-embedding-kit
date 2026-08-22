@@ -28,14 +28,16 @@ from .verify.interface import VerificationResult, VerificationType, verify
 
 class QualityTier(Enum):
     """质量等级"""
-    FAST = "fast"        # 快速检查：语法 + 基本 lint
+
+    FAST = "fast"  # 快速检查：语法 + 基本 lint
     STANDARD = "standard"  # 标准检查：完整测试 + 构建
-    DEEP = "deep"        # 深度检查：对抗性 + 多视角
+    DEEP = "deep"  # 深度检查：对抗性 + 多视角
 
 
 @dataclass
 class TierResult:
     """单个质量等级的验证结果"""
+
     tier: QualityTier
     passed: bool
     results: list[VerificationResult]
@@ -46,6 +48,7 @@ class TierResult:
 @dataclass
 class ProgressiveQualityResult:
     """渐进式质量验证结果"""
+
     artifact_path: Path
     tiers_completed: list[QualityTier]
     final_tier: QualityTier
@@ -164,7 +167,7 @@ class ProgressiveQuality:
             end_idx = tier_order.index(self.max_tier)
         except ValueError:
             return [start_tier]
-        return tier_order[start_idx:end_idx + 1]
+        return tier_order[start_idx : end_idx + 1]
 
     def _run_tier(
         self,
@@ -182,38 +185,44 @@ class ProgressiveQuality:
                 result = verify(artifact_path, criteria_path, verification_type=vtype)
                 results.append(result)
             except Exception as e:
-                results.append(VerificationResult(
-                    passed=False,
-                    verdict="FAIL",
-                    evidence=f"Error: {e}",
-                    verification_type=vtype,
-                    artifact_path=artifact_path,
-                    criteria_path=criteria_path,
-                    notes=f"Tier {tier.value} verification error: {e}",
-                ))
+                results.append(
+                    VerificationResult(
+                        passed=False,
+                        verdict="FAIL",
+                        evidence=f"Error: {e}",
+                        verification_type=vtype,
+                        artifact_path=artifact_path,
+                        criteria_path=criteria_path,
+                        notes=f"Tier {tier.value} verification error: {e}",
+                    )
+                )
 
         # 运行自定义钩子
         if tier in self._tier_hooks:
             try:
                 hook_passed = self._tier_hooks[tier](artifact_path, criteria_path)
                 if not hook_passed:
-                    results.append(VerificationResult(
+                    results.append(
+                        VerificationResult(
+                            passed=False,
+                            verdict="FAIL",
+                            evidence=f"Custom hook for tier {tier.value} failed",
+                            verification_type=VerificationType.TEST,
+                            artifact_path=artifact_path,
+                            criteria_path=criteria_path,
+                        )
+                    )
+            except Exception as e:
+                results.append(
+                    VerificationResult(
                         passed=False,
                         verdict="FAIL",
-                        evidence=f"Custom hook for tier {tier.value} failed",
+                        evidence=f"Custom hook error: {e}",
                         verification_type=VerificationType.TEST,
                         artifact_path=artifact_path,
                         criteria_path=criteria_path,
-                    ))
-            except Exception as e:
-                results.append(VerificationResult(
-                    passed=False,
-                    verdict="FAIL",
-                    evidence=f"Custom hook error: {e}",
-                    verification_type=VerificationType.TEST,
-                    artifact_path=artifact_path,
-                    criteria_path=criteria_path,
-                ))
+                    )
+                )
 
         tier_passed = all(r.passed for r in results) if results else True
         duration = (time.monotonic() - tier_start) * 1000
@@ -311,8 +320,9 @@ def quick_verify(artifact_path: Path) -> ProgressiveQualityResult:
     return progressive_verify(artifact_path, max_tier=QualityTier.FAST)
 
 
-def standard_verify(artifact_path: Path, criteria_path: Path | None = None
-                    ) -> ProgressiveQualityResult:
+def standard_verify(
+    artifact_path: Path, criteria_path: Path | None = None
+) -> ProgressiveQualityResult:
     """标准验证：运行 FAST + STANDARD 等级"""
     return progressive_verify(artifact_path, criteria_path, max_tier=QualityTier.STANDARD)
 

@@ -24,6 +24,7 @@ from typing import Any
 
 class BudgetPool(Enum):
     """预算池类型"""
+
     SYSTEM_PROMPT = "system_prompt"
     TOOL_DEFINITIONS = "tool_definitions"
     CONVERSATION_HISTORY = "conversation_history"
@@ -32,33 +33,32 @@ class BudgetPool(Enum):
 
 # 默认预算分配（占总token窗口的比例）
 DEFAULT_BUDGET_ALLOCATION: dict[BudgetPool, float] = {
-    BudgetPool.SYSTEM_PROMPT: 0.15,          # 15%
-    BudgetPool.TOOL_DEFINITIONS: 0.10,       # 10%
-    BudgetPool.CONVERSATION_HISTORY: 0.50,   # 50%
-    BudgetPool.MEMORY: 0.25,                 # 25%
+    BudgetPool.SYSTEM_PROMPT: 0.15,  # 15%
+    BudgetPool.TOOL_DEFINITIONS: 0.10,  # 10%
+    BudgetPool.CONVERSATION_HISTORY: 0.50,  # 50%
+    BudgetPool.MEMORY: 0.25,  # 25%
 }
 
 
 @dataclass
 class PoolStatus:
     """预算池状态"""
+
     pool: BudgetPool
-    allocated: int          # 分配的token数
-    used: int               # 已使用的token数
-    utilization: float      # 使用率 (0.0-1.0)
-    over_budget: bool       # 是否超预算
+    allocated: int  # 分配的token数
+    used: int  # 已使用的token数
+    utilization: float  # 使用率 (0.0-1.0)
+    over_budget: bool  # 是否超预算
 
     def __str__(self) -> str:
         status = "OVER" if self.over_budget else "OK"
-        return (
-            f"[{self.pool.value}] {self.used}/{self.allocated} "
-            f"({self.utilization:.0%}) {status}"
-        )
+        return f"[{self.pool.value}] {self.used}/{self.allocated} ({self.utilization:.0%}) {status}"
 
 
 @dataclass
 class BudgetSnapshot:
     """预算快照"""
+
     timestamp: float
     total_tokens: int
     pools: dict[BudgetPool, PoolStatus]
@@ -104,9 +104,7 @@ class TokenBudget:
         self.over_budget_threshold = over_budget_threshold
 
         # 各池已使用token计数
-        self._usage: dict[BudgetPool, int] = {
-            pool: 0 for pool in BudgetPool
-        }
+        self._usage: dict[BudgetPool, int] = {pool: 0 for pool in BudgetPool}
 
         # 快照历史
         self._snapshots: list[BudgetSnapshot] = []
@@ -117,10 +115,7 @@ class TokenBudget:
     @property
     def allocated(self) -> dict[BudgetPool, int]:
         """各池分配的token数"""
-        return {
-            pool: int(self.total_tokens * ratio)
-            for pool, ratio in self.allocation.items()
-        }
+        return {pool: int(self.total_tokens * ratio) for pool, ratio in self.allocation.items()}
 
     def register_callback(self, callback: Callable[[BudgetPool, PoolStatus], None]) -> None:
         """注册超配额回调"""
@@ -270,6 +265,7 @@ class TokenBudget:
 # Token估算工具
 # --------------------------------------------------------------------------- #
 
+
 def estimate_tokens(text: str) -> int:
     """粗略估算文本的token数
 
@@ -283,7 +279,7 @@ def estimate_tokens(text: str) -> int:
     total_chars = len(text)
 
     # 统计中文字符
-    cjk_count = sum(1 for ch in text if '\u4e00' <= ch <= '\u9fff' or '\u3000' <= ch <= '\u303f')
+    cjk_count = sum(1 for ch in text if "\u4e00" <= ch <= "\u9fff" or "\u3000" <= ch <= "\u303f")
 
     # 中文约 1 token/1.5 字符，英文约 1 token/4 字符
     cjk_tokens = cjk_count / 1.5
@@ -296,6 +292,6 @@ def estimate_memory_tokens(entries: list[Any]) -> int:
     """估算记忆条目的总token数"""
     total = 0
     for entry in entries:
-        content = getattr(entry, 'content', str(entry))
+        content = getattr(entry, "content", str(entry))
         total += estimate_tokens(content)
     return total

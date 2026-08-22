@@ -112,6 +112,30 @@ def test_ci_workflow_defines_quality_gates():
     assert evidence_validation < headline_validation < lint
 
 
+def test_ci_workflow_checks_formatting() -> None:
+    """CI should reject Python sources that differ from Ruff's canonical format."""
+    workflow_text = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "python -m ruff format --check src api mcp tests scripts" in workflow_text
+
+
+def test_ci_workflow_audits_core_and_all_supported_dependencies() -> None:
+    """CI should audit both locked core and all-extras dependency exports."""
+    workflow_text = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert (
+        "uv export --no-dev --no-emit-project --format requirements-txt "
+        "--output-file /tmp/uaek-core.txt"
+    ) in workflow_text
+    assert (
+        "uv export --all-extras --no-dev --no-emit-project --format requirements-txt "
+        "--output-file /tmp/uaek-all.txt"
+    ) in workflow_text
+    assert workflow_text.count("uvx pip-audit==2.10.1 -r") == 2
+    assert "uvx pip-audit==2.10.1 -r /tmp/uaek-core.txt" in workflow_text
+    assert "uvx pip-audit==2.10.1 -r /tmp/uaek-all.txt" in workflow_text
+
+
 def test_ci_workflow_uses_current_node24_actions():
     """CI should avoid action majors that emit GitHub's Node 20 deprecation warning."""
     data = yaml.safe_load(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))

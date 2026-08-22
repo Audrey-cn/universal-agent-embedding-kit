@@ -33,8 +33,8 @@ class MemoryEntry:
     metadata: dict[str, Any] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)
     # 记忆衰减字段
-    last_accessed: float = 0.0   # 最后访问时间戳
-    access_count: int = 0        # 访问次数
+    last_accessed: float = 0.0  # 最后访问时间戳
+    access_count: int = 0  # 访问次数
 
     def __post_init__(self):
         if not self.id:
@@ -45,6 +45,7 @@ class MemoryEntry:
     def record_access(self) -> None:
         """记录一次访问，更新最后访问时间和访问计数"""
         import time
+
         self.last_accessed = time.time()
         self.access_count += 1
 

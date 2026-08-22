@@ -166,8 +166,8 @@ class _TokenBucket:
     """令牌桶实现"""
 
     def __init__(self, rate: int, burst: int):
-        self._rate = rate          # 每秒填充令牌数
-        self._burst = burst        # 桶容量
+        self._rate = rate  # 每秒填充令牌数
+        self._burst = burst  # 桶容量
         self._tokens = float(burst)  # 当前令牌数，初始满桶
         self._last_refill = time.monotonic()
 

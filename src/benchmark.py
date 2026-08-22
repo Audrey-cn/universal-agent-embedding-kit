@@ -472,6 +472,7 @@ def _run_harness_once() -> dict[str, Any]:
         harness = AgentHarness(MemoryService(Path(tmp_dir) / "memory"))
         return harness.run(HarnessRequest(task="implement benchmark evidence pipeline")).to_dict()
 
+
 def run_audit(
     iterations: int = 2,
     baseline_path: Path | str | None = None,
@@ -590,8 +591,7 @@ def _build_proposition_summary(
         "adaptive_accuracy": ctx_readiness.get("adaptive", {}).get("accuracy_at_target"),
         "target_utilization": ctx_readiness.get("target_utilization"),
         "live_needle_recall": _get(
-            "context", "context_rot_readiness",
-            "live_measurement", "needle_recall"
+            "context", "context_rot_readiness", "live_measurement", "needle_recall"
         ),
     }
     p1 = {
@@ -616,12 +616,10 @@ def _build_proposition_summary(
         "naive_cheating_rate": adv_readiness.get("naive", {}).get("cheating_rate"),
         "adversarial_cheating_rate": adv_readiness.get("adversarial", {}).get("cheating_rate"),
         "live_subtle_bug_naive": _get(
-            "adversarial", "adversarial_readiness",
-            "live_measurement", "naive_cheating_rate"
+            "adversarial", "adversarial_readiness", "live_measurement", "naive_cheating_rate"
         ),
         "live_subtle_bug_adversarial": _get(
-            "adversarial", "adversarial_readiness",
-            "live_measurement", "adversarial_cheating_rate"
+            "adversarial", "adversarial_readiness", "live_measurement", "adversarial_cheating_rate"
         ),
     }
     p2 = {
@@ -645,8 +643,7 @@ def _build_proposition_summary(
         "model_cost_reduction": cst_readiness.get("cost_reduction"),
         "model_cache_hit": cst_readiness.get("cache_hit_rate"),
         "live_measured_reduction": _get(
-            "cost", "cost_readiness", "live_measurement",
-            "cost_reduction"
+            "cost", "cost_readiness", "live_measurement", "cost_reduction"
         ),
         "live_cache_hit": _get("cost", "cost_readiness", "live_measurement", "cache_hit_rate"),
         "live_warm_session_caveat": True if "cost" in suite_results else None,
@@ -670,10 +667,7 @@ def _build_proposition_summary(
         "reference_overall": scn_readiness.get("reference_overall"),
         "flawed_overall": scn_readiness.get("flawed_overall"),
         "flags_hidden_regression": scn_readiness.get("flags_hidden_regression"),
-        "live_both_100": _get(
-            "scenario", "scenario_readiness",
-            "live_measurement", "both_correct"
-        ),
+        "live_both_100": _get("scenario", "scenario_readiness", "live_measurement", "both_correct"),
     }
     p4 = {
         "title": "命题4: 真实场景基准",
@@ -724,9 +718,7 @@ def _build_proposition_summary(
         "p3_cost_optimization": p3,
         "p4_real_scenario_benchmark": p4,
         "p5_cross_platform_verification": p5,
-        "all_propositions_complete": all(
-            p["status"] == "complete" for p in [p1, p2, p3, p4, p5]
-        ),
+        "all_propositions_complete": all(p["status"] == "complete" for p in [p1, p2, p3, p4, p5]),
     }
 
 
@@ -749,7 +741,8 @@ def _build_gate_summary(
     proposition_items = []
     if isinstance(propositions, dict):
         proposition_items = [
-            value for key, value in propositions.items()
+            value
+            for key, value in propositions.items()
             if key != "all_propositions_complete" and isinstance(value, dict)
         ]
     has_incomplete_proposition = any(
@@ -757,9 +750,7 @@ def _build_gate_summary(
     )
     audit_passed = not errors and not has_incomplete_proposition and consistency_passed
     live_status = (
-        suite_results.get("live_matrix", {})
-        .get("live_matrix_readiness", {})
-        .get("status")
+        suite_results.get("live_matrix", {}).get("live_matrix_readiness", {}).get("status")
     )
     baseline_status = (external_baseline or {}).get("status")
     return {
@@ -904,9 +895,7 @@ def _load_v03_evidence(evidence_root: Path | str | None) -> dict[str, Any]:
         errors.extend(f"{path}: {error}" for error in validation["errors"])
 
     cost_records = _validate_path_group(root / "cost", validate_cost_ledger, errors)
-    session_records = _validate_path_group(
-        root / "sessions", validate_session_artifact, errors
-    )
+    session_records = _validate_path_group(root / "sessions", validate_session_artifact, errors)
 
     baseline_path = root / "baseline.json"
     baseline_record: dict[str, Any] | None = None
@@ -995,9 +984,7 @@ def _build_evidence_consistency(
     scenario: dict[str, Any],
     held_out: dict[str, Any],
 ) -> dict[str, Any]:
-    artifact_dir = Path(
-        capability.get("artifact_dir") or "benchmarks/results/capability-runs"
-    )
+    artifact_dir = Path(capability.get("artifact_dir") or "benchmarks/results/capability-runs")
     headline_validation = validate_headline_consistency(artifact_dir, Path("."))
     errors: list[str] = list(headline_validation["errors"])
     warnings: list[str] = []
@@ -1037,9 +1024,7 @@ def _build_evidence_consistency(
 def _build_limitations(suite_results: dict[str, dict[str, Any]]) -> list[str]:
     """Return the known limitations of this audit."""
     capability_metrics = (
-        suite_results.get("capability", {})
-        .get("capability_readiness", {})
-        .get("metrics", {})
+        suite_results.get("capability", {}).get("capability_readiness", {}).get("metrics", {})
     )
     graded_count = int(capability_metrics.get("graded_live_provider_count", 0) or 0)
     expected_count = int(capability_metrics.get("expected_provider_count", 0) or 0)

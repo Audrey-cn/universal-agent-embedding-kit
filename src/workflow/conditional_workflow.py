@@ -111,10 +111,7 @@ class ConditionalWorkflow(Workflow):
                 task.status = TaskStatus.SKIPPED
 
         duration = time.time() - start_time
-        success = all(
-            t.status == TaskStatus.COMPLETED
-            for t in tasks_to_run
-        ) and not errors
+        success = all(t.status == TaskStatus.COMPLETED for t in tasks_to_run) and not errors
 
         return WorkflowResult(
             workflow_id=self.workflow_id,

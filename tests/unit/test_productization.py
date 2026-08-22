@@ -61,8 +61,7 @@ def test_packaging_uses_non_deprecated_license_metadata():
 
     assert data["project"]["license"] == "MIT"
     assert not any(
-        classifier.startswith("License ::")
-        for classifier in data["project"].get("classifiers", [])
+        classifier.startswith("License ::") for classifier in data["project"].get("classifiers", [])
     )
 
 
@@ -168,15 +167,79 @@ exit 0
     assert result.returncode == 9
 
 
+def test_setup_verify_runs_the_format_gate(tmp_path: Path) -> None:
+    """Setup verification should fail when Ruff reports unformatted Python sources."""
+    repository = tmp_path / "repository"
+    scripts_dir = repository / "scripts"
+    venv_bin = repository / ".venv" / "bin"
+    fake_bin = tmp_path / "fake-bin"
+    scripts_dir.mkdir(parents=True)
+    venv_bin.mkdir(parents=True)
+    fake_bin.mkdir()
+    setup_script = scripts_dir / "setup.sh"
+    setup_script.write_text(Path("scripts/setup.sh").read_text(encoding="utf-8"), encoding="utf-8")
+    (venv_bin / "activate").write_text("", encoding="utf-8")
+
+    fake_python = """#!/usr/bin/env bash
+if [[ "$1" == "--version" ]]; then
+  echo "Python 3.12.0"
+  exit 0
+fi
+if [[ "$*" == *"-m ruff format --check"* ]]; then
+  exit 9
+fi
+exit 0
+"""
+    for command in ("python3.11", "python"):
+        path = fake_bin / command
+        path.write_text(fake_python, encoding="utf-8")
+        path.chmod(0o755)
+    fake_pip = fake_bin / "pip"
+    fake_pip.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    fake_pip.chmod(0o755)
+
+    result = subprocess.run(
+        ["bash", str(setup_script), "--verify"],
+        cwd=repository,
+        env={**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 9
+
+
+def test_contribution_commands_include_the_format_gate() -> None:
+    """Contributor instructions should match the formatting gate enforced by CI."""
+    contributing = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
+
+    assert "ruff format --check src api mcp tests scripts" in contributing
+
+
+def test_security_policy_describes_supported_version_and_execution_boundaries() -> None:
+    """Security guidance should distinguish trust boundaries without promising isolation."""
+    policy = Path("SECURITY.md").read_text(encoding="utf-8").lower()
+
+    assert "0.3.0.dev1" in policy
+    assert "main" in policy
+    assert "trusted adapters" in policy
+    assert "restricted candidate execution" in policy
+    assert "not a kernel-level sandbox" in policy
+
+
 def test_mcp_module_runs_stdio_initialize_and_tools_list():
     """`python -m mcp.server` should be a real stdio JSON-RPC MCP server."""
-    requests = "\n".join(
-        [
-            json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
-            json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
-            json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
-        ]
-    ) + "\n"
+    requests = (
+        "\n".join(
+            [
+                json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+                json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+                json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
+            ]
+        )
+        + "\n"
+    )
 
     completed = subprocess.run(
         [sys.executable, "-m", "mcp.server"],
@@ -188,11 +251,7 @@ def test_mcp_module_runs_stdio_initialize_and_tools_list():
     )
 
     assert completed.returncode == 0
-    responses = [
-        json.loads(line)
-        for line in completed.stdout.splitlines()
-        if line.strip()
-    ]
+    responses = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
     assert [response["id"] for response in responses[:2]] == [1, 2]
     assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
     tool_names = {tool["name"] for tool in responses[1]["result"]["tools"]}

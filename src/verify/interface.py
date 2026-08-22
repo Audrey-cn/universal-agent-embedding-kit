@@ -157,6 +157,7 @@ def _run_adversarial_verification(
     if criteria_path and criteria_path.exists():
         try:
             import json
+
             criteria = json.loads(criteria_path.read_text(encoding="utf-8"))
             task_id = criteria.get("task_id")
         except Exception:
@@ -183,7 +184,7 @@ def _run_adversarial_verification(
             passed=True,
             verdict="PASS",
             evidence=f"Adversarial verification passed ({result['trials_run']} trials, "
-                     f"perspectives: {result['perspectives']})",
+            f"perspectives: {result['perspectives']})",
             verification_type=VerificationType.ADVERSARIAL,
             artifact_path=artifact_path,
             criteria_path=criteria_path,
@@ -194,8 +195,8 @@ def _run_adversarial_verification(
             passed=False,
             verdict="FAIL",
             evidence=f"Failed perspective: {result['failed_perspective']}. "
-                     f"Reason: {result['reason']}. "
-                     f"Counterexample: {result['counterexample']}",
+            f"Reason: {result['reason']}. "
+            f"Counterexample: {result['counterexample']}",
             verification_type=VerificationType.ADVERSARIAL,
             artifact_path=artifact_path,
             criteria_path=criteria_path,
@@ -239,8 +240,8 @@ def _run_multi_perspective_verification(
         artifact_path=artifact_path,
         criteria_path=criteria_path,
         notes=f"Score: {mp_result.overall_score:.2%}, "
-              f"Consensus: {mp_result.consensus_level}, "
-              f"Failed: {[p.perspective.value for p in mp_result.failed_perspectives]}",
+        f"Consensus: {mp_result.consensus_level}, "
+        f"Failed: {[p.perspective.value for p in mp_result.failed_perspectives]}",
     )
 
 
@@ -273,6 +274,7 @@ def _run_cognitive_panel_verification(
     if criteria_path and criteria_path.exists():
         try:
             import json
+
             criteria = json.loads(criteria_path.read_text(encoding="utf-8"))
             context = criteria.get("context", "")
         except Exception:
@@ -288,6 +290,6 @@ def _run_cognitive_panel_verification(
         artifact_path=artifact_path,
         criteria_path=criteria_path,
         notes=f"Score: {result.overall_score:.2%}, "
-              f"Sycophancy risk: {result.sycophancy_risk:.0%}, "
-              f"Consensus: {result.consensus_level}",
+        f"Sycophancy risk: {result.sycophancy_risk:.0%}, "
+        f"Consensus: {result.consensus_level}",
     )

@@ -2,12 +2,13 @@
 
 ## Supported versions
 
-UAEK is pre-1.0 (alpha). Only the latest `main` and the most recent tagged
-release receive fixes.
+UAEK is pre-1.0 (alpha). Security fixes target the current `0.3.0.dev1`
+development line on `main`; older development snapshots and releases are not
+supported.
 
-| Version | Supported |
-|---------|:---------:|
-| `0.1.x` / `main` | ✅ |
+| Version / branch | Supported |
+|------------------|:---------:|
+| `0.3.0.dev1` / `main` | ✅ |
 | older | ❌ |
 
 ## Reporting a vulnerability
@@ -27,9 +28,29 @@ Please include:
 We aim to acknowledge a report within a few days and to coordinate a fix and
 disclosure timeline with you.
 
-## Scope notes
+## Execution trust boundaries
 
-UAEK drives external agent platforms and executes graded code in its benchmarks.
-Treat benchmark execution as you would any code-running sandbox: run untrusted
-scenario packs only in an isolated environment. Reports about the verification or
-sandboxing path are especially welcome.
+### Trusted adapters
+
+Command-backed adapters execute commands selected by the operator. They are
+trusted adapters: they inherit the caller's environment and are not subjected to
+the candidate-code AST policy. UAEK bounds their runtime, memory, and combined
+output and terminates their process group on timeout, but operators must only
+configure commands they trust.
+
+### Restricted candidate execution
+
+Benchmark candidate Python is checked against a restrictive AST policy, receives
+a limited builtins set, and runs in a child process with a temporary working
+directory, a reduced environment, and resource, time, and output limits. These
+controls reduce accidental and straightforward abuse while preserving the
+benchmark API.
+
+### Residual isolation boundary
+
+This subprocess isolation is **not a kernel-level sandbox**. In particular, the
+current `allow_network` and `allow_filesystem_write` policy fields are metadata;
+they do not enforce OS-level network or filesystem isolation, and resource-limit
+support varies by platform. Run untrusted scenario packs in a disposable
+container or virtual machine with no credentials, sensitive mounts, or network
+access. Reports about the verification or isolation path are especially welcome.

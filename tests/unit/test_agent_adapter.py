@@ -70,8 +70,7 @@ def test_command_agent_adapter_reports_invalid_json_and_timeout(tmp_path: Path):
 
     slow_script = tmp_path / "slow_adapter.py"
     slow_script.write_text(
-        "import time\n"
-        "time.sleep(1)\n",
+        "import time\ntime.sleep(1)\n",
         encoding="utf-8",
     )
 
@@ -92,8 +91,7 @@ def test_command_adapter_reports_output_limit_before_parsing_json(tmp_path: Path
 
     script = tmp_path / "large_output_adapter.py"
     script.write_text(
-        "import sys\n"
-        "sys.stdout.write('x' * 256)\n",
+        "import sys\nsys.stdout.write('x' * 256)\n",
         encoding="utf-8",
     )
 

@@ -28,7 +28,7 @@ The evidence-strength ladder (see [`docs/methodology.md`](docs/methodology.md)):
 ```bash
 git clone https://github.com/Audrey-cn/universal-agent-embedding-kit.git
 cd universal-agent-embedding-kit
-bash scripts/setup.sh --verify # .venv + install + ruff + mypy + pytest
+bash scripts/setup.sh --verify # .venv + install + lint + format + mypy + pytest
 ```
 
 ## Before opening a PR
@@ -36,7 +36,8 @@ bash scripts/setup.sh --verify # .venv + install + ruff + mypy + pytest
 All gates must be green:
 
 ```bash
-ruff check src api mcp tests
+ruff check src api mcp tests scripts
+ruff format --check src api mcp tests scripts
 mypy src api mcp
 pytest -q
 ```

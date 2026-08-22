@@ -24,6 +24,7 @@ from .interface import VerificationResult, VerificationType, verify
 @dataclass
 class FileFingerprint:
     """文件指纹"""
+
     path: Path
     hash: str
     last_verified: float = 0.0
@@ -112,6 +113,7 @@ class DependencyGraph:
 def _extract_imports(filepath: Path) -> list[str]:
     """从 Python 文件中提取本地导入"""
     import ast
+
     imports = []
     try:
         tree = ast.parse(filepath.read_text(encoding="utf-8"))
@@ -139,9 +141,7 @@ class IncrementalVerifier:
     def __init__(self, project_root: Path | str, cache_path: Path | str | None = None):
         self.project_root = Path(project_root)
         self._cache_path = (
-            Path(cache_path)
-            if cache_path
-            else self.project_root / ".uaek" / "verify_cache"
+            Path(cache_path) if cache_path else self.project_root / ".uaek" / "verify_cache"
         )
         self._fingerprints: dict[str, FileFingerprint] = {}
         self._dependency_graph: DependencyGraph | None = None
@@ -172,6 +172,7 @@ class IncrementalVerifier:
     ) -> FileFingerprint:
         """更新文件指纹（通常在验证后调用）"""
         import time
+
         key = self._fingerprint_path(filepath)
         fp = FileFingerprint(
             path=filepath,
@@ -221,9 +222,7 @@ class IncrementalVerifier:
 
     def build_dependency_graph(self, glob_pattern: str = "**/*.py") -> DependencyGraph:
         """构建依赖图"""
-        self._dependency_graph = DependencyGraph.from_directory(
-            self.project_root, glob_pattern
-        )
+        self._dependency_graph = DependencyGraph.from_directory(self.project_root, glob_pattern)
         return self._dependency_graph
 
     @property
@@ -370,15 +369,13 @@ class IncrementalVerifier:
         """获取增量验证统计信息"""
         total = len(self._fingerprints)
         cached = sum(
-            1 for fp in self._fingerprints.values()
-            if fp.last_result and fp.last_result.passed
+            1 for fp in self._fingerprints.values() if fp.last_result and fp.last_result.passed
         )
         return {
             "total_tracked": total,
             "cached_passed": cached,
             "cache_hit_rate": cached / max(1, total),
             "dependency_graph_nodes": (
-                len(self.dependency_graph.dependencies)
-                if self._dependency_graph else 0
+                len(self.dependency_graph.dependencies) if self._dependency_graph else 0
             ),
         }

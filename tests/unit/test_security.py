@@ -131,11 +131,7 @@ def test_candidate_policy_rejects_parent_environment_access(monkeypatch):
     from src.capability_tasks import get_task, grade_code
 
     monkeypatch.setenv("UAEK_GRADER_SENTINEL", "parent-secret")
-    code = (
-        "import os\n"
-        "def two_sum(nums, target):\n"
-        "    return os.environ['UAEK_GRADER_SENTINEL']\n"
-    )
+    code = "import os\ndef two_sum(nums, target):\n    return os.environ['UAEK_GRADER_SENTINEL']\n"
 
     result = grade_code(get_task("two_sum"), code, held_out=0)
 
@@ -150,8 +146,7 @@ def test_candidate_policy_rejects_external_file_access(tmp_path):
     sentinel = tmp_path / "outside-grader.txt"
     sentinel.write_text("filesystem-secret", encoding="utf-8")
     code = (
-        "def two_sum(nums, target):\n"
-        f"    return open({str(sentinel)!r}, encoding='utf-8').read()\n"
+        f"def two_sum(nums, target):\n    return open({str(sentinel)!r}, encoding='utf-8').read()\n"
     )
 
     result = grade_code(get_task("two_sum"), code, held_out=0)
@@ -160,6 +155,7 @@ def test_candidate_policy_rejects_external_file_access(tmp_path):
     assert "open" in str(result["error"]).lower()
     assert "filesystem-secret" not in str(result)
     assert sentinel.read_text(encoding="utf-8") == "filesystem-secret"
+
 
 # ============================================================================
 # 注入攻击测试用例

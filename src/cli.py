@@ -23,6 +23,7 @@ def main():
     """UAEK — Universal Agent Enhancement Kit"""
     pass
 
+
 main.add_command(evidence)
 
 
@@ -786,7 +787,6 @@ def benchmark(suite: str, iterations: int, output: str, baseline: str | None):
     console.print(f"[green]written[/green] {output_path}")
 
 
-
 @main.command()
 @click.option("--iterations", "-n", type=int, default=2, help="迭代次数")
 @click.option(
@@ -891,8 +891,7 @@ def audit(
     table.add_row(
         "P4 真实场景基准",
         props["p4_real_scenario_benchmark"]["status"],
-        f"{p4.get('scenario_count') or '—'} scenarios, ref "
-        f"{_fmt_pct(p4.get('reference_overall'))}"
+        f"{p4.get('scenario_count') or '—'} scenarios, ref {_fmt_pct(p4.get('reference_overall'))}"
         if p4.get("reference_overall") is not None
         else "—",
     )
@@ -919,8 +918,10 @@ def audit(
     )
     ci_url = gates.get("ci_remote_run_url")
     ci_detail = (
-        f"✓ {ci_url}" if gates["ci_remote_verified"] and ci_url
-        else "✓ detected" if gates["ci_remote_verified"]
+        f"✓ {ci_url}"
+        if gates["ci_remote_verified"] and ci_url
+        else "✓ detected"
+        if gates["ci_remote_verified"]
         else "配置完成，待远端运行"
     )
     table.add_row(

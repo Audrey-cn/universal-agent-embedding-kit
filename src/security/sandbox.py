@@ -166,9 +166,7 @@ def run_bounded_process(
         if _resource is not None:
             popen_kwargs["preexec_fn"] = lambda: _set_resource_limits(active_policy)
     elif os.name == "nt":  # pragma: no cover - exercised on Windows
-        popen_kwargs["creationflags"] = getattr(
-            subprocess, "CREATE_NEW_PROCESS_GROUP", 0
-        )
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
 
     try:
         process = subprocess.Popen(command, **popen_kwargs)
@@ -247,9 +245,7 @@ def run_bounded_process(
     stdout, stdout_decode_truncated = _truncate_text_to_byte_limit(
         stdout_decoded, int(active_policy.max_output_bytes)
     )
-    remaining_decoded_bytes = int(active_policy.max_output_bytes) - len(
-        stdout.encode("utf-8")
-    )
+    remaining_decoded_bytes = int(active_policy.max_output_bytes) - len(stdout.encode("utf-8"))
     stderr, stderr_decode_truncated = _truncate_text_to_byte_limit(
         stderr_decoded, remaining_decoded_bytes
     )
@@ -258,15 +254,9 @@ def run_bounded_process(
         stderr=stderr,
         exit_code=process.returncode,
         success=process.returncode == 0 and not timed_out,
-        error=(
-            f"执行超时（超过 {active_policy.max_runtime_sec} 秒）"
-            if timed_out
-            else None
-        ),
+        error=(f"执行超时（超过 {active_policy.max_runtime_sec} 秒）" if timed_out else None),
         timed_out=timed_out,
-        output_truncated=(
-            was_truncated or stdout_decode_truncated or stderr_decode_truncated
-        ),
+        output_truncated=(was_truncated or stdout_decode_truncated or stderr_decode_truncated),
     )
 
 
@@ -284,9 +274,7 @@ class SandboxedExecutor:
     # 公开 API
     # ------------------------------------------------------------------ #
 
-    def execute_python(
-        self, code: str, policy: SandboxPolicy | None = None
-    ) -> SandboxResult:
+    def execute_python(self, code: str, policy: SandboxPolicy | None = None) -> SandboxResult:
         """在隔离子进程中执行 Python 代码
 
         Args:
@@ -354,9 +342,7 @@ class SandboxedExecutor:
             # 解析 JSON 结果行
             return self._parse_batch_results(result.stdout, result.stderr)
 
-    def execute_command(
-        self, cmd: list[str], policy: SandboxPolicy | None = None
-    ) -> SandboxResult:
+    def execute_command(self, cmd: list[str], policy: SandboxPolicy | None = None) -> SandboxResult:
         """在隔离子进程中执行命令
 
         Args:
@@ -417,9 +403,7 @@ class SandboxedExecutor:
             "print(json.dumps(results))\n"
         )
 
-    def _parse_batch_results(
-        self, stdout: str, stderr: str
-    ) -> list[SandboxResult]:
+    def _parse_batch_results(self, stdout: str, stderr: str) -> list[SandboxResult]:
         """解析批量执行结果"""
         try:
             parsed = json.loads(stdout.strip() or "[]")
@@ -480,8 +464,6 @@ class SandboxedExecutor:
 
         return results
 
-    def _run_subprocess(
-        self, cmd: list[str], policy: SandboxPolicy
-    ) -> SandboxResult:
+    def _run_subprocess(self, cmd: list[str], policy: SandboxPolicy) -> SandboxResult:
         """Compatibility delegate for callers using the former private helper."""
         return run_bounded_process(cmd, policy=policy)

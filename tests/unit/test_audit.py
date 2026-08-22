@@ -85,14 +85,13 @@ def _write_active_surfaces(repository_root: Path, headline: str = "3/4") -> list
         }
     }
     paths[3].write_text(json.dumps(matrix), encoding="utf-8")
-    paths[4].write_text(
-        json.dumps({"capability_readiness": matrix}), encoding="utf-8"
-    )
+    paths[4].write_text(json.dumps({"capability_readiness": matrix}), encoding="utf-8")
     return paths
 
 
 def test_headline_validator_reports_expected_value_and_every_stale_path(
-    tmp_path: Path, capsys,
+    tmp_path: Path,
+    capsys,
 ):
     """A static 3/4 claim must fail when versioned run artifacts derive 2/4."""
     from scripts.check_headline_consistency import (
@@ -127,7 +126,8 @@ def test_headline_validator_reports_expected_value_and_every_stale_path(
 
 
 def test_audit_evidence_consistency_reuses_active_headline_validation(
-    tmp_path: Path, monkeypatch,
+    tmp_path: Path,
+    monkeypatch,
 ):
     """Audit must surface the validator's exact active-surface mismatches."""
     from scripts.check_headline_consistency import validate_headline_consistency
@@ -161,7 +161,8 @@ def test_audit_evidence_consistency_reuses_active_headline_validation(
 
 @pytest.mark.parametrize("near_match", ["3/40", "13/4"])
 def test_headline_validator_rejects_numeric_near_matches(
-    tmp_path: Path, near_match: str,
+    tmp_path: Path,
+    near_match: str,
 ) -> None:
     """A ratio containing the expected text must still be reported as stale."""
     from scripts.check_headline_consistency import validate_headline_consistency
@@ -221,9 +222,13 @@ def test_audit_run_all_suites():
     )
 
     # Each proposition should have evidence_rung
-    for key in ["p1_context_utilization", "p2_self_grading_cheating",
-                "p3_cost_optimization", "p4_real_scenario_benchmark",
-                "p5_cross_platform_verification"]:
+    for key in [
+        "p1_context_utilization",
+        "p2_self_grading_cheating",
+        "p3_cost_optimization",
+        "p4_real_scenario_benchmark",
+        "p5_cross_platform_verification",
+    ]:
         assert props[key]["evidence_rung"] >= 3
 
     # Gates should be present
@@ -272,19 +277,23 @@ def test_audit_with_baseline_path(tmp_path: Path):
     from src.evidence.baseline import CURRENT_GRADER_VERSION, current_task_set_digest
 
     baseline = tmp_path / "test-baseline.json"
-    baseline.write_text(json.dumps({
-        "schema": "external_baseline_v1",
-        "name": "test-baseline",
-        "source_ref": "artifact://test/baseline",
-        "model": "fixture-model",
-        "runtime": "fixture-runtime",
-        "evaluated_at": "2026-08-09T00:00:00Z",
-        "task_set_digest": current_task_set_digest(),
-        "grader_version": CURRENT_GRADER_VERSION,
-        "samples_per_task": 3,
-        "metrics": {"mean_score": 0.85},
-        "limitations": ["Test fixture only."],
-    }))
+    baseline.write_text(
+        json.dumps(
+            {
+                "schema": "external_baseline_v1",
+                "name": "test-baseline",
+                "source_ref": "artifact://test/baseline",
+                "model": "fixture-model",
+                "runtime": "fixture-runtime",
+                "evaluated_at": "2026-08-09T00:00:00Z",
+                "task_set_digest": current_task_set_digest(),
+                "grader_version": CURRENT_GRADER_VERSION,
+                "samples_per_task": 3,
+                "metrics": {"mean_score": 0.85},
+                "limitations": ["Test fixture only."],
+            }
+        )
+    )
 
     from src.benchmark import run_audit
 
@@ -299,19 +308,23 @@ def test_audit_rejects_incompatible_baseline_for_availability_gate(tmp_path: Pat
     from src.evidence.baseline import CURRENT_GRADER_VERSION
 
     baseline = tmp_path / "incompatible.json"
-    baseline.write_text(json.dumps({
-        "schema": "external_baseline_v1",
-        "name": "incompatible",
-        "source_ref": "artifact://test/incompatible",
-        "model": "fixture-model",
-        "runtime": "fixture-runtime",
-        "evaluated_at": "2026-08-09T00:00:00Z",
-        "task_set_digest": "different-task-set",
-        "grader_version": CURRENT_GRADER_VERSION,
-        "samples_per_task": 3,
-        "metrics": {"mean_score": 1.0},
-        "limitations": ["Test fixture only."],
-    }))
+    baseline.write_text(
+        json.dumps(
+            {
+                "schema": "external_baseline_v1",
+                "name": "incompatible",
+                "source_ref": "artifact://test/incompatible",
+                "model": "fixture-model",
+                "runtime": "fixture-runtime",
+                "evaluated_at": "2026-08-09T00:00:00Z",
+                "task_set_digest": "different-task-set",
+                "grader_version": CURRENT_GRADER_VERSION,
+                "samples_per_task": 3,
+                "metrics": {"mean_score": 1.0},
+                "limitations": ["Test fixture only."],
+            }
+        )
+    )
 
     result = run_audit(iterations=1, baseline_path=baseline)
 
@@ -468,9 +481,16 @@ def test_audit_cli_writes_json_file(tmp_path: Path):
     """uaek audit --output <file>.json should write valid JSON."""
     output = tmp_path / "test-audit.json"
     runner = CliRunner()
-    result = runner.invoke(main, [
-        "audit", "--iterations", "1", "--output", str(output),
-    ])
+    result = runner.invoke(
+        main,
+        [
+            "audit",
+            "--iterations",
+            "1",
+            "--output",
+            str(output),
+        ],
+    )
 
     assert result.exit_code == 0
     assert output.exists()

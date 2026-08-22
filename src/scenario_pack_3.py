@@ -123,16 +123,12 @@ SCENARIO_PACK_3 = (
         ambiguity="Two words are anagrams iff they share the same multiset of letters.",
         checks=(
             ScenarioCheck(
-                "correctness", "num_anagram_groups",
-                [["eat", "tea", "tan", "ate", "nat", "bat"]], 3
+                "correctness", "num_anagram_groups", [["eat", "tea", "tan", "ate", "nat", "bat"]], 3
             ),
             ScenarioCheck("correctness", "num_anagram_groups", [["abc"]], 1),
             ScenarioCheck("completeness", "num_anagram_groups", [["a", "b", "c"]], 3),
             ScenarioCheck("robustness", "num_anagram_groups", [[]], 0),
-            ScenarioCheck(
-                "robustness", "num_anagram_groups",
-                [["listen", "silent", "enlist"]], 1
-            ),
+            ScenarioCheck("robustness", "num_anagram_groups", [["listen", "silent", "enlist"]], 1),
         ),
     ),
     RealScenario(
@@ -153,7 +149,7 @@ SCENARIO_PACK_3 = (
 )
 
 REFERENCE_PACK_3 = {
-    "to_roman": '''
+    "to_roman": """
 def to_roman(n):
     vals = [(1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'), (100, 'C'),
             (90, 'XC'), (50, 'L'), (40, 'XL'), (10, 'X'), (9, 'IX'),
@@ -164,8 +160,8 @@ def to_roman(n):
             out += sym
             n -= v
     return out
-''',
-    "interval_merge": '''
+""",
+    "interval_merge": """
 def merge(intervals):
     if not intervals:
         return []
@@ -177,13 +173,13 @@ def merge(intervals):
         else:
             out.append([a, b])
     return out
-''',
-    "count_word": '''
+""",
+    "count_word": """
 def count_word(text, word):
     target = word.lower()
     return sum(1 for w in text.lower().split() if w == target)
-''',
-    "flatten_nested": '''
+""",
+    "flatten_nested": """
 def flatten(lst):
     out = []
     for x in lst:
@@ -192,8 +188,8 @@ def flatten(lst):
         else:
             out.append(x)
     return out
-''',
-    "is_balanced": '''
+""",
+    "is_balanced": """
 def is_balanced(s):
     pairs = {')': '(', ']': '[', '}': '{'}
     stack = []
@@ -204,8 +200,8 @@ def is_balanced(s):
             if not stack or stack.pop() != pairs[c]:
                 return False
     return not stack
-''',
-    "dedupe_ordered": '''
+""",
+    "dedupe_ordered": """
 def dedupe(lst):
     seen = set()
     out = []
@@ -214,8 +210,8 @@ def dedupe(lst):
             seen.add(x)
             out.append(x)
     return out
-''',
-    "moving_avg": '''
+""",
+    "moving_avg": """
 def moving_avg(nums, k):
     if k <= 0 or k > len(nums):
         return []
@@ -224,8 +220,8 @@ def moving_avg(nums, k):
         window = nums[i:i + k]
         out.append(sum(window) / k)
     return out
-''',
-    "compare_versions": '''
+""",
+    "compare_versions": """
 def compare_versions(a, b):
     pa = [int(x) for x in a.split('.')]
     pb = [int(x) for x in b.split('.')]
@@ -238,15 +234,15 @@ def compare_versions(a, b):
         if x > y:
             return 1
     return 0
-''',
-    "anagram_groups": '''
+""",
+    "anagram_groups": """
 def num_anagram_groups(words):
     groups = set()
     for w in words:
         groups.add(''.join(sorted(w)))
     return len(groups)
-''',
-    "validate_ipv4": '''
+""",
+    "validate_ipv4": """
 def is_valid_ipv4(s):
     parts = s.split('.')
     if len(parts) != 4:
@@ -257,13 +253,13 @@ def is_valid_ipv4(s):
         if int(p) > 255:
             return False
     return True
-''',
+""",
 }
 
 # Each flaw is plausible — it passes the obvious cases but fails one boundary check.
 FLAWED_PACK_3 = {
     # Additive only: no subtractive pairs, so 4 -> 'IIII', 40 -> 'XXXX'.
-    "to_roman": '''
+    "to_roman": """
 def to_roman(n):
     vals = [(1000, 'M'), (500, 'D'), (100, 'C'), (50, 'L'),
             (10, 'X'), (5, 'V'), (1, 'I')]
@@ -273,9 +269,9 @@ def to_roman(n):
             out += sym
             n -= v
     return out
-''',
+""",
     # Strict '<': touching intervals ([1,3],[3,5]) are not merged.
-    "interval_merge": '''
+    "interval_merge": """
 def merge(intervals):
     if not intervals:
         return []
@@ -287,14 +283,14 @@ def merge(intervals):
         else:
             out.append([a, b])
     return out
-''',
+""",
     # Case-sensitive: 'Cat'/'CAT' are not counted as 'cat'.
-    "count_word": '''
+    "count_word": """
 def count_word(text, word):
     return sum(1 for w in text.split() if w == word)
-''',
+""",
     # One level deep only: [1,[2,[3]]] -> [1,2,[3]].
-    "flatten_nested": '''
+    "flatten_nested": """
 def flatten(lst):
     out = []
     for x in lst:
@@ -303,9 +299,9 @@ def flatten(lst):
         else:
             out.append(x)
     return out
-''',
+""",
     # Counts brackets but ignores ordering: '([)]' -> True.
-    "is_balanced": '''
+    "is_balanced": """
 def is_balanced(s):
     counts = {'(': 0, '[': 0, '{': 0}
     closes = {')': '(', ']': '[', '}': '{'}
@@ -317,14 +313,14 @@ def is_balanced(s):
             if counts[closes[c]] < 0:
                 return False
     return all(v == 0 for v in counts.values())
-''',
+""",
     # set() loses first-seen order: [3,1,3,2,1] -> [1,2,3].
-    "dedupe_ordered": '''
+    "dedupe_ordered": """
 def dedupe(lst):
     return sorted(set(lst))
-''',
+""",
     # Emits a partial trailing window and never guards k > len(nums).
-    "moving_avg": '''
+    "moving_avg": """
 def moving_avg(nums, k):
     out = []
     for i in range(len(nums)):
@@ -332,24 +328,24 @@ def moving_avg(nums, k):
         if window:
             out.append(sum(window) / len(window))
     return out
-''',
+""",
     # Lexicographic string compare: '1.10.0' < '1.9.0'.
-    "compare_versions": '''
+    "compare_versions": """
 def compare_versions(a, b):
     if a == b:
         return 0
     return 1 if a > b else -1
-''',
+""",
     # Groups by length, not letter multiset: distinct anagrams collapse.
-    "anagram_groups": '''
+    "anagram_groups": """
 def num_anagram_groups(words):
     groups = set()
     for w in words:
         groups.add(len(w))
     return len(groups)
-''',
+""",
     # No octet range check: '256.1.1.1' passes.
-    "validate_ipv4": '''
+    "validate_ipv4": """
 def is_valid_ipv4(s):
     parts = s.split('.')
     if len(parts) != 4:
@@ -358,5 +354,5 @@ def is_valid_ipv4(s):
         if not p.isdigit():
             return False
     return True
-''',
+""",
 }

@@ -164,9 +164,7 @@ def uaek_cost(
         write_cost += turn.output_tokens * CACHE_WRITE_MULT * INPUT_PRICE
 
     total_cost = input_cost + write_cost + output_cost
-    hit_rate = (
-        round(cache_read_tokens / total_input_tokens, 4) if total_input_tokens else 0.0
-    )
+    hit_rate = round(cache_read_tokens / total_input_tokens, 4) if total_input_tokens else 0.0
     return {
         "input_cost": round(input_cost, 2),
         "write_cost": round(write_cost, 2),
@@ -219,9 +217,7 @@ def run_cost_readiness() -> dict[str, Any]:
     realistic = uaek_cost(workload, cache_miss_rate=REALISTIC_MISS_RATE)
     cache_only = uaek_cost(workload, use_effort_routing=False, cache_miss_rate=REALISTIC_MISS_RATE)
     # Improvement: stable prefix on the 1-hour cache tier survives TTL misses.
-    improved = uaek_cost(
-        workload, cache_miss_rate=REALISTIC_MISS_RATE, long_ttl_stable_prefix=True
-    )
+    improved = uaek_cost(workload, cache_miss_rate=REALISTIC_MISS_RATE, long_ttl_stable_prefix=True)
 
     best_case_reduction = cost_reduction(baseline, best_case)
     realistic_reduction = cost_reduction(baseline, realistic)

@@ -68,6 +68,9 @@ jobs:
       - name: Lint
         run: python -m ruff check src api mcp tests scripts
 
+      - name: Check formatting
+        run: python -m ruff format --check src api mcp tests scripts
+
       - name: Typecheck
         run: python -m mypy src api mcp
 
@@ -83,9 +86,38 @@ jobs:
             --evidence-root benchmarks/evidence/fixtures \
             --output /tmp/uaek-evidence-audit.json
 
+  dependency-audit:
+    name: Dependency audit (core + all extras)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install locked dependency tooling
+        run: |
+          python -m pip install --upgrade pip uv==0.11.32
+          uv lock --check
+
+      - name: Audit core dependencies
+        run: |
+          uv export --no-dev --no-emit-project --format requirements-txt --output-file /tmp/uaek-core.txt
+          uvx pip-audit==2.10.1 -r /tmp/uaek-core.txt
+
+      - name: Audit all supported extras
+        run: |
+          uv export --all-extras --no-dev --no-emit-project --format requirements-txt --output-file /tmp/uaek-all.txt
+          uvx pip-audit==2.10.1 -r /tmp/uaek-all.txt
+
   release-gate:
     name: Release gate (wheel + install + smoke)
-    needs: quality
+    needs: [quality, dependency-audit]
     runs-on: ubuntu-latest
     timeout-minutes: 20
 

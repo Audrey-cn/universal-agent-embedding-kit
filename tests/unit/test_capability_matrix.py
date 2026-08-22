@@ -735,7 +735,7 @@ def test_cli_capability_batch_dry_run_rejects_bad_output_mode(tmp_path: Path):
     assert "output_mode unsupported" in result.output
 
 
-FAKE_PROVIDER = '''
+FAKE_PROVIDER = """
 import sys
 prompt = sys.argv[-1]
 solutions = {
@@ -773,7 +773,7 @@ for name, code in solutions.items():
     if name in prompt:
         print("Sure, here you go:\\n```python\\n" + code + "```")
         break
-'''
+"""
 
 
 def test_run_capability_suite_live_grades_fake_provider(tmp_path: Path):

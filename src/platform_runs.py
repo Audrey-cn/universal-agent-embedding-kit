@@ -287,7 +287,7 @@ def _sample_adapter_result(index: int) -> dict[str, Any]:
         "trace_id": f"platform-readiness-{index}",
         "return_code": 0,
         "duration_ms": 1.0,
-        "stdout": "{\"success\": true}",
+        "stdout": '{"success": true}',
         "stderr": "",
         "artifacts": {},
         "metrics": {"steps": 1},

@@ -152,8 +152,7 @@ def test_property_verify_rejects_parent_environment_side_effect(
 def test_property_verify_preserves_verification_result_contract(tmp_path: Path) -> None:
     artifact = tmp_path / "candidate.py"
     artifact.write_text(
-        "def increment(value):\n"
-        "    return value + 1\n",
+        "def increment(value):\n    return value + 1\n",
         encoding="utf-8",
     )
 
@@ -206,17 +205,13 @@ def test_property_verify_preserves_syntax_error_contract(tmp_path: Path) -> None
     assert result.verdict == "FAIL"
     assert result.evidence.startswith("Cannot compile code: ")
     assert "invalid syntax" in result.evidence
-    assert result.notes == result.evidence.replace(
-        "Cannot compile code: ", "Compile error: ", 1
-    )
+    assert result.notes == result.evidence.replace("Cannot compile code: ", "Compile error: ", 1)
 
 
 def test_property_verify_preserves_load_error_contract(tmp_path: Path) -> None:
     artifact = tmp_path / "candidate.py"
     artifact.write_text(
-        "raise ValueError('boom')\n"
-        "def target(value):\n"
-        "    return value\n",
+        "raise ValueError('boom')\ndef target(value):\n    return value\n",
         encoding="utf-8",
     )
 
@@ -241,9 +236,7 @@ def test_multi_perspective_checker_uses_weights_and_strict_consensus(tmp_path: P
     )
     checker.register_perspective(
         Perspective.SECURITY,
-        lambda _artifact, _criteria: PerspectiveResult(
-            Perspective.SECURITY, False, 0.0, "unsafe"
-        ),
+        lambda _artifact, _criteria: PerspectiveResult(Perspective.SECURITY, False, 0.0, "unsafe"),
         weight=1.0,
     )
 

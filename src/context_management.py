@@ -43,6 +43,7 @@ def load_live_context_measurement(
     data = json.loads(p.read_text(encoding="utf-8"))
     return data if isinstance(data, dict) else None
 
+
 WINDOW_TOKENS = 2000
 FIDELITY_TOKENS = 40  # tokens needed to faithfully retain one fact (compression floor)
 NAIVE_USABLE_FRACTION = 0.40  # documented linear-context "dumb zone" (proposal / Fable-5)
@@ -113,9 +114,7 @@ def naive_context(scenario: ContextScenario) -> dict[str, Any]:
     """Linear context: only the first NAIVE_USABLE_FRACTION of the window is reliable."""
     reliable_limit = NAIVE_USABLE_FRACTION * WINDOW_TOKENS
     accessible = {
-        item.query_id
-        for item in scenario.items
-        if item.is_needle and item.offset < reliable_limit
+        item.query_id for item in scenario.items if item.is_needle and item.offset < reliable_limit
     }
     tokens_used = sum(FIDELITY_TOKENS for _ in scenario.items)  # keeps raw context
     return {
@@ -202,14 +201,10 @@ def _naive_accuracy_at(utilization: float, adversarial: bool = False) -> float:
     return answer_accuracy(naive_context(scenario), scenario)
 
 
-def expected_adaptive_accuracy(
-    utilization: float, adversarial: bool = False
-) -> dict[str, float]:
+def expected_adaptive_accuracy(utilization: float, adversarial: bool = False) -> dict[str, float]:
     """Mean/min/max adaptive accuracy over seeds, accounting for lossy compression."""
     scenario = build_scenario(utilization, adversarial_placement=adversarial)
-    samples = [
-        answer_accuracy(adaptive_context(scenario, seed=seed), scenario) for seed in SEEDS
-    ]
+    samples = [answer_accuracy(adaptive_context(scenario, seed=seed), scenario) for seed in SEEDS]
     return {
         "mean": round(statistics.mean(samples), 4),
         "min": round(min(samples), 4),
@@ -238,8 +233,7 @@ def run_context_rot_readiness() -> dict[str, Any]:
     # Sensitivity: usable ceiling depends heavily on the threshold, so report both.
     naive_curve = measure_utilization_curve("naive")
     adaptive_mean_curve = [
-        {"utilization": u, "accuracy": expected_adaptive_accuracy(u)["mean"]}
-        for u in SWEEP_LEVELS
+        {"utilization": u, "accuracy": expected_adaptive_accuracy(u)["mean"]} for u in SWEEP_LEVELS
     ]
     ceilings = {
         f"threshold_{int(t * 100)}": {

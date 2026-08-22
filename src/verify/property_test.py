@@ -29,19 +29,21 @@ from .interface import VerificationResult, VerificationType
 
 class PropertyType(Enum):
     """属性类型"""
-    IDEMPOTENT = "idempotent"      # f(f(x)) == f(x)
-    COMMUTATIVE = "commutative"     # f(a, b) == f(b, a)
-    ROUND_TRIP = "round_trip"       # decode(encode(x)) == x
-    INVARIANT = "invariant"         # 自定义不变性
-    SYMMETRIC = "symmetric"         # f(a, b) == f(b, a)
-    MONOTONIC = "monotonic"         # a <= b → f(a) <= f(b)
-    NO_CRASH = "no_crash"           # 不会崩溃
-    ASSOCIATIVE = "associative"     # f(a, f(b, c)) == f(f(a, b), c)
+
+    IDEMPOTENT = "idempotent"  # f(f(x)) == f(x)
+    COMMUTATIVE = "commutative"  # f(a, b) == f(b, a)
+    ROUND_TRIP = "round_trip"  # decode(encode(x)) == x
+    INVARIANT = "invariant"  # 自定义不变性
+    SYMMETRIC = "symmetric"  # f(a, b) == f(b, a)
+    MONOTONIC = "monotonic"  # a <= b → f(a) <= f(b)
+    NO_CRASH = "no_crash"  # 不会崩溃
+    ASSOCIATIVE = "associative"  # f(a, f(b, c)) == f(f(a, b), c)
 
 
 @dataclass
 class PropertyTestResult:
     """单个属性测试的运行结果"""
+
     property_type: PropertyType
     passed: bool
     total_trials: int
@@ -55,6 +57,7 @@ class PropertyTestResult:
 @dataclass
 class PropertyTestSuiteResult:
     """属性测试套件结果"""
+
     artifact_path: Path
     function_name: str
     results: list[PropertyTestResult]
@@ -160,7 +163,7 @@ class Shrinker:
         current = value
         # 尝试移除后半部分
         while len(current) > 0:
-            candidate = current[:len(current) // 2]
+            candidate = current[: len(current) // 2]
             if not property_fn(candidate):
                 current = candidate
             else:
@@ -171,7 +174,7 @@ class Shrinker:
         current = list(value)
         # 尝试移除后半部分元素
         while len(current) > 0:
-            candidate = current[:len(current) // 2]
+            candidate = current[: len(current) // 2]
             if not property_fn(candidate):
                 current = candidate
             else:
@@ -288,7 +291,7 @@ class PropertyTester:
                         shrunk_counterexample=None,
                         duration_ms=(time.monotonic() - start) * 1000,
                         evidence=f"decode(encode(x)) != x for x={x}, "
-                                 f"encoded={encoded}, decoded={decoded}",
+                        f"encoded={encoded}, decoded={decoded}",
                     )
             except Exception as e:
                 return PropertyTestResult(
@@ -344,8 +347,7 @@ class PropertyTester:
                         counterexample=(a, b),
                         shrunk_counterexample=None,
                         duration_ms=(time.monotonic() - start) * 1000,
-                        evidence=f"f(a, b) != f(b, a) for a={a}, b={b}, "
-                                 f"f(a,b)={fab}, f(b,a)={fba}",
+                        evidence=f"f(a, b) != f(b, a) for a={a}, b={b}, f(a,b)={fab}, f(b,a)={fba}",
                     )
             except Exception as e:
                 return PropertyTestResult(
@@ -432,7 +434,7 @@ class PropertyTester:
                         shrunk_counterexample=None,
                         duration_ms=(time.monotonic() - start) * 1000,
                         evidence=f"Property '{property_name}' failed at trial {trial + 1} "
-                                 f"with inputs {inputs}",
+                        f"with inputs {inputs}",
                     )
             except Exception as e:
                 return PropertyTestResult(
@@ -444,8 +446,7 @@ class PropertyTester:
                     shrunk_counterexample=None,
                     duration_ms=(time.monotonic() - start) * 1000,
                     evidence=(
-                        f"Property '{property_name}' threw exception "
-                        f"at trial {trial + 1}: {e}"
+                        f"Property '{property_name}' threw exception at trial {trial + 1}: {e}"
                     ),
                 )
 
@@ -479,7 +480,7 @@ class PropertyTester:
 # 与验证框架的集成
 # --------------------------------------------------------------------------- #
 
-_PROPERTY_HARNESS = '''
+_PROPERTY_HARNESS = """
 from src.verify.property_test import PropertyTester, PropertyType
 
 def safe_counterexample(value):
@@ -521,7 +522,7 @@ else:
                 "shrunk_counterexample": safe_counterexample(result.shrunk_counterexample),
             })
         print(json.dumps({"results": results}))
-'''
+"""
 
 
 def property_test_verify(
@@ -621,8 +622,7 @@ def property_test_verify(
     raw_results = payload.get("results", [])
     results = raw_results if isinstance(raw_results, list) else []
     all_passed = all(
-        isinstance(result, dict) and result.get("passed") is True
-        for result in results
+        isinstance(result, dict) and result.get("passed") is True for result in results
     )
     failed = [
         result
@@ -630,9 +630,7 @@ def property_test_verify(
         if isinstance(result, dict) and result.get("passed") is not True
     ]
     passed_count = sum(
-        1
-        for result in results
-        if isinstance(result, dict) and result.get("passed") is True
+        1 for result in results if isinstance(result, dict) and result.get("passed") is True
     )
 
     return VerificationResult(

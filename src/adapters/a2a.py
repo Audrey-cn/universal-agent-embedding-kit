@@ -30,8 +30,10 @@ from typing import Any
 # 消息层
 # --------------------------------------------------------------------------- #
 
+
 class MessageRole(Enum):
     """消息角色"""
+
     SYSTEM = "system"
     USER = "user"
     AGENT = "agent"
@@ -42,6 +44,7 @@ class MessageRole(Enum):
 
 class TaskStatus(Enum):
     """任务状态"""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"

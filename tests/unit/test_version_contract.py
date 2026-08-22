@@ -55,9 +55,7 @@ def test_mcp_metadata_uses_the_portable_console_command() -> None:
 
 
 def test_active_release_docs_use_current_setup_and_portable_paths() -> None:
-    documents = {
-        name: Path(name).read_text(encoding="utf-8") for name in ACTIVE_PORTABLE_DOCS
-    }
+    documents = {name: Path(name).read_text(encoding="utf-8") for name in ACTIVE_PORTABLE_DOCS}
 
     assert "# UAEK 0.3 Support Matrix" in documents["docs/support-matrix.md"]
     assert EXPECTED_VERSION in documents["docs/support-matrix.md"]
@@ -92,9 +90,7 @@ def test_active_headline_surfaces_match_versioned_capability_runs() -> None:
     )
     assert matrix["metrics"]["graded_live_provider_count"] == 3
     assert matrix["metrics"]["expected_provider_count"] == 4
-    assert benchmark["capability_readiness"]["metrics"][
-        "graded_live_provider_count"
-    ] == 3
+    assert benchmark["capability_readiness"]["metrics"]["graded_live_provider_count"] == 3
     assert benchmark["capability_readiness"]["metrics"]["expected_provider_count"] == 4
     for readiness in (matrix, benchmark["capability_readiness"]):
         assert "hermes 8/10" not in "\n".join(readiness["limitations"])

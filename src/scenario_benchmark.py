@@ -146,17 +146,14 @@ SCENARIOS: tuple[RealScenario, ...] = (
         checks=(
             ScenarioCheck("correctness", "get_config", ('{"db":{"host":"x"}}', "db.host", ""), "x"),
             ScenarioCheck(
-                "correctness", "get_config",
-                ('{"db":{"port":5432}}', "db.port", 0), 5432
+                "correctness", "get_config", ('{"db":{"port":5432}}', "db.port", 0), 5432
             ),
             ScenarioCheck(
-                "completeness", "get_config",
-                ('{"db":{}}', "db.host", "localhost"), "localhost"
+                "completeness", "get_config", ('{"db":{}}', "db.host", "localhost"), "localhost"
             ),
             ScenarioCheck("robustness", "get_config", ("{}", "db.host", "localhost"), "localhost"),
             ScenarioCheck(
-                "robustness", "get_config",
-                ('{"db":null}', "db.host", "default"), "default"
+                "robustness", "get_config", ('{"db":null}', "db.host", "default"), "default"
             ),
         ),
     ),
@@ -376,10 +373,7 @@ FLAWED_SOLUTIONS: dict[str, str] = {
         "    return price\n"
     ),
     # Only checks length, misses digit+special requirements.
-    "password_validator": (
-        "def is_strong(pw):\n"
-        "    return len(pw) >= 8\n"
-    ),
+    "password_validator": ("def is_strong(pw):\n    return len(pw) >= 8\n"),
     # Hardcodes the config path, ignores the key_path parameter.
     "json_config_reader": (
         "import json\n"
@@ -402,8 +396,7 @@ FLAWED_SOLUTIONS: dict[str, str] = {
     ),
     # Allows overdraft (negative balance), passes correctness on happy path.
     "bank_transfer": (
-        "def transfer(from_bal, to_bal, amount):\n"
-        "    return (from_bal - amount, to_bal + amount)\n"
+        "def transfer(from_bal, to_bal, amount):\n    return (from_bal - amount, to_bal + amount)\n"
     ),
     # Uses list slicing instead of circular overwrite — fails on overflow.
     "circular_buffer": (
@@ -484,13 +477,14 @@ FLAWED_SOLUTIONS: dict[str, str] = {
     ),
 }
 
+
 def get_scenario(scenario_id: str) -> RealScenario:
     if scenario_id not in _SCENARIOS_BY_ID:
         raise KeyError(f"unknown scenario: {scenario_id}")
     return _SCENARIOS_BY_ID[scenario_id]
 
 
-_SCENARIO_HARNESS = '''
+_SCENARIO_HARNESS = """
 def decode_value(value):
     if not isinstance(value, dict) or "__uaek_type__" not in value:
         return value
@@ -556,7 +550,7 @@ print(json.dumps({
     "per_dimension_total": per_dimension_total,
     "load_error": load_error,
 }))
-'''
+"""
 
 
 def _encode_scenario_value(value: Any) -> Any:
@@ -637,9 +631,7 @@ def _evaluate_scenario(
         load_error = process_result.error if not process_result.success else None
     if not per_dimension_total:
         for check in scenario.checks:
-            per_dimension_total[check.dimension] = (
-                per_dimension_total.get(check.dimension, 0) + 1
-            )
+            per_dimension_total[check.dimension] = per_dimension_total.get(check.dimension, 0) + 1
         if scenario.reuse_probe is not None:
             per_dimension_total["context_retention"] = (
                 per_dimension_total.get("context_retention", 0) + 1
@@ -683,9 +675,7 @@ def evaluate_repository_scenario(source_id: str) -> dict[str, Any]:
 def run_scenario_readiness() -> dict[str, Any]:
     """Demonstrate multi-dimensional discrimination on 10 diverse scenarios."""
     reference_reports = {
-        scenario.scenario_id: evaluate_repository_scenario(
-            f"reference:{scenario.scenario_id}"
-        )
+        scenario.scenario_id: evaluate_repository_scenario(f"reference:{scenario.scenario_id}")
         for scenario in SCENARIOS
     }
     reference_overall = round(
@@ -694,9 +684,7 @@ def run_scenario_readiness() -> dict[str, Any]:
 
     # Evaluate all flawed solutions
     flawed_reports = {
-        scenario.scenario_id: evaluate_repository_scenario(
-            f"flawed:{scenario.scenario_id}"
-        )
+        scenario.scenario_id: evaluate_repository_scenario(f"flawed:{scenario.scenario_id}")
         for scenario in SCENARIOS
     }
     flawed_overall = round(
@@ -720,9 +708,7 @@ def run_scenario_readiness() -> dict[str, Any]:
     )
 
     # Count how many flawed solutions are discriminated from reference
-    discriminated_count = sum(
-        1 for r in flawed_reports.values() if r["overall"] < 1.0
-    )
+    discriminated_count = sum(1 for r in flawed_reports.values() if r["overall"] < 1.0)
     # Count distinct failure dimensions across flawed solutions
     flawed_dims = set()
     for r in flawed_reports.values():
@@ -742,8 +728,7 @@ def run_scenario_readiness() -> dict[str, Any]:
             "required": True,
             "status": "pass" if reference_overall == 1.0 else "fail",
             "evidence": (
-                f"all {len(SCENARIOS)} reference solutions "
-                f"score {reference_overall:.0%} overall"
+                f"all {len(SCENARIOS)} reference solutions score {reference_overall:.0%} overall"
             ),
         },
         {
@@ -829,6 +814,7 @@ def run_scenario_readiness() -> dict[str, Any]:
         ],
     }
 
+
 # ── Import and merge scenario pack 2 (20 additional scenarios) ──
 try:
     from src.scenario_pack_2 import FLAWED_PACK_2, REFERENCE_PACK_2, SCENARIO_PACK_2
@@ -877,14 +863,8 @@ except Exception:
 
 _REPOSITORY_SCENARIO_SOURCES = MappingProxyType(
     {
-        **{
-            f"reference:{scenario_id}": code
-            for scenario_id, code in REFERENCE_SOLUTIONS.items()
-        },
-        **{
-            f"flawed:{scenario_id}": code
-            for scenario_id, code in FLAWED_SOLUTIONS.items()
-        },
+        **{f"reference:{scenario_id}": code for scenario_id, code in REFERENCE_SOLUTIONS.items()},
+        **{f"flawed:{scenario_id}": code for scenario_id, code in FLAWED_SOLUTIONS.items()},
     }
 )
 

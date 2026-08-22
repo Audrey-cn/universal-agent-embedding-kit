@@ -63,8 +63,7 @@ class L1CurrentContext(MemoryLayer):
         unique_ratio = self._calculate_information_density()
         # 信息密度高 → 提高阈值（更多保留），信息密度低 → 降低阈值（更多压缩）
         self._compression_threshold = (
-            self.DEFAULT_COMPRESSION_THRESHOLD
-            + (unique_ratio - 0.5) * 0.2
+            self.DEFAULT_COMPRESSION_THRESHOLD + (unique_ratio - 0.5) * 0.2
         )
         self._compression_threshold = max(
             self.MIN_COMPRESSION_THRESHOLD,
@@ -87,7 +86,8 @@ class L1CurrentContext(MemoryLayer):
                 # 同时添加到知识图谱
                 if self._knowledge_graph is not None:
                     self._knowledge_graph.ingest_memory_entry(
-                        entry.id, entry.content,
+                        entry.id,
+                        entry.content,
                         importance=entry.importance,
                         tags=entry.tags,
                     )

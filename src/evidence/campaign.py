@@ -450,8 +450,10 @@ def _write_campaign_state(
 
 
 def _string_list(value: Any, field: str, errors: list[str]) -> list[str]:
-    if not isinstance(value, list) or not value or any(
-        not isinstance(item, str) or not item for item in value
+    if (
+        not isinstance(value, list)
+        or not value
+        or any(not isinstance(item, str) or not item for item in value)
     ):
         errors.append(f"{field} must be a non-empty string list")
         return []

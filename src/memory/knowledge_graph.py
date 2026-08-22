@@ -20,30 +20,33 @@ from typing import Any
 
 class EntityType(Enum):
     """知识图谱实体类型"""
-    DECISION = "decision"       # 决策
-    CONSTRAINT = "constraint"   # 约束
-    ERROR = "error"             # 错误
-    FILE = "file"               # 文件
-    TASK = "task"               # 任务
-    REQUIREMENT = "requirement" # 需求
-    PATTERN = "pattern"         # 模式/经验
+
+    DECISION = "decision"  # 决策
+    CONSTRAINT = "constraint"  # 约束
+    ERROR = "error"  # 错误
+    FILE = "file"  # 文件
+    TASK = "task"  # 任务
+    REQUIREMENT = "requirement"  # 需求
+    PATTERN = "pattern"  # 模式/经验
 
 
 class RelationType(Enum):
     """关系类型"""
-    DEPENDS_ON = "depends_on"       # 依赖
-    MODIFIES = "modifies"           # 修改
-    REFERENCES = "references"       # 引用
-    CAUSES = "causes"               # 导致
-    RESOLVES = "resolves"           # 解决
-    RELATES_TO = "relates_to"       # 相关
-    PRECEDES = "precedes"           # 先于
-    CONSTRAINS = "constrains"       # 约束
+
+    DEPENDS_ON = "depends_on"  # 依赖
+    MODIFIES = "modifies"  # 修改
+    REFERENCES = "references"  # 引用
+    CAUSES = "causes"  # 导致
+    RESOLVES = "resolves"  # 解决
+    RELATES_TO = "relates_to"  # 相关
+    PRECEDES = "precedes"  # 先于
+    CONSTRAINS = "constrains"  # 约束
 
 
 @dataclass
 class Entity:
     """知识图谱实体"""
+
     id: str
     name: str
     entity_type: EntityType
@@ -65,6 +68,7 @@ class Entity:
 @dataclass
 class Relation:
     """知识图谱关系"""
+
     source_id: str
     target_id: str
     relation_type: RelationType
@@ -115,8 +119,7 @@ class KnowledgeGraph:
         del self._entities[entity_id]
         # 删除关联关系
         self._relations = [
-            r for r in self._relations
-            if r.source_id != entity_id and r.target_id != entity_id
+            r for r in self._relations if r.source_id != entity_id and r.target_id != entity_id
         ]
         self._rebuild_relation_indexes()
         return True
@@ -205,7 +208,8 @@ class KnowledgeGraph:
             candidates = [e for e in candidates if e.importance >= min_importance]
         if query_lower:
             candidates = [
-                e for e in candidates
+                e
+                for e in candidates
                 if query_lower in e.name.lower() or query_lower in e.content.lower()
             ]
 
