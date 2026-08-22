@@ -6,14 +6,23 @@
 from __future__ import annotations
 
 import json
+import math
 import os
-import resource
+import signal
 import subprocess
 import sys
 import tempfile
-import warnings
+import threading
+import time
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from pathlib import Path
+from typing import IO, Any
+
+try:
+    import resource as _resource
+except ImportError:  # pragma: no cover - resource is unavailable on Windows
+    _resource = None  # type: ignore[assignment]
 
 
 # --------------------------------------------------------------------------- #
@@ -27,9 +36,9 @@ class SandboxPolicy:
     max_memory_mb: int = 256
     # 最大运行时间（秒）
     max_runtime_sec: int = 30
-    # 是否允许网络访问（当前通过隔离环境变量实现基本限制）
+    # 是否允许网络访问（策略元数据；当前未做 OS 级强制）
     allow_network: bool = False
-    # 是否允许文件系统写入（当前通过 RLIMIT_FSIZE 限制文件大小）
+    # 是否允许文件系统写入（策略元数据；当前未做 OS 级强制）
     allow_filesystem_write: bool = False
     # 白名单路径（预留，当前版本未强制路径检查）
     allowed_paths: list[str] = field(default_factory=list)
@@ -51,6 +60,204 @@ class SandboxResult:
     error: str | None = None
     timed_out: bool = False
     result: Any = None  # 从 stdout 解析的 JSON 结果
+    output_truncated: bool = False
+
+
+def _validate_policy(policy: SandboxPolicy) -> None:
+    for field_name in ("max_runtime_sec", "max_memory_mb", "max_output_bytes"):
+        value = getattr(policy, field_name)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(f"{field_name} must be finite and positive")
+
+
+def _set_resource_limits(policy: SandboxPolicy) -> None:
+    if _resource is None:
+        return
+
+    memory_bytes = int(policy.max_memory_mb * 1024 * 1024)
+    for rlimit_name in ("RLIMIT_AS", "RLIMIT_DATA", "RLIMIT_RSS"):
+        rlimit = getattr(_resource, rlimit_name, None)
+        if rlimit is None:
+            continue
+        try:
+            _resource.setrlimit(rlimit, (memory_bytes, memory_bytes))
+        except (OSError, ValueError):
+            pass
+
+    process_limit = 64
+    nproc_resource = getattr(_resource, "RLIMIT_NPROC", None)
+    if sys.platform == "darwin" and nproc_resource is not None:
+        # macOS accounts RLIMIT_NPROC per user, so lowering it below the
+        # caller's existing process count prevents even one child process.
+        process_limit = _resource.getrlimit(nproc_resource)[0]
+
+    limits = (
+        ("RLIMIT_CPU", math.ceil(policy.max_runtime_sec)),
+        ("RLIMIT_NPROC", process_limit),
+        ("RLIMIT_FSIZE", int(policy.max_output_bytes)),
+    )
+    for rlimit_name, limit in limits:
+        rlimit = getattr(_resource, rlimit_name, None)
+        if rlimit is None:
+            continue
+        try:
+            _resource.setrlimit(rlimit, (limit, limit))
+        except (OSError, ValueError):
+            pass
+
+
+def _truncate_text_to_byte_limit(text: str, limit: int) -> tuple[str, bool]:
+    if len(text.encode("utf-8")) <= limit:
+        return text, False
+
+    retained: list[str] = []
+    retained_bytes = 0
+    for character in text:
+        encoded_size = len(character.encode("utf-8"))
+        if retained_bytes + encoded_size > limit:
+            break
+        retained.append(character)
+        retained_bytes += encoded_size
+    return "".join(retained), True
+
+
+def _kill_process_group(process: subprocess.Popen[bytes]) -> None:
+    if os.name == "posix":
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+            return
+        except (OSError, ProcessLookupError):
+            pass
+    try:
+        process.kill()
+    except OSError:
+        pass
+
+
+def run_bounded_process(
+    command: Sequence[str],
+    *,
+    input_text: str | None = None,
+    policy: SandboxPolicy | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: Path | str | None = None,
+) -> SandboxResult:
+    """在有界资源和合并输出预算下运行子进程。
+
+    ``env`` 是完整的子进程环境；本函数不会合并父进程环境。
+    """
+    active_policy = policy or SandboxPolicy()
+    _validate_policy(active_policy)
+
+    popen_kwargs: dict[str, Any] = {
+        "stdin": subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+        "env": env,
+        "cwd": cwd,
+    }
+    if os.name == "posix":
+        popen_kwargs["start_new_session"] = True
+        if _resource is not None:
+            popen_kwargs["preexec_fn"] = lambda: _set_resource_limits(active_policy)
+    elif os.name == "nt":  # pragma: no cover - exercised on Windows
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+
+    try:
+        process = subprocess.Popen(command, **popen_kwargs)
+    except Exception as exc:
+        return SandboxResult(error=f"沙箱执行异常: {exc}")
+    deadline = time.monotonic() + active_policy.max_runtime_sec
+
+    stdout_chunks: list[bytes] = []
+    stderr_chunks: list[bytes] = []
+    budget_lock = threading.Lock()
+    remaining_bytes = int(active_policy.max_output_bytes)
+    output_truncated = False
+
+    def drain(stream: IO[bytes], destination: list[bytes]) -> None:
+        nonlocal output_truncated, remaining_bytes
+        while chunk := stream.read(8192):
+            with budget_lock:
+                retained_size = min(len(chunk), remaining_bytes)
+                if retained_size:
+                    destination.append(chunk[:retained_size])
+                    remaining_bytes -= retained_size
+                if retained_size < len(chunk):
+                    output_truncated = True
+        stream.close()
+
+    drain_threads = [
+        threading.Thread(target=drain, args=(process.stdout, stdout_chunks), daemon=True),
+        threading.Thread(target=drain, args=(process.stderr, stderr_chunks), daemon=True),
+    ]
+    for thread in drain_threads:
+        thread.start()
+
+    input_thread: threading.Thread | None = None
+    stdin = process.stdin
+    if input_text is not None and stdin is not None:
+
+        def write_input() -> None:
+            try:
+                stdin.write(input_text.encode("utf-8"))
+            except (BrokenPipeError, OSError):
+                pass
+            finally:
+                stdin.close()
+
+        input_thread = threading.Thread(target=write_input, daemon=True)
+        input_thread.start()
+
+    io_threads = [*drain_threads]
+    if input_thread is not None:
+        io_threads.append(input_thread)
+
+    timed_out = False
+    try:
+        process.wait(timeout=max(0.0, deadline - time.monotonic()))
+    except subprocess.TimeoutExpired:
+        timed_out = True
+
+    if not timed_out:
+        for thread in io_threads:
+            thread.join(timeout=max(0.0, deadline - time.monotonic()))
+        timed_out = any(thread.is_alive() for thread in io_threads)
+
+    if timed_out:
+        _kill_process_group(process)
+        process.wait()
+        for thread in io_threads:
+            thread.join()
+
+    with budget_lock:
+        stdout_bytes = b"".join(stdout_chunks)
+        stderr_bytes = b"".join(stderr_chunks)
+        was_truncated = output_truncated
+
+    stdout_decoded = stdout_bytes.decode("utf-8", errors="replace")
+    stderr_decoded = stderr_bytes.decode("utf-8", errors="replace")
+    stdout, stdout_decode_truncated = _truncate_text_to_byte_limit(
+        stdout_decoded, int(active_policy.max_output_bytes)
+    )
+    remaining_decoded_bytes = int(active_policy.max_output_bytes) - len(stdout.encode("utf-8"))
+    stderr, stderr_decode_truncated = _truncate_text_to_byte_limit(
+        stderr_decoded, remaining_decoded_bytes
+    )
+    return SandboxResult(
+        stdout=stdout,
+        stderr=stderr,
+        exit_code=process.returncode,
+        success=process.returncode == 0 and not timed_out,
+        error=(f"执行超时（超过 {active_policy.max_runtime_sec} 秒）" if timed_out else None),
+        timed_out=timed_out,
+        output_truncated=(was_truncated or stdout_decode_truncated or stderr_decode_truncated),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -67,9 +274,7 @@ class SandboxedExecutor:
     # 公开 API
     # ------------------------------------------------------------------ #
 
-    def execute_python(
-        self, code: str, policy: SandboxPolicy | None = None
-    ) -> SandboxResult:
+    def execute_python(self, code: str, policy: SandboxPolicy | None = None) -> SandboxResult:
         """在隔离子进程中执行 Python 代码
 
         Args:
@@ -82,24 +287,15 @@ class SandboxedExecutor:
         if policy is None:
             policy = SandboxPolicy()
 
-        # 将代码写入临时文件
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(code)
-            tmp_path = f.name
-
-        try:
-            return self._run_subprocess(
-                [sys.executable, tmp_path],
+        with tempfile.TemporaryDirectory(prefix="uaek-sandbox-") as tmp_dir:
+            script_path = Path(tmp_dir) / "candidate.py"
+            script_path.write_text(code, encoding="utf-8")
+            return run_bounded_process(
+                [sys.executable, str(script_path)],
                 policy=policy,
+                env=self._sandbox_environment(tmp_dir),
+                cwd=tmp_dir,
             )
-        finally:
-            # 清理临时文件
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
 
     def execute_python_with_inputs(
         self,
@@ -129,17 +325,14 @@ class SandboxedExecutor:
         # 构建包装脚本：定义函数 + 对每组参数调用并输出 JSON 结果
         wrapper = self._build_wrapper_script(code, entrypoint, args_list)
 
-        # 写入临时文件
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(wrapper)
-            tmp_path = f.name
-
-        try:
-            result = self._run_subprocess(
-                [sys.executable, tmp_path],
+        with tempfile.TemporaryDirectory(prefix="uaek-sandbox-") as tmp_dir:
+            script_path = Path(tmp_dir) / "candidate.py"
+            script_path.write_text(wrapper, encoding="utf-8")
+            result = run_bounded_process(
+                [sys.executable, str(script_path)],
                 policy=policy,
+                env=self._sandbox_environment(tmp_dir),
+                cwd=tmp_dir,
             )
 
             if not result.success:
@@ -148,15 +341,8 @@ class SandboxedExecutor:
 
             # 解析 JSON 结果行
             return self._parse_batch_results(result.stdout, result.stderr)
-        finally:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
 
-    def execute_command(
-        self, cmd: list[str], policy: SandboxPolicy | None = None
-    ) -> SandboxResult:
+    def execute_command(self, cmd: list[str], policy: SandboxPolicy | None = None) -> SandboxResult:
         """在隔离子进程中执行命令
 
         Args:
@@ -169,11 +355,27 @@ class SandboxedExecutor:
         if policy is None:
             policy = SandboxPolicy()
 
-        return self._run_subprocess(cmd, policy=policy)
+        with tempfile.TemporaryDirectory(prefix="uaek-sandbox-") as tmp_dir:
+            return run_bounded_process(
+                cmd,
+                policy=policy,
+                env=self._sandbox_environment(tmp_dir),
+                cwd=tmp_dir,
+            )
 
     # ------------------------------------------------------------------ #
     # 内部实现
     # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _sandbox_environment(tmp_dir: str) -> dict[str, str]:
+        return {
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "HOME": tmp_dir,
+            "TMPDIR": tmp_dir,
+            "LANG": "en_US.UTF-8",
+            "PYTHONPATH": tmp_dir,
+        }
 
     def _build_wrapper_script(
         self,
@@ -201,9 +403,7 @@ class SandboxedExecutor:
             "print(json.dumps(results))\n"
         )
 
-    def _parse_batch_results(
-        self, stdout: str, stderr: str
-    ) -> list[SandboxResult]:
+    def _parse_batch_results(self, stdout: str, stderr: str) -> list[SandboxResult]:
         """解析批量执行结果"""
         try:
             parsed = json.loads(stdout.strip() or "[]")
@@ -264,116 +464,6 @@ class SandboxedExecutor:
 
         return results
 
-    def _run_subprocess(
-        self, cmd: list[str], policy: SandboxPolicy
-    ) -> SandboxResult:
-        """在受资源限制的子进程中运行命令"""
-
-        # 构建 preexec_fn 用于设置资源限制（仅 Unix/macOS）
-        def _set_limits() -> None:
-            # 内存限制 —— 尝试多种方式以兼容不同平台
-            mem_bytes = policy.max_memory_mb * 1024 * 1024
-            memory_limited = False
-            # macOS 不支持 RLIMIT_AS，尝试 RLIMIT_DATA + RLIMIT_RSS
-            for rlimit_attr in ("RLIMIT_AS", "RLIMIT_DATA", "RLIMIT_RSS"):
-                try:
-                    attr = getattr(resource, rlimit_attr, None)
-                    if attr is not None:
-                        resource.setrlimit(attr, (mem_bytes, mem_bytes))
-                        memory_limited = True
-                except (OSError, ValueError):
-                    continue
-
-            if not memory_limited and policy.max_memory_mb > 0:
-                # 所有内存限制方式均失败（如 macOS），发出警告
-                warnings.warn(
-                    f"沙箱内存限制未生效：当前平台不支持 RLIMIT_AS/RLIMIT_DATA/RLIMIT_RSS。"
-                    f"子进程可能分配超过 {policy.max_memory_mb}MB 内存。",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-
-            # CPU 时间限制
-            try:
-                resource.setrlimit(
-                    resource.RLIMIT_CPU,
-                    (policy.max_runtime_sec, policy.max_runtime_sec),
-                )
-            except (OSError, ValueError):
-                pass
-
-            # 进程数限制（防止 fork 炸弹）
-            try:
-                resource.setrlimit(resource.RLIMIT_NPROC, (64, 64))
-            except (OSError, ValueError):
-                pass
-
-            # 文件大小限制
-            try:
-                resource.setrlimit(
-                    resource.RLIMIT_FSIZE,
-                    (policy.max_output_bytes, policy.max_output_bytes),
-                )
-            except (OSError, ValueError):
-                pass
-
-            # 创建新的进程组，便于超时杀灭
-            os.setpgrp()
-
-        try:
-            completed = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=policy.max_runtime_sec + 5,  # 额外 5 秒缓冲
-                preexec_fn=_set_limits,
-                # 限制环境变量，减少信息泄露
-                env={
-                    "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-                    "HOME": "/tmp",  # 不暴露用户真实 HOME
-                    "TMPDIR": tempfile.gettempdir(),
-                    "LANG": "en_US.UTF-8",
-                    # 不继承 PYTHONPATH，防止注入恶意模块
-                    "PYTHONPATH": "",
-                },
-            )
-
-            # 截断输出到最大限制
-            stdout = (
-                completed.stdout[:policy.max_output_bytes]
-                if completed.stdout
-                else ""
-            )
-            stderr = (
-                completed.stderr[:policy.max_output_bytes]
-                if completed.stderr
-                else ""
-            )
-
-            return SandboxResult(
-                stdout=stdout,
-                stderr=stderr,
-                exit_code=completed.returncode,
-                success=completed.returncode == 0,
-                error=None,
-                timed_out=False,
-            )
-
-        except subprocess.TimeoutExpired:
-            return SandboxResult(
-                stdout="",
-                stderr="",
-                exit_code=-1,
-                success=False,
-                error=f"执行超时（超过 {policy.max_runtime_sec} 秒）",
-                timed_out=True,
-            )
-        except Exception as exc:
-            return SandboxResult(
-                stdout="",
-                stderr="",
-                exit_code=-1,
-                success=False,
-                error=f"沙箱执行异常: {exc}",
-                timed_out=False,
-            )
+    def _run_subprocess(self, cmd: list[str], policy: SandboxPolicy) -> SandboxResult:
+        """Compatibility delegate for callers using the former private helper."""
+        return run_bounded_process(cmd, policy=policy)

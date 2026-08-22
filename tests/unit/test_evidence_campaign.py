@@ -83,9 +83,7 @@ def test_campaign_rejects_secrets_zero_samples_and_duplicate_sample_ids() -> Non
 
 
 def test_campaign_rejects_seed_count_mismatch_and_backend_omission() -> None:
-    validation = validate_campaign_manifest(
-        _campaign(backend_family="", sample_count=2, seeds=[1])
-    )
+    validation = validate_campaign_manifest(_campaign(backend_family="", sample_count=2, seeds=[1]))
 
     assert validation["valid"] is False
     assert any("backend_family" in error for error in validation["errors"])

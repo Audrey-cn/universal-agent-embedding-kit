@@ -102,8 +102,38 @@ def test_ci_workflow_defines_quality_gates():
     assert "uaek evidence cost aggregate" in workflow_text
     assert "uaek evidence session aggregate" in workflow_text
     assert "uaek evidence baseline validate" in workflow_text
+    assert "python scripts/check_headline_consistency.py" in workflow_text
     assert "--evidence-root benchmarks/evidence/fixtures" in workflow_text
     assert 'audit["evidence_index"]["v0_3"]["status"] == "valid"' in workflow_source
+
+    evidence_validation = workflow_source.index("Validate UAEK 0.3 evidence contracts")
+    headline_validation = workflow_source.index("python scripts/check_headline_consistency.py")
+    lint = workflow_source.index("- name: Lint")
+    assert evidence_validation < headline_validation < lint
+
+
+def test_ci_workflow_checks_formatting() -> None:
+    """CI should reject Python sources that differ from Ruff's canonical format."""
+    workflow_text = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "python -m ruff format --check src api mcp tests scripts" in workflow_text
+
+
+def test_ci_workflow_audits_core_and_all_supported_dependencies() -> None:
+    """CI should audit both locked core and all-extras dependency exports."""
+    workflow_text = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert (
+        "uv export --no-dev --no-emit-project --format requirements-txt "
+        "--output-file /tmp/uaek-core.txt"
+    ) in workflow_text
+    assert (
+        "uv export --all-extras --no-dev --no-emit-project --format requirements-txt "
+        "--output-file /tmp/uaek-all.txt"
+    ) in workflow_text
+    assert workflow_text.count("uvx pip-audit==2.10.1 -r") == 2
+    assert "uvx pip-audit==2.10.1 -r /tmp/uaek-core.txt" in workflow_text
+    assert "uvx pip-audit==2.10.1 -r /tmp/uaek-all.txt" in workflow_text
 
 
 def test_ci_workflow_uses_current_node24_actions():

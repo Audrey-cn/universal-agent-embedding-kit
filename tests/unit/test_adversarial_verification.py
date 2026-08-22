@@ -16,11 +16,7 @@ from src.cli import main
 
 # A subtly wrong is_palindrome: forgets to strip non-alphanumeric characters.
 # It still passes the trivial happy-path example "aba" but fails real cases.
-BUGGY_PALINDROME_EDGE = (
-    "def is_palindrome(s):\n"
-    "    t = s.lower()\n"
-    "    return t == t[::-1]\n"
-)
+BUGGY_PALINDROME_EDGE = "def is_palindrome(s):\n    t = s.lower()\n    return t == t[::-1]\n"
 
 # A blatantly wrong is_palindrome that fails even the happy-path example.
 BUGGY_PALINDROME_OBVIOUS = "def is_palindrome(s):\n    return False\n"

@@ -26,8 +26,19 @@ class DiffRunner(VerificationRunner):
     """
 
     SUPPORTED_EXTENSIONS = {
-        ".txt", ".md", ".py", ".ts", ".js", ".json", ".yaml", ".yml",
-        ".html", ".css", ".toml", ".ini", ".cfg",
+        ".txt",
+        ".md",
+        ".py",
+        ".ts",
+        ".js",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".html",
+        ".css",
+        ".toml",
+        ".ini",
+        ".cfg",
     }
 
     def can_handle(self, artifact_path: Path) -> bool:
@@ -62,10 +73,12 @@ class DiffRunner(VerificationRunner):
             artifact_content = artifact_path.read_text(encoding="utf-8")
         except Exception as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Cannot read artifact: {e}",
                 verification_type=VerificationType.DIFF,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes=f"Artifact read error: {e}",
             )
 
@@ -73,10 +86,12 @@ class DiffRunner(VerificationRunner):
             criteria_text = criteria_path.read_text(encoding="utf-8")
         except Exception as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Cannot read criteria: {e}",
                 verification_type=VerificationType.DIFF,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes=f"Criteria read error: {e}",
             )
 
@@ -101,10 +116,12 @@ class DiffRunner(VerificationRunner):
             criteria = json.loads(criteria_text)
         except json.JSONDecodeError as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Invalid criteria JSON: {e}",
                 verification_type=VerificationType.DIFF,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes="Criteria is not valid JSON",
             )
 
@@ -131,11 +148,13 @@ class DiffRunner(VerificationRunner):
                 )
             missing_keys = [k for k in criteria if k not in artifact]
             extra_keys = [k for k in artifact if k not in criteria]
-            checks.append({
-                "check": "json_keys_coverage",
-                "passed": len(missing_keys) == 0,
-                "details": {"missing": missing_keys, "extra": extra_keys},
-            })
+            checks.append(
+                {
+                    "check": "json_keys_coverage",
+                    "passed": len(missing_keys) == 0,
+                    "details": {"missing": missing_keys, "extra": extra_keys},
+                }
+            )
             if missing_keys:
                 all_passed = False
 
@@ -144,16 +163,20 @@ class DiffRunner(VerificationRunner):
             for key in criteria:
                 if key in artifact:
                     if criteria[key] != artifact[key]:
-                        mismatches.append({
-                            "key": key,
-                            "expected": criteria[key],
-                            "actual": artifact[key],
-                        })
-            checks.append({
-                "check": "json_values_match",
-                "passed": len(mismatches) == 0,
-                "details": {"mismatches": mismatches},
-            })
+                        mismatches.append(
+                            {
+                                "key": key,
+                                "expected": criteria[key],
+                                "actual": artifact[key],
+                            }
+                        )
+            checks.append(
+                {
+                    "check": "json_values_match",
+                    "passed": len(mismatches) == 0,
+                    "details": {"mismatches": mismatches},
+                }
+            )
             if mismatches:
                 all_passed = False
 
@@ -161,11 +184,13 @@ class DiffRunner(VerificationRunner):
             # 检查列表元素覆盖率
             if isinstance(artifact, list):
                 missing_items = [item for item in criteria if item not in artifact]
-                checks.append({
-                    "check": "json_list_coverage",
-                    "passed": len(missing_items) == 0,
-                    "details": {"missing": missing_items},
-                })
+                checks.append(
+                    {
+                        "check": "json_list_coverage",
+                        "passed": len(missing_items) == 0,
+                        "details": {"missing": missing_items},
+                    }
+                )
                 if missing_items:
                     all_passed = False
             else:
@@ -215,22 +240,26 @@ class DiffRunner(VerificationRunner):
 
         matcher = difflib.SequenceMatcher(None, criteria_lines, artifact_lines)
         similarity = matcher.ratio()
-        checks.append({
-            "check": "text_similarity",
-            "passed": similarity >= 0.5,
-            "details": {"similarity": round(similarity, 4)},
-        })
+        checks.append(
+            {
+                "check": "text_similarity",
+                "passed": similarity >= 0.5,
+                "details": {"similarity": round(similarity, 4)},
+            }
+        )
         if similarity < 0.5:
             all_passed = False
 
         # 2. 生成 unified diff
-        diff = list(difflib.unified_diff(
-            criteria_lines,
-            artifact_lines,
-            fromfile=f"spec/{criteria_path.name}",
-            tofile=f"artifact/{artifact_path.name}",
-            lineterm="",
-        ))
+        diff = list(
+            difflib.unified_diff(
+                criteria_lines,
+                artifact_lines,
+                fromfile=f"spec/{criteria_path.name}",
+                tofile=f"artifact/{artifact_path.name}",
+                lineterm="",
+            )
+        )
 
         # 3. 检查规格中的关键要求是否在产出物中
         # 提取规格中的 checklist 项（以 - [ ] 或 * [ ] 开头的行）
@@ -253,16 +282,18 @@ class DiffRunner(VerificationRunner):
                     uncovered.append(desc)
 
             coverage_rate = covered / len(checklist_items) if checklist_items else 1.0
-            checks.append({
-                "check": "checklist_coverage",
-                "passed": coverage_rate >= 0.8,
-                "details": {
-                    "total": len(checklist_items),
-                    "covered": covered,
-                    "uncovered": uncovered,
-                    "coverage_rate": round(coverage_rate, 4),
-                },
-            })
+            checks.append(
+                {
+                    "check": "checklist_coverage",
+                    "passed": coverage_rate >= 0.8,
+                    "details": {
+                        "total": len(checklist_items),
+                        "covered": covered,
+                        "uncovered": uncovered,
+                        "coverage_rate": round(coverage_rate, 4),
+                    },
+                }
+            )
             if coverage_rate < 0.8:
                 all_passed = False
 
@@ -288,16 +319,18 @@ class DiffRunner(VerificationRunner):
                     missing_keywords.append(kw)
 
             kw_coverage = found_keywords / len(spec_keywords) if spec_keywords else 1.0
-            checks.append({
-                "check": "keyword_coverage",
-                "passed": kw_coverage >= 0.6,
-                "details": {
-                    "total": len(spec_keywords),
-                    "found": found_keywords,
-                    "missing": missing_keywords,
-                    "coverage_rate": round(kw_coverage, 4),
-                },
-            })
+            checks.append(
+                {
+                    "check": "keyword_coverage",
+                    "passed": kw_coverage >= 0.6,
+                    "details": {
+                        "total": len(spec_keywords),
+                        "found": found_keywords,
+                        "missing": missing_keywords,
+                        "coverage_rate": round(kw_coverage, 4),
+                    },
+                }
+            )
             if kw_coverage < 0.6:
                 all_passed = False
 
@@ -316,9 +349,12 @@ class DiffRunner(VerificationRunner):
             verification_type=VerificationType.DIFF,
             artifact_path=artifact_path,
             criteria_path=criteria_path,
-            notes=json.dumps({
-                "similarity": similarity,
-                "diff_lines": len(diff),
-                "checks": checks,
-            }, ensure_ascii=False),
+            notes=json.dumps(
+                {
+                    "similarity": similarity,
+                    "diff_lines": len(diff),
+                    "checks": checks,
+                },
+                ensure_ascii=False,
+            ),
         )

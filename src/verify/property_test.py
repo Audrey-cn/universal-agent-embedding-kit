@@ -22,24 +22,28 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from src.security.python_policy import run_restricted_module_harness
+
 from .interface import VerificationResult, VerificationType
 
 
 class PropertyType(Enum):
     """属性类型"""
-    IDEMPOTENT = "idempotent"      # f(f(x)) == f(x)
-    COMMUTATIVE = "commutative"     # f(a, b) == f(b, a)
-    ROUND_TRIP = "round_trip"       # decode(encode(x)) == x
-    INVARIANT = "invariant"         # 自定义不变性
-    SYMMETRIC = "symmetric"         # f(a, b) == f(b, a)
-    MONOTONIC = "monotonic"         # a <= b → f(a) <= f(b)
-    NO_CRASH = "no_crash"           # 不会崩溃
-    ASSOCIATIVE = "associative"     # f(a, f(b, c)) == f(f(a, b), c)
+
+    IDEMPOTENT = "idempotent"  # f(f(x)) == f(x)
+    COMMUTATIVE = "commutative"  # f(a, b) == f(b, a)
+    ROUND_TRIP = "round_trip"  # decode(encode(x)) == x
+    INVARIANT = "invariant"  # 自定义不变性
+    SYMMETRIC = "symmetric"  # f(a, b) == f(b, a)
+    MONOTONIC = "monotonic"  # a <= b → f(a) <= f(b)
+    NO_CRASH = "no_crash"  # 不会崩溃
+    ASSOCIATIVE = "associative"  # f(a, f(b, c)) == f(f(a, b), c)
 
 
 @dataclass
 class PropertyTestResult:
     """单个属性测试的运行结果"""
+
     property_type: PropertyType
     passed: bool
     total_trials: int
@@ -53,6 +57,7 @@ class PropertyTestResult:
 @dataclass
 class PropertyTestSuiteResult:
     """属性测试套件结果"""
+
     artifact_path: Path
     function_name: str
     results: list[PropertyTestResult]
@@ -158,7 +163,7 @@ class Shrinker:
         current = value
         # 尝试移除后半部分
         while len(current) > 0:
-            candidate = current[:len(current) // 2]
+            candidate = current[: len(current) // 2]
             if not property_fn(candidate):
                 current = candidate
             else:
@@ -169,7 +174,7 @@ class Shrinker:
         current = list(value)
         # 尝试移除后半部分元素
         while len(current) > 0:
-            candidate = current[:len(current) // 2]
+            candidate = current[: len(current) // 2]
             if not property_fn(candidate):
                 current = candidate
             else:
@@ -286,7 +291,7 @@ class PropertyTester:
                         shrunk_counterexample=None,
                         duration_ms=(time.monotonic() - start) * 1000,
                         evidence=f"decode(encode(x)) != x for x={x}, "
-                                 f"encoded={encoded}, decoded={decoded}",
+                        f"encoded={encoded}, decoded={decoded}",
                     )
             except Exception as e:
                 return PropertyTestResult(
@@ -342,8 +347,7 @@ class PropertyTester:
                         counterexample=(a, b),
                         shrunk_counterexample=None,
                         duration_ms=(time.monotonic() - start) * 1000,
-                        evidence=f"f(a, b) != f(b, a) for a={a}, b={b}, "
-                                 f"f(a,b)={fab}, f(b,a)={fba}",
+                        evidence=f"f(a, b) != f(b, a) for a={a}, b={b}, f(a,b)={fab}, f(b,a)={fba}",
                     )
             except Exception as e:
                 return PropertyTestResult(
@@ -430,7 +434,7 @@ class PropertyTester:
                         shrunk_counterexample=None,
                         duration_ms=(time.monotonic() - start) * 1000,
                         evidence=f"Property '{property_name}' failed at trial {trial + 1} "
-                                 f"with inputs {inputs}",
+                        f"with inputs {inputs}",
                     )
             except Exception as e:
                 return PropertyTestResult(
@@ -442,8 +446,7 @@ class PropertyTester:
                     shrunk_counterexample=None,
                     duration_ms=(time.monotonic() - start) * 1000,
                     evidence=(
-                        f"Property '{property_name}' threw exception "
-                        f"at trial {trial + 1}: {e}"
+                        f"Property '{property_name}' threw exception at trial {trial + 1}: {e}"
                     ),
                 )
 
@@ -477,6 +480,50 @@ class PropertyTester:
 # 与验证框架的集成
 # --------------------------------------------------------------------------- #
 
+_PROPERTY_HARNESS = """
+from src.verify.property_test import PropertyTester, PropertyType
+
+def safe_counterexample(value):
+    if value is None or type(value) in (bool, int, float, str):
+        return repr(value)[:1000]
+    if type(value) in (list, tuple, dict, set):
+        return repr(value)[:1000]
+    return f"<{type(value).__name__}>"
+
+try:
+    namespace = {"__builtins__": SAFE_BUILTINS}
+    exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
+except Exception as exc:
+    print(json.dumps({"load_error": str(exc)}))
+else:
+    function_name = PAYLOAD["func_name"]
+    if function_name not in namespace:
+        available = [name for name in namespace if callable(namespace[name])]
+        print(json.dumps({"status": "missing", "available": available}))
+    elif not callable(namespace[function_name]):
+        print(json.dumps({"status": "not_callable"}))
+    else:
+        function = namespace[function_name]
+        tester = PropertyTester(trials=PAYLOAD["trials"], seed=PAYLOAD["seed"])
+        results = []
+        for requested_type in PAYLOAD["property_types"]:
+            if requested_type == PropertyType.IDEMPOTENT.value:
+                result = tester.test_idempotent(function)
+            elif requested_type == PropertyType.NO_CRASH.value:
+                result = tester.test_no_crash(function)
+            else:
+                continue
+            results.append({
+                "passed": result.passed,
+                "property_type": result.property_type.value,
+                "total_trials": result.total_trials,
+                "failed_trial": result.failed_trial,
+                "counterexample": safe_counterexample(result.counterexample),
+                "shrunk_counterexample": safe_counterexample(result.shrunk_counterexample),
+            })
+        print(json.dumps({"results": results}))
+"""
+
 
 def property_test_verify(
     artifact_path: Path,
@@ -501,10 +548,8 @@ def property_test_verify(
             notes=f"Artifact read error: {e}",
         )
 
-    # 动态加载函数
-    namespace: dict[str, Any] = {}
     try:
-        exec(compile(code, str(artifact_path), "exec"), namespace)
+        compile(code, str(artifact_path), "exec")
     except Exception as e:
         return VerificationResult(
             passed=False,
@@ -515,18 +560,57 @@ def property_test_verify(
             notes=f"Compile error: {e}",
         )
 
-    if func_name not in namespace:
+    property_types = []
+    if property_type is None or property_type == PropertyType.IDEMPOTENT:
+        property_types.append(PropertyType.IDEMPOTENT.value)
+    if property_type is None or property_type == PropertyType.NO_CRASH:
+        property_types.append(PropertyType.NO_CRASH.value)
+    process_result = run_restricted_module_harness(
+        code,
+        _PROPERTY_HARNESS,
+        {
+            "func_name": func_name,
+            "property_types": property_types,
+            "trials": trials,
+            "seed": seed,
+        },
+        timeout=5.0,
+    )
+    if not process_result.success:
+        diagnostic = process_result.error or "unknown grader failure"
+        return VerificationResult(
+            passed=False,
+            verdict="FAIL",
+            evidence=f"Property test policy rejected or execution failed: {diagnostic}",
+            verification_type=VerificationType.TEST,
+            artifact_path=artifact_path,
+            notes=diagnostic,
+        )
+
+    payload = process_result.result if isinstance(process_result.result, dict) else {}
+    load_error = payload.get("load_error")
+    if isinstance(load_error, str):
+        return VerificationResult(
+            passed=False,
+            verdict="FAIL",
+            evidence=f"Cannot compile code: {load_error}",
+            verification_type=VerificationType.TEST,
+            artifact_path=artifact_path,
+            notes=f"Compile error: {load_error}",
+        )
+
+    status = payload.get("status")
+    if status == "missing":
+        available = payload.get("available", [])
         return VerificationResult(
             passed=False,
             verdict="INDETERMINATE",
             evidence=f"Function '{func_name}' not found in {artifact_path}",
             verification_type=VerificationType.TEST,
             artifact_path=artifact_path,
-            notes=f"Available: {[k for k in namespace if callable(namespace[k])]}",
+            notes=f"Available: {available}",
         )
-
-    func = namespace[func_name]
-    if not callable(func):
+    if status == "not_callable":
         return VerificationResult(
             passed=False,
             verdict="FAIL",
@@ -535,23 +619,29 @@ def property_test_verify(
             artifact_path=artifact_path,
         )
 
-    # 运行属性测试
-    tester = PropertyTester(trials=trials, seed=seed)
-    results: list[PropertyTestResult] = []
-
-    if property_type is None or property_type == PropertyType.IDEMPOTENT:
-        results.append(tester.test_idempotent(func))
-    if property_type is None or property_type == PropertyType.NO_CRASH:
-        results.append(tester.test_no_crash(func))
-
-    all_passed = all(r.passed for r in results)
-    failed = [r for r in results if not r.passed]
+    raw_results = payload.get("results", [])
+    results = raw_results if isinstance(raw_results, list) else []
+    all_passed = all(
+        isinstance(result, dict) and result.get("passed") is True for result in results
+    )
+    failed = [
+        result
+        for result in results
+        if isinstance(result, dict) and result.get("passed") is not True
+    ]
+    passed_count = sum(
+        1 for result in results if isinstance(result, dict) and result.get("passed") is True
+    )
 
     return VerificationResult(
         passed=all_passed,
         verdict="PASS" if all_passed else "FAIL",
-        evidence=f"Property tests: {sum(1 for r in results if r.passed)}/{len(results)} passed",
+        evidence=f"Property tests: {passed_count}/{len(results)} passed",
         verification_type=VerificationType.TEST,
         artifact_path=artifact_path,
-        notes=f"Failed: {[r.property_type.value for r in failed]}" if failed else "All passed",
+        notes=(
+            f"Failed: {[result.get('property_type') for result in failed]}"
+            if failed
+            else "All passed"
+        ),
     )

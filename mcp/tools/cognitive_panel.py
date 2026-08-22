@@ -30,8 +30,7 @@ def register_cognitive_panel_tool(server) -> None:
                     role_list.append(role_map[role_name])
                 else:
                     raise ValueError(
-                        f"Unknown role '{role_name}'. "
-                        f"Available: {list(role_map.keys())}"
+                        f"Unknown role '{role_name}'. Available: {list(role_map.keys())}"
                     )
 
         result = cognitive_panel_verify(

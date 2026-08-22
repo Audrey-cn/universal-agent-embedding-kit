@@ -20,13 +20,12 @@ from src.cli import main
 
 def test_reference_solutions_score_full_marks():
     from src.scenario_benchmark import (
-        REFERENCE_SOLUTIONS,
         SCENARIOS,
-        evaluate_scenario,
+        evaluate_repository_scenario,
     )
 
     for scenario in SCENARIOS:
-        report = evaluate_scenario(scenario, REFERENCE_SOLUTIONS[scenario.scenario_id])
+        report = evaluate_repository_scenario(f"reference:{scenario.scenario_id}")
         assert report["overall"] == 1.0, scenario.scenario_id
 
 
@@ -60,12 +59,111 @@ def test_context_retention_catches_inline_reimplementation():
 
 
 def test_genuine_reuse_passes_context_retention():
-    from src.scenario_benchmark import REFERENCE_SOLUTIONS, evaluate_scenario, get_scenario
+    from src.scenario_benchmark import evaluate_repository_scenario
 
-    scenario = get_scenario("running_total")
-    report = evaluate_scenario(scenario, REFERENCE_SOLUTIONS["running_total"])
+    report = evaluate_repository_scenario("reference:running_total")
 
     assert report["dimensions"]["context_retention"] == 1.0
+
+
+def test_scenario_evaluation_isolation_rejects_parent_filesystem_side_effect(
+    tmp_path: Path,
+):
+    """A policy regression would let candidate module code overwrite the sentinel."""
+    from src.scenario_benchmark import evaluate_scenario, get_scenario
+
+    sentinel = tmp_path / "parent-sentinel.txt"
+    sentinel.write_text("unchanged", encoding="utf-8")
+    code = (
+        f"open({str(sentinel)!r}, 'w').write('changed')\n"
+        "def discount(price, code):\n"
+        "    return price\n"
+    )
+
+    report = evaluate_scenario(get_scenario("discount_feature"), code)
+
+    assert report["overall"] == 0.0
+    assert report["checks_passed"] == 0
+    assert "policy rejected" in str(report["load_error"]).lower()
+    assert sentinel.read_text(encoding="utf-8") == "unchanged"
+
+
+def test_scenario_isolation_does_not_invoke_source_equality_or_trusted_execution(
+    tmp_path: Path,
+):
+    from src.scenario_benchmark import evaluate_scenario, get_scenario
+
+    equality_sentinel = tmp_path / "parent-equality.txt"
+    execution_sentinel = tmp_path / "trusted-execution.txt"
+
+    class HostileSource(str):
+        def __eq__(self, other: object) -> bool:
+            equality_sentinel.write_text("called", encoding="utf-8")
+            return True
+
+        __hash__ = str.__hash__
+
+    source = HostileSource(
+        f"open({str(execution_sentinel)!r}, 'w').write('called')\n"
+        "def discount(price, code):\n"
+        "    return price\n"
+    )
+
+    report = evaluate_scenario(get_scenario("discount_feature"), source)
+
+    assert report["overall"] == 0.0
+    assert "policy rejected" in str(report["load_error"]).lower()
+    assert not equality_sentinel.exists()
+    assert not execution_sentinel.exists()
+
+
+def test_repository_scenario_evaluation_uses_fixed_identifier_only():
+    from src.scenario_benchmark import (
+        REFERENCE_SOLUTIONS,
+        evaluate_repository_scenario,
+        evaluate_scenario,
+        get_scenario,
+    )
+
+    trusted_report = evaluate_repository_scenario("reference:json_config_reader")
+    external_report = evaluate_scenario(
+        get_scenario("json_config_reader"),
+        REFERENCE_SOLUTIONS["json_config_reader"],
+    )
+
+    assert trusted_report["overall"] == 1.0
+    assert trusted_report["load_error"] is None
+    assert external_report["overall"] == 0.0
+    assert "policy rejected" in str(external_report["load_error"]).lower()
+
+    import pytest
+
+    with pytest.raises(KeyError, match="unknown repository scenario source"):
+        evaluate_repository_scenario("reference:not-fixed")
+
+
+def test_repository_scenario_identifier_retrieves_frozen_source(
+    tmp_path: Path,
+    monkeypatch,
+):
+    from src.scenario_benchmark import (
+        REFERENCE_SOLUTIONS,
+        evaluate_repository_scenario,
+    )
+
+    sentinel = tmp_path / "mutable-map-source.txt"
+    monkeypatch.setitem(
+        REFERENCE_SOLUTIONS,
+        "json_config_reader",
+        f"open({str(sentinel)!r}, 'w').write('called')\n"
+        "def get_config(raw, key_path, default):\n"
+        "    return default\n",
+    )
+
+    report = evaluate_repository_scenario("reference:json_config_reader")
+
+    assert report["overall"] == 1.0
+    assert not sentinel.exists()
 
 
 def test_scenarios_are_multistep_and_multidimensional():

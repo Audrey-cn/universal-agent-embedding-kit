@@ -76,6 +76,10 @@ if [[ "${1:-}" == "--verify" || "${1:-}" == "-v" ]]; then
     python -m ruff check src api mcp tests scripts
     echo "✅ ruff passed"
     echo ""
+    echo "--- ruff format ---"
+    python -m ruff format --check src api mcp tests scripts
+    echo "✅ ruff format passed"
+    echo ""
     echo "--- mypy ---"
     python -m mypy src api mcp
     echo "✅ mypy passed"

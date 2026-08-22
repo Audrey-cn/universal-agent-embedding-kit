@@ -104,7 +104,7 @@ class ComplexityMetrics:
         """估计模糊度"""
         # 按空格分词（英文），中文按单字计数
         words = description.split()
-        cjk_count = sum(1 for ch in description if '一' <= ch <= '鿿')
+        cjk_count = sum(1 for ch in description if "一" <= ch <= "鿿")
         word_count = len(words) + cjk_count  # CJK 字符各算一个词
         if word_count < 5:
             return 0.8

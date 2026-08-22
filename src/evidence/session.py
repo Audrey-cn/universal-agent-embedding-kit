@@ -52,10 +52,14 @@ def aggregate_session_evidence(artifacts: Iterable[JsonObjectSource]) -> dict[st
         else:
             deterministic.append(artifact)
 
-    grade_means = {
-        field: round(statistics.fmean(item["grades"][field] for item in live), 6)
-        for field in GRADE_FIELDS
-    } if live else {}
+    grade_means = (
+        {
+            field: round(statistics.fmean(item["grades"][field] for item in live), 6)
+            for field in GRADE_FIELDS
+        }
+        if live
+        else {}
+    )
     return {
         "schema": SESSION_SUMMARY_SCHEMA,
         "live_session_count": len(live),
@@ -73,17 +77,15 @@ def _validate_live_session(artifact: dict[str, Any], errors: list[str]) -> None:
         errors.append("session_id: must be a non-empty string")
 
     provenance = artifact.get("provenance")
-    if not isinstance(provenance, dict) or not _non_empty_string(
-        provenance.get("source")
-    ) or not _non_empty_string(provenance.get("recorded_at")):
+    if (
+        not isinstance(provenance, dict)
+        or not _non_empty_string(provenance.get("source"))
+        or not _non_empty_string(provenance.get("recorded_at"))
+    ):
         errors.append("provenance: source and recorded_at are required")
 
     duration = artifact.get("duration_seconds")
-    if (
-        not isinstance(duration, (int, float))
-        or isinstance(duration, bool)
-        or duration <= 0
-    ):
+    if not isinstance(duration, (int, float)) or isinstance(duration, bool) or duration <= 0:
         errors.append("duration_seconds: must be a positive number")
 
     turn_count = artifact.get("turn_count")
@@ -100,11 +102,7 @@ def _validate_live_session(artifact: dict[str, Any], errors: list[str]) -> None:
     if not isinstance(grades, dict):
         errors.append(f"grades: requires {', '.join(GRADE_FIELDS)}")
         return
-    missing_or_invalid = [
-        field
-        for field in GRADE_FIELDS
-        if not _bounded_grade(grades.get(field))
-    ]
+    missing_or_invalid = [field for field in GRADE_FIELDS if not _bounded_grade(grades.get(field))]
     if missing_or_invalid:
         errors.append(f"grades: invalid or missing {', '.join(missing_or_invalid)}")
 

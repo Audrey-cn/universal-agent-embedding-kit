@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import sys
 import time
 
 import pytest
@@ -14,6 +15,18 @@ from src.memory.knowledge_graph import (
     RelationType,
 )
 from src.memory.token_budget import BudgetPool, TokenBudget, estimate_memory_tokens, estimate_tokens
+from src.memory.vector_backends import ChromaBackend, detect_chromadb
+
+
+def test_chromadb_backend_is_retired_without_importing_installed_package(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The retired integration must stay unavailable even if ChromaDB is installed."""
+    monkeypatch.setitem(sys.modules, "chromadb", object())
+
+    assert detect_chromadb() is False
+    with pytest.raises(RuntimeError, match="retired"):
+        ChromaBackend()
 
 
 def test_replacing_entity_removes_it_from_the_previous_type_index() -> None:
@@ -114,4 +127,3 @@ def test_token_estimates_handle_mixed_text_and_entry_objects() -> None:
     assert estimate_tokens("abcd") == 1
     assert estimate_tokens("中文") == 1
     assert estimate_memory_tokens([Entry(), "abcd"]) == 3
-

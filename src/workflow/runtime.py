@@ -203,6 +203,7 @@ def list_actions() -> list[str]:
 
 # ---- Built-in actions (auto-registered) ----
 
+
 def _action_noop(*_args: Any, **_kwargs: Any) -> None:
     return None
 
@@ -224,6 +225,7 @@ def _action_sum(*args: Any, **kwargs: Any) -> float:
 
 def _action_effort(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.effort import classify
+
     task_description = str(kwargs.get("task_description") or (args[0] if args else ""))
     result = classify(task_description)
     return {
@@ -240,6 +242,7 @@ def _action_fail(*args: Any, **kwargs: Any) -> None:
 
 def _action_verify(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.verify.interface import verify as run_verify
+
     artifact_path = Path(str(kwargs.get("artifact_path") or (args[0] if args else ".")))
     result = run_verify(artifact_path)
     return {
@@ -254,6 +257,7 @@ def _action_verify(*args: Any, **kwargs: Any) -> dict[str, Any]:
 
 def _action_memory_add(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.memory import MemoryService
+
     svc = MemoryService()
     entry = svc.add(
         content=kwargs.get("content", args[0] if args else ""),
@@ -267,6 +271,7 @@ def _action_memory_add(*args: Any, **kwargs: Any) -> dict[str, Any]:
 
 def _action_memory_query(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.memory import MemoryService
+
     svc = MemoryService()
     return svc.query(
         query=kwargs.get("query", args[0] if args else ""),
@@ -279,6 +284,7 @@ def _action_memory_query(*args: Any, **kwargs: Any) -> dict[str, Any]:
 def _action_verify_lint(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.verify.interface import VerificationType
     from src.verify.interface import verify as run_verify
+
     artifact_path = Path(str(kwargs.get("artifact_path", args[0] if args else ".")))
     result = run_verify(artifact_path, verification_type=VerificationType.LINT)
     return {"passed": result.passed, "verdict": result.verdict, "evidence": result.evidence[:500]}
@@ -287,6 +293,7 @@ def _action_verify_lint(*args: Any, **kwargs: Any) -> dict[str, Any]:
 def _action_verify_test(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.verify.interface import VerificationType
     from src.verify.interface import verify as run_verify
+
     artifact_path = Path(str(kwargs.get("artifact_path", args[0] if args else ".")))
     result = run_verify(artifact_path, verification_type=VerificationType.TEST)
     return {"passed": result.passed, "verdict": result.verdict, "evidence": result.evidence[:500]}
@@ -295,6 +302,7 @@ def _action_verify_test(*args: Any, **kwargs: Any) -> dict[str, Any]:
 def _action_verify_render(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.verify.interface import VerificationType
     from src.verify.interface import verify as run_verify
+
     artifact_path = Path(str(kwargs.get("artifact_path", args[0] if args else ".")))
     criteria_path = kwargs.get("criteria_path")
     if criteria_path:
@@ -308,6 +316,7 @@ def _action_verify_render(*args: Any, **kwargs: Any) -> dict[str, Any]:
 def _action_verify_diff(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.verify.interface import VerificationType
     from src.verify.interface import verify as run_verify
+
     artifact_path = Path(str(kwargs.get("artifact_path", args[0] if args else ".")))
     criteria_path = kwargs.get("criteria_path")
     if criteria_path:
@@ -321,6 +330,7 @@ def _action_verify_diff(*args: Any, **kwargs: Any) -> dict[str, Any]:
 def _action_verify_multi_perspective(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.verify.interface import VerificationType
     from src.verify.interface import verify as run_verify
+
     artifact_path = Path(str(kwargs.get("artifact_path", args[0] if args else ".")))
     criteria_path = kwargs.get("criteria_path")
     if criteria_path:
@@ -330,12 +340,17 @@ def _action_verify_multi_perspective(*args: Any, **kwargs: Any) -> dict[str, Any
         criteria_path=criteria_path,
         verification_type=VerificationType.MULTI_PERSPECTIVE,
     )
-    return {"passed": result.passed, "verdict": result.verdict, "evidence": result.evidence[:500],
-            "notes": result.notes}
+    return {
+        "passed": result.passed,
+        "verdict": result.verdict,
+        "evidence": result.evidence[:500],
+        "notes": result.notes,
+    }
 
 
 def _action_effort_cached(*args: Any, **kwargs: Any) -> dict[str, Any]:
     from src.effort import classify_with_cache
+
     task_description = str(kwargs.get("task_description") or (args[0] if args else ""))
     result = classify_with_cache(task_description)
     return {

@@ -29,15 +29,16 @@ from typing import Any
 
 
 class FormalVerificationStatus(Enum):
-    SAT = "sat"           # 可满足（找到反例）
-    UNSAT = "unsat"       # 不可满足（属性成立）
-    UNKNOWN = "unknown"   # 无法确定
-    ERROR = "error"       # 验证过程出错
+    SAT = "sat"  # 可满足（找到反例）
+    UNSAT = "unsat"  # 不可满足（属性成立）
+    UNKNOWN = "unknown"  # 无法确定
+    ERROR = "error"  # 验证过程出错
 
 
 @dataclass
 class Constraint:
     """约束条件"""
+
     expression: str
     description: str = ""
     bound_vars: list[str] = field(default_factory=list)
@@ -46,6 +47,7 @@ class Constraint:
 @dataclass
 class FormalVerificationResult:
     """形式化验证结果"""
+
     status: FormalVerificationStatus
     passed: bool
     property_name: str
@@ -294,6 +296,7 @@ class FormalVerifier:
         if use_z3:
             try:
                 import z3  # noqa: F401
+
                 self._z3_available = True
             except ImportError:
                 pass
@@ -434,8 +437,7 @@ class FormalVerifier:
                 passed=False,
                 property_name=property_name,
                 evidence=(
-                    f"Cannot determine invariant '{invariant}' "
-                    f"within {max_iterations} iterations"
+                    f"Cannot determine invariant '{invariant}' within {max_iterations} iterations"
                 ),
                 duration_ms=duration,
                 details={"backend": self.backend},
@@ -497,8 +499,7 @@ class FormalVerifier:
                 passed=True,
                 property_name=property_name,
                 evidence=(
-                    f"Postcondition '{postcondition}' holds given "
-                    f"precondition '{precondition}'"
+                    f"Postcondition '{postcondition}' holds given precondition '{precondition}'"
                 ),
                 duration_ms=duration,
                 details={"backend": self.backend},
@@ -533,6 +534,7 @@ class FormalVerifier:
     ) -> FormalVerificationResult:
         """使用 Z3 求解器验证（需要 z3-solver 已安装）"""
         import time
+
         try:
             import z3
         except ImportError:
@@ -610,7 +612,7 @@ class FormalVerifier:
             return None
 
         # 匹配: x op y
-        match = re.match(r'\s*(\w+)\s*(==|!=|<=|>=|<|>)\s*(\w+|\d+)\s*', constraint)
+        match = re.match(r"\s*(\w+)\s*(==|!=|<=|>=|<|>)\s*(\w+|\d+)\s*", constraint)
         if match:
             var_name = match.group(1)
             op = match.group(2)
@@ -620,7 +622,7 @@ class FormalVerifier:
                 return None
 
             v = variables[var_name]
-            if other.isdigit() or (other.startswith('-') and other[1:].isdigit()):
+            if other.isdigit() or (other.startswith("-") and other[1:].isdigit()):
                 rhs = int(other)
             elif other in variables:
                 rhs = variables[other]
@@ -697,7 +699,10 @@ def formal_verify_artifact(
         elif ctype == "postcondition":
             precondition = constraint.get("precondition", "True")
             result = verifier.verify_postcondition(
-                precondition, prop, var_domains, max_iterations=max_iterations,
+                precondition,
+                prop,
+                var_domains,
+                max_iterations=max_iterations,
             )
         else:
             result = verifier.verify_invariant(prop, var_domains, max_iterations=max_iterations)

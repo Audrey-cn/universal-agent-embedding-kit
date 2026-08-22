@@ -26,16 +26,18 @@ from typing import Any
 
 class CognitiveRole(Enum):
     """认知角色"""
-    DEVILS_ADVOCATE = "devils_advocate"        # 反驳者
+
+    DEVILS_ADVOCATE = "devils_advocate"  # 反驳者
     OPPORTUNITY_SPOTTER = "opportunity_spotter"  # 机会发现者
-    LAYPERSON = "layperson"                     # 外行旁观者
-    RULE_BREAKER = "rule_breaker"               # 破局者
-    EXECUTOR = "executor"                       # 落地执行者
+    LAYPERSON = "layperson"  # 外行旁观者
+    RULE_BREAKER = "rule_breaker"  # 破局者
+    EXECUTOR = "executor"  # 落地执行者
 
 
 @dataclass
 class RoleResult:
     """单个角色的审查结果"""
+
     role: CognitiveRole
     passed: bool
     score: float  # 0.0 - 1.0
@@ -50,6 +52,7 @@ class RoleResult:
 @dataclass
 class CognitivePanelResult:
     """认知智囊团审查结果"""
+
     proposal: str
     context: str
     roles: list[RoleResult]
@@ -118,6 +121,7 @@ def detect_sycophancy(text: str) -> list[str]:
 # --------------------------------------------------------------------------- #
 # 五个认知角色检查函数
 # --------------------------------------------------------------------------- #
+
 
 def _check_devils_advocate(proposal: str, context: str) -> RoleResult:
     """反驳者：专找隐形风险与逻辑漏洞，预判潜在翻车点"""
@@ -238,10 +242,28 @@ def _check_layperson(proposal: str, context: str) -> RoleResult:
 
     # 检测术语密度（外行看不懂 = 存在沟通盲区）
     jargon_indicators = [
-        "架构", "微服务", "pipeline", "ci/cd", "kubernetes", "k8s",
-        "grpc", "graphql", "websocket", "oauth", "jwt", "rbac",
-        "事件驱动", "event.?driven", "cqrs", "ddd", "领域驱动",
-        "分布式", "distributed", "一致性", "consensus", "cap",
+        "架构",
+        "微服务",
+        "pipeline",
+        "ci/cd",
+        "kubernetes",
+        "k8s",
+        "grpc",
+        "graphql",
+        "websocket",
+        "oauth",
+        "jwt",
+        "rbac",
+        "事件驱动",
+        "event.?driven",
+        "cqrs",
+        "ddd",
+        "领域驱动",
+        "分布式",
+        "distributed",
+        "一致性",
+        "consensus",
+        "cap",
     ]
     jargon_count = sum(1 for j in jargon_indicators if re.search(j, text))
     if jargon_count >= 3:
@@ -299,8 +321,16 @@ def _check_rule_breaker(proposal: str, context: str) -> RoleResult:
 
     # 检测思维定式
     conventional_patterns = [
-        "通常", "一般来说", "传统", "常规", "标准做法", "业界惯例",
-        "usually", "typically", "traditionally", "conventionally",
+        "通常",
+        "一般来说",
+        "传统",
+        "常规",
+        "标准做法",
+        "业界惯例",
+        "usually",
+        "typically",
+        "traditionally",
+        "conventionally",
     ]
     conventional_count = sum(1 for p in conventional_patterns if p in text)
     if conventional_count >= 2:
@@ -492,15 +522,17 @@ class CognitivePanel:
 
         for role in to_review:
             if role not in self._checkers:
-                results.append(RoleResult(
-                    role=role,
-                    passed=False,
-                    score=0.0,
-                    concerns=[f"No checker registered for {role.value}"],
-                    opportunities=[],
-                    sycophancy_flags=[],
-                    evidence=f"未注册的角色: {role.value}",
-                ))
+                results.append(
+                    RoleResult(
+                        role=role,
+                        passed=False,
+                        score=0.0,
+                        concerns=[f"No checker registered for {role.value}"],
+                        opportunities=[],
+                        sycophancy_flags=[],
+                        evidence=f"未注册的角色: {role.value}",
+                    )
+                )
                 continue
 
             start = time.monotonic()
@@ -509,16 +541,18 @@ class CognitivePanel:
                 result.duration_ms = (time.monotonic() - start) * 1000
                 results.append(result)
             except Exception as e:
-                results.append(RoleResult(
-                    role=role,
-                    passed=False,
-                    score=0.0,
-                    concerns=[f"角色检查出错: {e}"],
-                    opportunities=[],
-                    sycophancy_flags=[],
-                    evidence=f"Error: {e}",
-                    duration_ms=(time.monotonic() - start) * 1000,
-                ))
+                results.append(
+                    RoleResult(
+                        role=role,
+                        passed=False,
+                        score=0.0,
+                        concerns=[f"角色检查出错: {e}"],
+                        opportunities=[],
+                        sycophancy_flags=[],
+                        evidence=f"Error: {e}",
+                        duration_ms=(time.monotonic() - start) * 1000,
+                    )
+                )
 
         return self._aggregate(results, proposal, context)
 
@@ -562,7 +596,8 @@ class CognitivePanel:
             critical = {CognitiveRole.DEVILS_ADVOCATE, CognitiveRole.EXECUTOR}
             critical_results = [r for r in results if r.role in critical]
             overall_passed = (
-                all(r.passed for r in critical_results) if critical_results
+                all(r.passed for r in critical_results)
+                if critical_results
                 else sum(1 for r in results if r.passed) >= len(results) * 0.6
             )
 
@@ -621,6 +656,7 @@ class CognitivePanel:
 # --------------------------------------------------------------------------- #
 # 便捷函数
 # --------------------------------------------------------------------------- #
+
 
 def cognitive_panel_verify(
     proposal: str,

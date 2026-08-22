@@ -6,6 +6,7 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from src.cli import main
@@ -21,6 +22,119 @@ CORRECT_TWO_SUM = (
 )
 
 WRONG_TWO_SUM = "def two_sum(nums, target):\n    return [0, 0]\n"
+
+REFERENCE_SOLUTIONS = {
+    "two_sum": CORRECT_TWO_SUM,
+    "is_palindrome": (
+        "def is_palindrome(s):\n"
+        "    cleaned = ''.join(char.lower() for char in s if char.isalnum())\n"
+        "    return cleaned == cleaned[::-1]\n"
+    ),
+    "fizzbuzz": (
+        "def fizzbuzz(n):\n"
+        "    if n % 15 == 0:\n        return 'FizzBuzz'\n"
+        "    if n % 3 == 0:\n        return 'Fizz'\n"
+        "    if n % 5 == 0:\n        return 'Buzz'\n"
+        "    return str(n)\n"
+    ),
+    "max_subarray": (
+        "def max_subarray(nums):\n"
+        "    best = current = nums[0]\n"
+        "    for number in nums[1:]:\n"
+        "        current = max(number, current + number)\n"
+        "        best = max(best, current)\n"
+        "    return best\n"
+    ),
+    "roman_to_int": (
+        "def roman_to_int(s):\n"
+        "    values = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}\n"
+        "    total = 0\n"
+        "    for index, char in enumerate(s):\n"
+        "        value = values[char]\n"
+        "        if index + 1 < len(s) and value < values[s[index + 1]]:\n"
+        "            total -= value\n"
+        "        else:\n"
+        "            total += value\n"
+        "    return total\n"
+    ),
+    "valid_parentheses": (
+        "def valid_parentheses(s):\n"
+        "    pairs = {')': '(', ']': '[', '}': '{'}\n"
+        "    stack = []\n"
+        "    for char in s:\n"
+        "        if char in '([{':\n"
+        "            stack.append(char)\n"
+        "        elif not stack or stack.pop() != pairs[char]:\n"
+        "            return False\n"
+        "    return not stack\n"
+    ),
+    "longest_unique_substring": (
+        "def longest_unique_substring(s):\n"
+        "    starts = {}\n"
+        "    left = 0\n"
+        "    best = 0\n"
+        "    for right, char in enumerate(s):\n"
+        "        if char in starts and starts[char] >= left:\n"
+        "            left = starts[char] + 1\n"
+        "        starts[char] = right\n"
+        "        best = max(best, right - left + 1)\n"
+        "    return best\n"
+    ),
+    "edit_distance": (
+        "def edit_distance(a, b):\n"
+        "    previous = list(range(len(b) + 1))\n"
+        "    for row, left_char in enumerate(a, 1):\n"
+        "        current = [row]\n"
+        "        for column, right_char in enumerate(b, 1):\n"
+        "            current.append(min(current[-1] + 1, previous[column] + 1, "
+        "previous[column - 1] + (left_char != right_char)))\n"
+        "        previous = current\n"
+        "    return previous[-1]\n"
+    ),
+    "lru_cache_sim": (
+        "def lru_cache_sim(capacity, ops):\n"
+        "    cache = {}\n"
+        "    order = []\n"
+        "    results = []\n"
+        "    for op in ops:\n"
+        "        key = op[1]\n"
+        "        if op[0] == 'get':\n"
+        "            if key not in cache:\n"
+        "                results.append(-1)\n"
+        "            else:\n"
+        "                order.remove(key)\n"
+        "                order.append(key)\n"
+        "                results.append(cache[key])\n"
+        "        else:\n"
+        "            if key in cache:\n"
+        "                order.remove(key)\n"
+        "            cache[key] = op[2]\n"
+        "            order.append(key)\n"
+        "            if len(cache) > capacity:\n"
+        "                del cache[order.pop(0)]\n"
+        "    return results\n"
+    ),
+    "calculator": (
+        "def calculator(expr):\n"
+        "    expression = expr.replace(' ', '')\n"
+        "    values = []\n"
+        "    number = 0\n"
+        "    operator = '+'\n"
+        "    for index, char in enumerate(expression + '+'):\n"
+        "        if char.isdigit():\n"
+        "            number = number * 10 + int(char)\n"
+        "        else:\n"
+        "            if operator == '+':\n"
+        "                values.append(number)\n"
+        "            elif operator == '-':\n"
+        "                values.append(-number)\n"
+        "            else:\n"
+        "                values[-1] *= number\n"
+        "            operator = char\n"
+        "            number = 0\n"
+        "    return sum(values)\n"
+    ),
+}
 
 
 def _task(task_id: str = "two_sum"):
@@ -38,6 +152,56 @@ def test_grade_code_passes_correct_solution():
     assert result["passed"] == result["total"]
     assert result["pass_rate"] == 1.0
     assert result["error"] is None
+
+
+@pytest.mark.parametrize("task_id", REFERENCE_SOLUTIONS)
+def test_grade_code_passes_all_reference_solutions(task_id: str):
+    from src.capability_tasks import get_task, grade_code
+
+    result = grade_code(get_task(task_id), REFERENCE_SOLUTIONS[task_id])
+
+    assert result["status"] == "pass", result
+    assert result["passed"] == result["total"]
+    assert result["error"] is None
+
+
+@pytest.mark.parametrize(
+    "code,diagnostic",
+    [
+        ("import os\ndef two_sum(nums, target): return []", "imports"),
+        ("from os import environ\ndef two_sum(nums, target): return []", "imports"),
+        ("print('side effect')\ndef two_sum(nums, target): return []", "top-level"),
+        ("class Helper: pass\ndef two_sum(nums, target): return []", "class"),
+        ("def two_sum(nums, target):\n    with open('x') as handle: return []", "with"),
+        ("def two_sum(nums, target):\n    global secret\n    return []", "global"),
+        (
+            "def two_sum(nums, target):\n    def inner():\n        nonlocal nums\n    return []",
+            "nonlocal",
+        ),
+        ("def two_sum(nums, target): return open('/etc/passwd').read()", "open"),
+        ("def two_sum(nums, target): return exec('pass')", "exec"),
+        ("def two_sum(nums, target): return eval('1')", "eval"),
+        ("def two_sum(nums, target): return compile('1', 'x', 'eval')", "compile"),
+        ("def two_sum(nums, target): return __import__('os')", "__import__"),
+        ("def two_sum(nums, target): return globals()", "globals"),
+        ("def two_sum(nums, target): return locals()", "locals"),
+        ("def two_sum(nums, target): return getattr(nums, 'append')", "getattr"),
+        ("def two_sum(nums, target): return setattr(nums, 'x', 1)", "setattr"),
+        ("def two_sum(nums, target): return vars(nums)", "vars"),
+        ("def two_sum(nums, target): return ().__class__.__mro__", "dunder"),
+        ("def two_sum(nums, target):\n    return __builtins__", "dunder"),
+        ("def two_sum(nums, target): return []\ndef two_sum(nums, target): return []", "once"),
+        ("def helper(nums, target): return []", "entrypoint"),
+    ],
+)
+def test_grade_code_rejects_unsafe_candidate_syntax(code: str, diagnostic: str) -> None:
+    from src.capability_tasks import get_task, grade_code
+
+    result = grade_code(get_task("two_sum"), code)
+
+    assert result["status"] == "fail"
+    assert diagnostic in str(result["error"]).lower()
+    assert result["cases"] == []
 
 
 def test_grade_code_fails_wrong_solution():
@@ -99,6 +263,59 @@ def test_grade_code_reports_runtime_error_without_crashing():
 
     assert result["status"] == "fail"
     assert result["passed"] == 0
+    assert "ValueError: boom" in str(result["error"])
+
+
+def test_grade_code_reports_timeout_without_crashing():
+    from src.capability_tasks import grade_code
+
+    result = grade_code(
+        _task(),
+        "def two_sum(nums, target):\n    while True:\n        pass\n",
+        timeout=0.05,
+        held_out=0,
+    )
+
+    assert result["status"] == "fail"
+    assert "timed out" in str(result["error"]).lower()
+    assert result["cases"] == []
+
+
+def test_grade_code_reports_invalid_grader_json(monkeypatch):
+    from src.capability_tasks import grade_code
+    from src.security.sandbox import SandboxResult
+
+    monkeypatch.setattr(
+        "src.security.python_policy.run_bounded_process",
+        lambda *args, **kwargs: SandboxResult(stdout="not-json", exit_code=0, success=True),
+    )
+
+    result = grade_code(_task(), CORRECT_TWO_SUM, held_out=0)
+
+    assert result["status"] == "fail"
+    assert "json" in str(result["error"]).lower()
+    assert result["cases"] == []
+
+
+def test_grade_code_reports_truncated_grader_output(monkeypatch):
+    from src.capability_tasks import grade_code
+    from src.security.sandbox import SandboxResult
+
+    monkeypatch.setattr(
+        "src.security.python_policy.run_bounded_process",
+        lambda *args, **kwargs: SandboxResult(
+            stdout="[",
+            exit_code=0,
+            success=True,
+            output_truncated=True,
+        ),
+    )
+
+    result = grade_code(_task(), CORRECT_TWO_SUM, held_out=0)
+
+    assert result["status"] == "fail"
+    assert "output limit" in str(result["error"]).lower()
+    assert result["cases"] == []
 
 
 def test_extract_code_strips_markdown_fences():
@@ -255,6 +472,28 @@ def test_capability_matrix_scores_99_with_three_graded(tmp_path: Path):
     assert result["recommended_score"] == 99
     assert result["metrics"]["graded_live_provider_count"] == 3
     assert _check_status(result, "blocked_attempt_diagnostics") == "pass"
+
+
+def test_capability_limitations_do_not_describe_graded_hermes_as_partial(tmp_path: Path):
+    """Current graded providers must not remain in the generated partial limitation."""
+    from src.capability_matrix import run_capability_readiness
+
+    for provider in ["claude_code", "codex", "hermes"]:
+        _write_json(
+            tmp_path / f"{provider}-capability-run.json",
+            _capability_artifact(provider, tasks_passed=4, suite_pass_rate=1.0),
+        )
+    _write_json(
+        tmp_path / "mimo_code-capability-run.json",
+        _capability_artifact("mimo_code", tasks_passed=3, suite_pass_rate=0.75),
+    )
+
+    result = run_capability_readiness(tmp_path)
+    partial_limitation = next(
+        item for item in result["limitations"] if "'partial' provider" in item
+    )
+
+    assert "hermes" not in partial_limitation
 
 
 def test_benchmark_capability_suite_uses_existing_artifacts():
@@ -496,7 +735,7 @@ def test_cli_capability_batch_dry_run_rejects_bad_output_mode(tmp_path: Path):
     assert "output_mode unsupported" in result.output
 
 
-FAKE_PROVIDER = '''
+FAKE_PROVIDER = """
 import sys
 prompt = sys.argv[-1]
 solutions = {
@@ -534,7 +773,7 @@ for name, code in solutions.items():
     if name in prompt:
         print("Sure, here you go:\\n```python\\n" + code + "```")
         break
-'''
+"""
 
 
 def test_run_capability_suite_live_grades_fake_provider(tmp_path: Path):

@@ -19,19 +19,21 @@ from .interface import Task, TaskStatus
 
 class RecoveryStrategy(Enum):
     """恢复策略"""
-    RETRY = "retry"           # 重试（指数退避）
-    FALLBACK = "fallback"     # 执行降级任务
-    SKIP = "skip"             # 跳过并继续
-    ABORT = "abort"           # 中止整个工作流
-    ROLLBACK = "rollback"     # 回滚到检查点
+
+    RETRY = "retry"  # 重试（指数退避）
+    FALLBACK = "fallback"  # 执行降级任务
+    SKIP = "skip"  # 跳过并继续
+    ABORT = "abort"  # 中止整个工作流
+    ROLLBACK = "rollback"  # 回滚到检查点
 
 
 @dataclass
 class RecoveryConfig:
     """恢复配置"""
+
     max_retries: int = 3
     retry_delay_base: float = 1.0  # 基础延迟（秒）
-    retry_backoff: float = 2.0     # 退避因子
+    retry_backoff: float = 2.0  # 退避因子
     strategy: RecoveryStrategy = RecoveryStrategy.RETRY
     fallback_task: Task | None = None
     # 动态注入配置
@@ -42,6 +44,7 @@ class RecoveryConfig:
 @dataclass
 class Checkpoint:
     """工作流检查点"""
+
     checkpoint_id: str
     task_states: dict[str, TaskStatus]
     task_results: dict[str, Any]
@@ -80,9 +83,7 @@ class RecoverableTask:
                 self.last_error = e
 
                 if attempt < self.recovery.max_retries:
-                    delay = self.recovery.retry_delay_base * (
-                        self.recovery.retry_backoff ** attempt
-                    )
+                    delay = self.recovery.retry_delay_base * (self.recovery.retry_backoff**attempt)
                     time.sleep(delay)
                 else:
                     # 所有重试耗尽
@@ -227,6 +228,7 @@ class InjectionRule:
 # --------------------------------------------------------------------------- #
 # 便捷函数
 # --------------------------------------------------------------------------- #
+
 
 def make_recoverable(
     task: Task,

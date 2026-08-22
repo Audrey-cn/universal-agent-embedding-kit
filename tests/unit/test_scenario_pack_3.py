@@ -7,7 +7,11 @@ are normalized to a tuple.
 
 from __future__ import annotations
 
-from src.scenario_benchmark import DIMENSIONS, evaluate_scenario
+from src.scenario_benchmark import (
+    DIMENSIONS,
+    evaluate_repository_scenario,
+    evaluate_scenario,
+)
 from src.scenario_pack_3 import FLAWED_PACK_3, REFERENCE_PACK_3, SCENARIO_PACK_3
 
 
@@ -31,7 +35,7 @@ def test_every_reference_solution_scores_full_marks():
     missing = [s.scenario_id for s in SCENARIO_PACK_3 if s.scenario_id not in REFERENCE_PACK_3]
     assert not missing, f"scenarios without a reference solution: {missing}"
     for s in SCENARIO_PACK_3:
-        report = evaluate_scenario(s, REFERENCE_PACK_3[s.scenario_id])
+        report = evaluate_repository_scenario(f"reference:{s.scenario_id}")
         assert report["overall"] == 1.0, f"{s.scenario_id} reference scored {report['overall']}"
 
 

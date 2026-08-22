@@ -162,7 +162,7 @@ def _write_adapter_result(tmp_path: Path) -> Path:
                 "trace_id": "trace-platform-001",
                 "return_code": 0,
                 "duration_ms": 12.5,
-                "stdout": "{\"success\": true}",
+                "stdout": '{"success": true}',
                 "stderr": "",
                 "artifacts": {"file": "result.txt"},
                 "metrics": {"steps": 1},

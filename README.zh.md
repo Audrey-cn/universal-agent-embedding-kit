@@ -74,6 +74,7 @@ python -m pytest -q                  # 完整测试套件
 | 🔧 工作流 / 记忆 / 技能 / Harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | 编排原语 |
 
 三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。稳定能力与实验能力的边界见 [`0.3 支持矩阵`](docs/support-matrix.md)。
+向量记忆使用内置 `SimpleBackend`；仅在需要可选的 sentence-transformers 嵌入时安装 `uaek[memory]`。
 
 ## 🔬 诚实证据
 
@@ -85,7 +86,7 @@ python -m pytest -q                  # 完整测试套件
 | 上下文利用率 | 自适应 **0.85** 期望准确率 @70% 利用率 vs naive 0.57 | ③ | live needle 测试 31K tokens 召回 6/6 —— 验证的是检索,不是自适应优势的 live 证明 |
 | 成本降低 | 建模 −43%(1h 档 −49%);warm live 抽检 **−82%,命中 92%** | ④ partial | warm-only best case;全冷会话建模结果比 baseline **贵 22%** |
 | 真实场景基准 | 多维评分;能标出"功能齐全但**有回归**"的解 | ③ | 40 场景 / 38 类别 —— 还不是 100+ live 多小时会话 |
-| 跨平台矩阵 | **2/4** 平台通过全套 graded live 任务;Mimo/Hermes partial 证据保留 | ④ partial | 全套通过指 10/10;8/10 或 9/10 证据不再计为 graded-live 成功 |
+| 跨平台矩阵 | **3/4** 平台通过全套 graded live 任务;Mimo partial 证据保留 | ④ partial | 全套通过指 10/10;Mimo 的 9/10 证据不计为 graded-live 成功 |
 
 <a id="状态"></a>**门禁:** 测试通过 · ruff + mypy 全绿 · 全局与核心模块覆盖率下限 · 本地 audit 语义门禁通过。最新状态见 [`main` CI 运行记录](https://github.com/Audrey-cn/universal-agent-embedding-kit/actions/workflows/ci.yml?query=branch%3Amain)；固定运行出处见 [`VERIFICATION_SCORECARD.md`](VERIFICATION_SCORECARD.md)。
 

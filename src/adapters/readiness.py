@@ -18,6 +18,7 @@ def run_adapter_readiness(iterations: int = 1) -> dict[str, Any]:
     checks = [
         _check_command_adapter_contract(safe_iterations),
         _check_failure_diagnostics(),
+        _check_bounded_output_diagnostics(),
         _check_trace_logging(),
     ]
     required_checks = [check for check in checks if check["required"]]
@@ -80,6 +81,26 @@ def _check_failure_diagnostics() -> dict[str, Any]:
         "required": True,
         "status": "pass" if passed else "fail",
         "evidence": "invalid stdout is returned as structured adapter failure",
+    }
+
+
+def _check_bounded_output_diagnostics() -> dict[str, Any]:
+    result = CommandAgentAdapter(
+        [sys.executable, "-c", "import sys; sys.stdout.write('x' * 256)"],
+        provider="output-limit-fixture",
+        timeout_seconds=5,
+        max_output_bytes=128,
+    ).run(AdapterRequest(task="bounded output"))
+    passed = (
+        not result.success
+        and result.error == "Adapter command output exceeded 128 bytes"
+        and "Invalid JSON" not in result.error
+    )
+    return {
+        "id": "bounded_output_diagnostics",
+        "required": True,
+        "status": "pass" if passed else "fail",
+        "evidence": "oversized stdout is reported before adapter JSON parsing",
     }
 
 

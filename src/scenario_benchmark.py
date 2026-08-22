@@ -22,7 +22,13 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
+
+from src.security.python_policy import (
+    run_repository_scenario_harness,
+    run_restricted_harness,
+)
 
 DIMENSIONS = ("correctness", "completeness", "context_retention", "robustness")
 LIVE_MEASUREMENT_PATH = Path("benchmarks/results/scenario-live-measurement.json")
@@ -140,17 +146,14 @@ SCENARIOS: tuple[RealScenario, ...] = (
         checks=(
             ScenarioCheck("correctness", "get_config", ('{"db":{"host":"x"}}', "db.host", ""), "x"),
             ScenarioCheck(
-                "correctness", "get_config",
-                ('{"db":{"port":5432}}', "db.port", 0), 5432
+                "correctness", "get_config", ('{"db":{"port":5432}}', "db.port", 0), 5432
             ),
             ScenarioCheck(
-                "completeness", "get_config",
-                ('{"db":{}}', "db.host", "localhost"), "localhost"
+                "completeness", "get_config", ('{"db":{}}', "db.host", "localhost"), "localhost"
             ),
             ScenarioCheck("robustness", "get_config", ("{}", "db.host", "localhost"), "localhost"),
             ScenarioCheck(
-                "robustness", "get_config",
-                ('{"db":null}', "db.host", "default"), "default"
+                "robustness", "get_config", ('{"db":null}', "db.host", "default"), "default"
             ),
         ),
     ),
@@ -370,10 +373,7 @@ FLAWED_SOLUTIONS: dict[str, str] = {
         "    return price\n"
     ),
     # Only checks length, misses digit+special requirements.
-    "password_validator": (
-        "def is_strong(pw):\n"
-        "    return len(pw) >= 8\n"
-    ),
+    "password_validator": ("def is_strong(pw):\n    return len(pw) >= 8\n"),
     # Hardcodes the config path, ignores the key_path parameter.
     "json_config_reader": (
         "import json\n"
@@ -396,8 +396,7 @@ FLAWED_SOLUTIONS: dict[str, str] = {
     ),
     # Allows overdraft (negative balance), passes correctness on happy path.
     "bank_transfer": (
-        "def transfer(from_bal, to_bal, amount):\n"
-        "    return (from_bal - amount, to_bal + amount)\n"
+        "def transfer(from_bal, to_bal, amount):\n    return (from_bal - amount, to_bal + amount)\n"
     ),
     # Uses list slicing instead of circular overwrite — fails on overflow.
     "circular_buffer": (
@@ -479,68 +478,164 @@ FLAWED_SOLUTIONS: dict[str, str] = {
 }
 
 
-
 def get_scenario(scenario_id: str) -> RealScenario:
     if scenario_id not in _SCENARIOS_BY_ID:
         raise KeyError(f"unknown scenario: {scenario_id}")
     return _SCENARIOS_BY_ID[scenario_id]
 
 
-def _reuse_detected(namespace: dict[str, Any], probe: ReuseProbe) -> bool:
-    """True iff swapping the dependency changes the caller's output (genuine reuse)."""
-    caller = namespace.get(probe.caller)
-    if not callable(caller):
-        return False
-    try:
-        baseline = caller(probe.probe_input)
-    except Exception:  # noqa: BLE001
-        return False
-    # Swap the dependency in-place with a valid-but-different implementation.
-    exec(compile(probe.swapped_code, "<reuse-probe>", "exec"), namespace)  # noqa: S102
-    swapped_caller = namespace.get(probe.caller)
-    if not callable(swapped_caller):
-        return False
-    try:
-        swapped = swapped_caller(probe.probe_input)
-    except Exception:  # noqa: BLE001
-        return False
-    return bool(swapped != baseline)
+_SCENARIO_HARNESS = """
+def decode_value(value):
+    if not isinstance(value, dict) or "__uaek_type__" not in value:
+        return value
+    kind = value["__uaek_type__"]
+    items = value.get("items", [])
+    if kind == "tuple":
+        return tuple(decode_value(item) for item in items)
+    if kind == "list":
+        return [decode_value(item) for item in items]
+    if kind == "dict":
+        return {decode_value(item[0]): decode_value(item[1]) for item in items}
+    return value
+
+per_dimension_pass = {}
+per_dimension_total = {}
+load_error = None
+try:
+    candidate_builtins = __builtins__ if PAYLOAD["repository_source"] else SAFE_BUILTINS
+    namespace = {"__builtins__": candidate_builtins}
+    exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
+except Exception as exc:
+    load_error = f"{type(exc).__name__}: {exc}"
+
+for check in PAYLOAD["checks"]:
+    dimension = check["dimension"]
+    per_dimension_total[dimension] = per_dimension_total.get(dimension, 0) + 1
+    passed = False
+    if load_error is None:
+        function = namespace.get(check["entrypoint"])
+        if callable(function):
+            try:
+                args = decode_value(check["args"])
+                expected = decode_value(check["expected"])
+                passed = function(*args) == expected
+            except Exception:
+                passed = False
+    if passed:
+        per_dimension_pass[dimension] = per_dimension_pass.get(dimension, 0) + 1
+
+probe = PAYLOAD.get("reuse_probe")
+if probe is not None:
+    dimension = "context_retention"
+    per_dimension_total[dimension] = per_dimension_total.get(dimension, 0) + 1
+    passed = False
+    if load_error is None:
+        caller = namespace.get(probe["caller"])
+        if callable(caller):
+            try:
+                probe_input = decode_value(probe["probe_input"])
+                baseline = caller(probe_input)
+                exec(compile(probe["swapped_code"], "reuse_probe.py", "exec"), namespace)
+                swapped_caller = namespace.get(probe["caller"])
+                if callable(swapped_caller):
+                    swapped = swapped_caller(probe_input)
+                    passed = swapped != baseline
+            except Exception:
+                passed = False
+    if passed:
+        per_dimension_pass[dimension] = per_dimension_pass.get(dimension, 0) + 1
+
+print(json.dumps({
+    "per_dimension_pass": per_dimension_pass,
+    "per_dimension_total": per_dimension_total,
+    "load_error": load_error,
+}))
+"""
 
 
-def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
-    """Score a solution across the scenario's dimensions."""
-    namespace: dict[str, Any] = {}
-    load_error: str | None = None
-    try:
-        exec(compile(code, f"<{scenario.scenario_id}>", "exec"), namespace)  # noqa: S102
-    except Exception as exc:  # noqa: BLE001
-        load_error = f"{type(exc).__name__}: {exc}"
+def _encode_scenario_value(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return {
+            "__uaek_type__": "tuple",
+            "items": [_encode_scenario_value(item) for item in value],
+        }
+    if isinstance(value, list):
+        return {
+            "__uaek_type__": "list",
+            "items": [_encode_scenario_value(item) for item in value],
+        }
+    if isinstance(value, dict):
+        return {
+            "__uaek_type__": "dict",
+            "items": [
+                [_encode_scenario_value(key), _encode_scenario_value(item)]
+                for key, item in value.items()
+            ],
+        }
+    return value
 
-    per_dimension_pass: dict[str, int] = {}
-    per_dimension_total: dict[str, int] = {}
-    for check in scenario.checks:
-        per_dimension_total[check.dimension] = per_dimension_total.get(check.dimension, 0) + 1
-        passed = False
-        if load_error is None:
-            fn = namespace.get(check.entrypoint)
-            if callable(fn):
-                try:
-                    passed = fn(*check.args) == check.expected
-                except Exception:  # noqa: BLE001
-                    passed = False
-        if passed:
-            per_dimension_pass[check.dimension] = per_dimension_pass.get(check.dimension, 0) + 1
 
-    # Genuine context_retention: the reuse probe (swap the dependency, require the
-    # caller's output to track it). An inline reimplementation fails this.
+def _evaluate_scenario(
+    scenario: RealScenario,
+    *,
+    code: str | None = None,
+    repository_source_id: str | None = None,
+) -> dict[str, Any]:
+    checks = [
+        {
+            "dimension": check.dimension,
+            "entrypoint": check.entrypoint,
+            "args": _encode_scenario_value(check.args),
+            "expected": _encode_scenario_value(check.expected),
+        }
+        for check in scenario.checks
+    ]
+    reuse_probe = None
     if scenario.reuse_probe is not None:
-        per_dimension_total["context_retention"] = per_dimension_total.get(
-            "context_retention", 0
-        ) + 1
-        if load_error is None and _reuse_detected(namespace, scenario.reuse_probe):
-            per_dimension_pass["context_retention"] = per_dimension_pass.get(
-                "context_retention", 0
-            ) + 1
+        reuse_probe = {
+            "caller": scenario.reuse_probe.caller,
+            "dependency": scenario.reuse_probe.dependency,
+            "swapped_code": scenario.reuse_probe.swapped_code,
+            "probe_input": _encode_scenario_value(scenario.reuse_probe.probe_input),
+        }
+    entrypoint = scenario.checks[0].entrypoint if scenario.checks else ""
+    payload_input = {
+        "checks": checks,
+        "reuse_probe": reuse_probe,
+        "repository_source": repository_source_id is not None,
+    }
+    if repository_source_id is None:
+        process_result = run_restricted_harness(
+            code if code is not None else "",
+            entrypoint,
+            _SCENARIO_HARNESS,
+            payload_input,
+            timeout=5.0,
+        )
+    else:
+        process_result = run_repository_scenario_harness(
+            repository_source_id,
+            entrypoint,
+            _SCENARIO_HARNESS,
+            payload_input,
+            timeout=5.0,
+        )
+
+    payload = process_result.result if isinstance(process_result.result, dict) else {}
+    raw_pass = payload.get("per_dimension_pass", {})
+    raw_total = payload.get("per_dimension_total", {})
+    per_dimension_pass = raw_pass if isinstance(raw_pass, dict) else {}
+    per_dimension_total = raw_total if isinstance(raw_total, dict) else {}
+    load_error = payload.get("load_error")
+    if not isinstance(load_error, str):
+        load_error = process_result.error if not process_result.success else None
+    if not per_dimension_total:
+        for check in scenario.checks:
+            per_dimension_total[check.dimension] = per_dimension_total.get(check.dimension, 0) + 1
+        if scenario.reuse_probe is not None:
+            per_dimension_total["context_retention"] = (
+                per_dimension_total.get("context_retention", 0) + 1
+            )
 
     dimensions = {
         dim: round(per_dimension_pass.get(dim, 0) / total, 4)
@@ -559,10 +654,28 @@ def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
     }
 
 
+def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
+    """Score external solution source using the restricted candidate policy."""
+    return _evaluate_scenario(scenario, code=code)
+
+
+def evaluate_repository_scenario(source_id: str) -> dict[str, Any]:
+    """Score a fixed repository scenario source selected only by its identifier."""
+    try:
+        _repository_scenario_source(source_id)
+    except KeyError:
+        raise KeyError(f"unknown repository scenario source: {source_id!r}")
+    _, scenario_id = source_id.split(":", 1)
+    return _evaluate_scenario(
+        get_scenario(scenario_id),
+        repository_source_id=source_id,
+    )
+
+
 def run_scenario_readiness() -> dict[str, Any]:
     """Demonstrate multi-dimensional discrimination on 10 diverse scenarios."""
     reference_reports = {
-        scenario.scenario_id: evaluate_scenario(scenario, REFERENCE_SOLUTIONS[scenario.scenario_id])
+        scenario.scenario_id: evaluate_repository_scenario(f"reference:{scenario.scenario_id}")
         for scenario in SCENARIOS
     }
     reference_overall = round(
@@ -571,9 +684,7 @@ def run_scenario_readiness() -> dict[str, Any]:
 
     # Evaluate all flawed solutions
     flawed_reports = {
-        scenario.scenario_id: evaluate_scenario(
-            scenario, FLAWED_SOLUTIONS[scenario.scenario_id]
-        )
+        scenario.scenario_id: evaluate_repository_scenario(f"flawed:{scenario.scenario_id}")
         for scenario in SCENARIOS
     }
     flawed_overall = round(
@@ -597,9 +708,7 @@ def run_scenario_readiness() -> dict[str, Any]:
     )
 
     # Count how many flawed solutions are discriminated from reference
-    discriminated_count = sum(
-        1 for r in flawed_reports.values() if r["overall"] < 1.0
-    )
+    discriminated_count = sum(1 for r in flawed_reports.values() if r["overall"] < 1.0)
     # Count distinct failure dimensions across flawed solutions
     flawed_dims = set()
     for r in flawed_reports.values():
@@ -619,8 +728,7 @@ def run_scenario_readiness() -> dict[str, Any]:
             "required": True,
             "status": "pass" if reference_overall == 1.0 else "fail",
             "evidence": (
-                f"all {len(SCENARIOS)} reference solutions "
-                f"score {reference_overall:.0%} overall"
+                f"all {len(SCENARIOS)} reference solutions score {reference_overall:.0%} overall"
             ),
         },
         {
@@ -706,6 +814,7 @@ def run_scenario_readiness() -> dict[str, Any]:
         ],
     }
 
+
 # ── Import and merge scenario pack 2 (20 additional scenarios) ──
 try:
     from src.scenario_pack_2 import FLAWED_PACK_2, REFERENCE_PACK_2, SCENARIO_PACK_2
@@ -750,3 +859,18 @@ except ImportError:
     _pack3_loaded = False
 except Exception:
     _pack3_loaded = False
+
+
+_REPOSITORY_SCENARIO_SOURCES = MappingProxyType(
+    {
+        **{f"reference:{scenario_id}": code for scenario_id, code in REFERENCE_SOLUTIONS.items()},
+        **{f"flawed:{scenario_id}": code for scenario_id, code in FLAWED_SOLUTIONS.items()},
+    }
+)
+
+
+def _repository_scenario_source(source_id: str) -> str:
+    """Return immutable repository source selected by an exact plain-string ID."""
+    if type(source_id) is not str:
+        raise KeyError(source_id)
+    return _REPOSITORY_SCENARIO_SOURCES[source_id]

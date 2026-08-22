@@ -68,9 +68,7 @@ class DAGWorkflow(Workflow):
         else:
             return self._execute_sequential(start_time, errors)
 
-    def _execute_sequential(
-        self, start_time: float, errors: list[Exception]
-    ) -> WorkflowResult:
+    def _execute_sequential(self, start_time: float, errors: list[Exception]) -> WorkflowResult:
         """按拓扑顺序串行执行"""
         order = self.dag.topological_sort()
 
@@ -106,9 +104,7 @@ class DAGWorkflow(Workflow):
             errors=errors,
         )
 
-    def _execute_parallel(
-        self, start_time: float, errors: list[Exception]
-    ) -> WorkflowResult:
+    def _execute_parallel(self, start_time: float, errors: list[Exception]) -> WorkflowResult:
         """并行执行互不依赖的节点"""
         completed: set[str] = set()
 
@@ -119,7 +115,8 @@ class DAGWorkflow(Workflow):
 
                 if not ready:
                     all_done = all(
-                        t.status in {
+                        t.status
+                        in {
                             TaskStatus.COMPLETED,
                             TaskStatus.FAILED,
                             TaskStatus.SKIPPED,
@@ -135,7 +132,8 @@ class DAGWorkflow(Workflow):
                         self._mark_dependents_as_skipped(failed_id)
 
                     all_done = all(
-                        t.status in {
+                        t.status
+                        in {
                             TaskStatus.COMPLETED,
                             TaskStatus.FAILED,
                             TaskStatus.SKIPPED,

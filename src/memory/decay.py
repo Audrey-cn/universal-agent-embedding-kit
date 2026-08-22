@@ -147,5 +147,5 @@ def should_evict(
 
 # 预设衰减配置
 DEFAULT_DECAY_CONFIG = DecayConfig()
-FAST_DECAY_CONFIG = DecayConfig(half_life_days=3.0)   # 3天半衰期（快速遗忘）
+FAST_DECAY_CONFIG = DecayConfig(half_life_days=3.0)  # 3天半衰期（快速遗忘）
 SLOW_DECAY_CONFIG = DecayConfig(half_life_days=30.0)  # 30天半衰期（长期记忆）

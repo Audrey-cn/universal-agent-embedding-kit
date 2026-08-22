@@ -26,8 +26,17 @@ class RenderRunner(VerificationRunner):
     """
 
     SUPPORTED_EXTENSIONS = {
-        ".html", ".htm", ".jsx", ".tsx", ".vue", ".md", ".markdown",
-        ".svg", ".png", ".jpg", ".jpeg",
+        ".html",
+        ".htm",
+        ".jsx",
+        ".tsx",
+        ".vue",
+        ".md",
+        ".markdown",
+        ".svg",
+        ".png",
+        ".jpg",
+        ".jpeg",
     }
 
     def can_handle(self, artifact_path: Path) -> bool:
@@ -71,10 +80,12 @@ class RenderRunner(VerificationRunner):
             content = artifact_path.read_text(encoding="utf-8")
         except Exception as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Cannot read HTML: {e}",
                 verification_type=VerificationType.RENDER,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes=f"Read error: {e}",
             )
 
@@ -85,13 +96,17 @@ class RenderRunner(VerificationRunner):
         has_doctype = "<!DOCTYPE html>" in content or "<!doctype html>" in content
         has_html_tag = "<html" in content.lower()
         has_body = "<body" in content.lower()
-        checks.append({
-            "check": "basic_structure",
-            "passed": has_doctype and has_html_tag and has_body,
-            "details": {
-                "doctype": has_doctype, "html_tag": has_html_tag, "body": has_body,
-            },
-        })
+        checks.append(
+            {
+                "check": "basic_structure",
+                "passed": has_doctype and has_html_tag and has_body,
+                "details": {
+                    "doctype": has_doctype,
+                    "html_tag": has_html_tag,
+                    "body": has_body,
+                },
+            }
+        )
         if not (has_doctype and has_html_tag and has_body):
             all_passed = False
             evidence_parts.append("Missing basic HTML structure")
@@ -103,11 +118,13 @@ class RenderRunner(VerificationRunner):
                 required_elements = criteria.get("required_elements", [])
                 for elem in required_elements:
                     found = elem in content
-                    checks.append({
-                        "check": f"required_element:{elem}",
-                        "passed": found,
-                        "details": {"element": elem},
-                    })
+                    checks.append(
+                        {
+                            "check": f"required_element:{elem}",
+                            "passed": found,
+                            "details": {"element": elem},
+                        }
+                    )
                     if not found:
                         all_passed = False
                         evidence_parts.append(f"Missing required element: {elem}")
@@ -118,11 +135,13 @@ class RenderRunner(VerificationRunner):
         error_patterns = ["{{", "}}", "undefined", "null", "[object Object]"]
         for pattern in error_patterns:
             if pattern in content:
-                checks.append({
-                    "check": f"render_error:{pattern}",
-                    "passed": False,
-                    "details": {"pattern": pattern},
-                })
+                checks.append(
+                    {
+                        "check": f"render_error:{pattern}",
+                        "passed": False,
+                        "details": {"pattern": pattern},
+                    }
+                )
                 all_passed = False
                 evidence_parts.append(f"Found render error pattern: {pattern}")
 
@@ -148,10 +167,12 @@ class RenderRunner(VerificationRunner):
             content = artifact_path.read_text(encoding="utf-8")
         except Exception as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Cannot read Markdown: {e}",
                 verification_type=VerificationType.RENDER,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes=f"Read error: {e}",
             )
 
@@ -167,7 +188,8 @@ class RenderRunner(VerificationRunner):
 
         # 2. 检查断链（相对路径引用，防止路径遍历）
         import re
-        link_pattern = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
+
+        link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
         broken_links = []
         for match in link_pattern.finditer(content):
             link_target = match.group(2)
@@ -182,11 +204,13 @@ class RenderRunner(VerificationRunner):
                     continue
                 if not resolved.exists():
                     broken_links.append(link_target)
-        checks.append({
-            "check": "broken_links",
-            "passed": len(broken_links) == 0,
-            "details": {"broken": broken_links},
-        })
+        checks.append(
+            {
+                "check": "broken_links",
+                "passed": len(broken_links) == 0,
+                "details": {"broken": broken_links},
+            }
+        )
         if broken_links:
             all_passed = False
             evidence_parts.append(f"Broken links: {broken_links}")
@@ -221,10 +245,12 @@ class RenderRunner(VerificationRunner):
             content = artifact_path.read_text(encoding="utf-8")
         except Exception as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Cannot read component: {e}",
                 verification_type=VerificationType.RENDER,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes=f"Read error: {e}",
             )
 
@@ -249,11 +275,13 @@ class RenderRunner(VerificationRunner):
         open_braces = content.count("{")
         close_braces = content.count("}")
         braces_balanced = open_braces == close_braces
-        checks.append({
-            "check": "balanced_braces",
-            "passed": braces_balanced,
-            "details": {"open": open_braces, "close": close_braces},
-        })
+        checks.append(
+            {
+                "check": "balanced_braces",
+                "passed": braces_balanced,
+                "details": {"open": open_braces, "close": close_braces},
+            }
+        )
         if not braces_balanced:
             all_passed = False
             evidence_parts.append(f"Unbalanced braces: {open_braces} open, {close_braces} close")
@@ -280,10 +308,12 @@ class RenderRunner(VerificationRunner):
             content = artifact_path.read_text(encoding="utf-8")
         except Exception as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Cannot read SVG: {e}",
                 verification_type=VerificationType.RENDER,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes=f"Read error: {e}",
             )
 
@@ -319,10 +349,12 @@ class RenderRunner(VerificationRunner):
             file_size = artifact_path.stat().st_size
         except Exception as e:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Cannot read image: {e}",
                 verification_type=VerificationType.RENDER,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
                 notes=f"Read error: {e}",
             )
 
@@ -332,10 +364,12 @@ class RenderRunner(VerificationRunner):
         max_image_size = 50 * 1024 * 1024  # 50MB
         if file_size > max_image_size:
             return VerificationResult(
-                passed=False, verdict="FAIL",
+                passed=False,
+                verdict="FAIL",
                 evidence=f"Image too large: {file_size} bytes (max {max_image_size})",
                 verification_type=VerificationType.RENDER,
-                artifact_path=artifact_path, criteria_path=criteria_path,
+                artifact_path=artifact_path,
+                criteria_path=criteria_path,
             )
 
         # 检查文件大小是否合理（非空）
@@ -361,8 +395,7 @@ class RenderRunner(VerificationRunner):
             pass
 
         evidence = (
-            "\n".join(evidence_parts) if evidence_parts
-            else f"Image valid ({file_size} bytes)"
+            "\n".join(evidence_parts) if evidence_parts else f"Image valid ({file_size} bytes)"
         )
         return VerificationResult(
             passed=all_passed,

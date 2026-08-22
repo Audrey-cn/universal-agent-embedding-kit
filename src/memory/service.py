@@ -82,8 +82,7 @@ class MemoryService:
         layer_type = self.resolve_layer(layer)
         resolved_entry_id = entry_id or self._new_entry_id()
         if any(
-            layer_object.get(resolved_entry_id) is not None
-            for layer_object in self.layers.values()
+            layer_object.get(resolved_entry_id) is not None for layer_object in self.layers.values()
         ):
             raise ValueError(f"duplicate memory entry id: {resolved_entry_id}")
         entry = MemoryEntry(
@@ -99,7 +98,8 @@ class MemoryService:
 
         # 同步到知识图谱
         self._knowledge_graph.ingest_memory_entry(
-            entry.id, entry.content,
+            entry.id,
+            entry.content,
             importance=entry.importance,
             tags=entry.tags,
         )
@@ -322,6 +322,7 @@ class MemoryService:
     ) -> dict[str, Any]:
         """查询知识图谱"""
         from .knowledge_graph import EntityType
+
         et = EntityType(entity_type) if entity_type else None
         entities = self._knowledge_graph.search(query=query, entity_type=et, limit=limit)
         return {
@@ -411,6 +412,7 @@ class MemoryService:
     def _simple_embed(self, text: str, dimension: int = 384) -> list[float]:
         """简单的字符级 embedding（fallback，实际应使用 sentence-transformers）"""
         import hashlib
+
         # 使用 hash 生成确定性向量
         h = hashlib.sha256(text.encode()).digest()
         vec = []

@@ -28,9 +28,7 @@ def run_live_matrix_readiness(
         1 for item in provider_statuses if item["status"] in {"missing", "missing_live"}
     )
     full_matrix = live_provider_count == len(EXPECTED_PROVIDERS)
-    diagnostics_ready = all(
-        item["status"] in {"live", "blocked"} for item in provider_statuses
-    )
+    diagnostics_ready = all(item["status"] in {"live", "blocked"} for item in provider_statuses)
 
     checks = [
         {

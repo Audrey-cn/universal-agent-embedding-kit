@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from typing import Any, cast
+from typing import Any
 
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
@@ -78,84 +78,43 @@ class SimpleBackend(VectorBackend):
         return len(self._embeddings)
 
 
-class ChromaBackend(VectorBackend):
-    """基于 ChromaDB 的 HNSW 索引后端
+class _RetiredChromaError(RuntimeError, ImportError):
+    """Keeps callers that handled the former missing-package error compatible."""
 
-    需要安装 chromadb，请使用 'pip install uaek[memory]' 安装。
-    """
+
+class ChromaBackend(VectorBackend):
+    """Retired compatibility name for the removed ChromaDB integration."""
 
     def __init__(self, persist_dir: str | None = None):
-        try:
-            import chromadb  # noqa: F811
-        except ImportError:
-            raise ImportError(
-                "chromadb 未安装，请使用 'pip install uaek[memory]' 安装"
-            )
-
-        if persist_dir:
-            self._client = chromadb.PersistentClient(path=persist_dir)
-        else:
-            self._client = chromadb.Client()
-
-        self._collection = self._client.get_or_create_collection(
-            name="uaek_memory",
-            metadata={"hnsw:space": "cosine"},
+        del persist_dir
+        raise _RetiredChromaError(
+            "ChromaBackend (chromadb integration) has been retired for security reasons; "
+            "use SimpleBackend instead."
         )
 
     def add(self, doc_id: str, embedding: list[float], metadata: dict[str, Any]) -> None:
-        """添加文档到 ChromaDB"""
-        # ChromaDB 要求 metadata 值为字符串/数字/布尔
-        safe_metadata = {k: str(v) if not isinstance(v, (str, int, float, bool)) else v
-                         for k, v in metadata.items()}
-        self._collection.add(
-            ids=[doc_id],
-            embeddings=[embedding],
-            metadatas=[safe_metadata],
-        )
+        raise NotImplementedError("ChromaBackend has been retired")
 
     def search(self, query_embedding: list[float], top_k: int) -> list[tuple[str, float]]:
-        """使用 HNSW 索引搜索"""
-        result = self._collection.query(
-            query_embeddings=[query_embedding],
-            n_results=min(top_k, self.count()),
-        )
-        ids = result.get("ids", [[]])[0]
-        distances = result.get("distances", [[]])[0]
-
-        # ChromaDB 返回的是距离（cosine distance），需要转换为相似度
-        results: list[tuple[str, float]] = []
-        for doc_id, distance in zip(ids, distances):
-            # cosine distance -> cosine similarity: similarity = 1 - distance
-            similarity = 1.0 - float(distance)
-            results.append((doc_id, similarity))
-        return results
+        raise NotImplementedError("ChromaBackend has been retired")
 
     def delete(self, doc_id: str) -> bool:
-        """从 ChromaDB 删除文档"""
-        try:
-            self._collection.delete(ids=[doc_id])
-            return True
-        except Exception:
-            return False
+        raise NotImplementedError("ChromaBackend has been retired")
 
     def count(self) -> int:
-        """获取 ChromaDB 集合中的文档数量"""
-        return cast(int, self._collection.count())
+        raise NotImplementedError("ChromaBackend has been retired")
 
 
 def detect_chromadb() -> bool:
-    """检测 chromadb 是否可用"""
-    try:
-        import chromadb  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    """ChromaDB is retired and is never considered available."""
+    return False
 
 
 def detect_sentence_transformers() -> bool:
     """检测 sentence-transformers 是否可用"""
     try:
         import sentence_transformers  # noqa: F401
+
         return True
     except ImportError:
         return False

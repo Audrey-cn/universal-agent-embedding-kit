@@ -5,9 +5,188 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from src.cli import main
+
+
+def _write_capability_artifact(path: Path, provider: str, tasks_passed: int) -> None:
+    tasks_total = 4
+    task_results = [
+        {
+            "task_id": f"task_{index}",
+            "difficulty": "hard" if index == tasks_total - 1 else "easy",
+            "passed": 3 if index < tasks_passed else 0,
+            "total": 3,
+            "pass_rate": 1.0 if index < tasks_passed else 0.0,
+            "status": "pass" if index < tasks_passed else "fail",
+            "code": "def f():\n    return 1\n",
+            "error": None if index < tasks_passed else "wrong answer",
+        }
+        for index in range(tasks_total)
+    ]
+    artifact = {
+        "schema": "capability_run_v1",
+        "run_id": f"capability-{provider}",
+        "provider": provider,
+        "task": f"{provider} capability suite",
+        "status": "completed",
+        "evidence_level": "live_external",
+        "recorded_at": "2026-08-22T00:00:00+00:00",
+        "suite": {"task_count": tasks_total},
+        "task_results": task_results,
+        "metrics": {
+            "tasks_attempted": tasks_total,
+            "tasks_passed": tasks_passed,
+            "suite_pass_rate": tasks_passed / tasks_total,
+            "cases_passed": tasks_passed * 3,
+            "cases_total": tasks_total * 3,
+        },
+        "provenance": {
+            "source": f"{provider} live capability suite",
+            "command": [provider, "run", "task"],
+        },
+        "error": None,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(artifact), encoding="utf-8")
+
+
+def _write_active_surfaces(repository_root: Path, headline: str = "3/4") -> list[Path]:
+    paths = [
+        repository_root / "README.md",
+        repository_root / "README.zh.md",
+        repository_root / "VERIFICATION_SCORECARD.md",
+        repository_root / "benchmarks/results/capability-matrix.json",
+        repository_root / "benchmarks/results/benchmark-capability.json",
+    ]
+    paths[0].write_text(
+        f"| Cross-platform matrix | **{headline}** providers pass the full graded live suite |\n",
+        encoding="utf-8",
+    )
+    paths[1].write_text(
+        f"| 跨平台矩阵 | **{headline}** 平台通过全套 graded live 任务 |\n",
+        encoding="utf-8",
+    )
+    paths[2].write_text(
+        "## 当前实测状态\n"
+        f"| Capability matrix CLI（全套通过口径） | command | {headline} full-suite graded-live |\n"
+        f"| Capability benchmark CLI | command | {headline} full-suite graded-live |\n"
+        f"因此当前是 **{headline} full-suite graded-live**。\n"
+        "## 评分维度\n",
+        encoding="utf-8",
+    )
+    paths[3].parent.mkdir(parents=True, exist_ok=True)
+    matrix = {
+        "metrics": {
+            "graded_live_provider_count": int(headline.split("/")[0]),
+            "expected_provider_count": int(headline.split("/")[1]),
+        }
+    }
+    paths[3].write_text(json.dumps(matrix), encoding="utf-8")
+    paths[4].write_text(json.dumps({"capability_readiness": matrix}), encoding="utf-8")
+    return paths
+
+
+def test_headline_validator_reports_expected_value_and_every_stale_path(
+    tmp_path: Path,
+    capsys,
+):
+    """A static 3/4 claim must fail when versioned run artifacts derive 2/4."""
+    from scripts.check_headline_consistency import (
+        derive_headline,
+    )
+    from scripts.check_headline_consistency import (
+        main as headline_main,
+    )
+
+    artifact_dir = tmp_path / "capability-runs"
+    for provider, tasks_passed in {
+        "claude_code": 4,
+        "codex": 4,
+        "hermes": 3,
+        "mimo_code": 3,
+    }.items():
+        _write_capability_artifact(
+            artifact_dir / f"{provider}-capability-run.json", provider, tasks_passed
+        )
+    stale_paths = _write_active_surfaces(tmp_path)
+
+    assert derive_headline(artifact_dir) == "2/4"
+    exit_code = headline_main(
+        ["--artifact-dir", str(artifact_dir), "--repository-root", str(tmp_path)]
+    )
+    diagnostics = capsys.readouterr().out
+
+    assert exit_code == 1
+    assert "expected headline: 2/4" in diagnostics
+    for path in stale_paths:
+        assert str(path) in diagnostics
+
+
+def test_audit_evidence_consistency_reuses_active_headline_validation(
+    tmp_path: Path,
+    monkeypatch,
+):
+    """Audit must surface the validator's exact active-surface mismatches."""
+    from scripts.check_headline_consistency import validate_headline_consistency
+    from src.benchmark import _build_evidence_consistency
+
+    artifact_dir = tmp_path / "capability-runs"
+    for provider, tasks_passed in {
+        "claude_code": 4,
+        "codex": 4,
+        "hermes": 3,
+        "mimo_code": 3,
+    }.items():
+        _write_capability_artifact(
+            artifact_dir / f"{provider}-capability-run.json", provider, tasks_passed
+        )
+    _write_active_surfaces(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    expected = validate_headline_consistency(artifact_dir, Path("."))
+    consistency = _build_evidence_consistency(
+        suite_results={},
+        propositions={},
+        capability={"artifact_dir": str(artifact_dir)},
+        scenario={},
+        held_out={"enabled_in_current_grader": False, "regrade_artifact": {"exists": True}},
+    )
+
+    assert consistency["status"] == "fail"
+    assert consistency["errors"] == expected["errors"]
+
+
+@pytest.mark.parametrize("near_match", ["3/40", "13/4"])
+def test_headline_validator_rejects_numeric_near_matches(
+    tmp_path: Path,
+    near_match: str,
+) -> None:
+    """A ratio containing the expected text must still be reported as stale."""
+    from scripts.check_headline_consistency import validate_headline_consistency
+
+    artifact_dir = tmp_path / "capability-runs"
+    for provider, tasks_passed in {
+        "claude_code": 4,
+        "codex": 4,
+        "hermes": 4,
+        "mimo_code": 3,
+    }.items():
+        _write_capability_artifact(
+            artifact_dir / f"{provider}-capability-run.json", provider, tasks_passed
+        )
+    active_paths = _write_active_surfaces(tmp_path)
+    active_paths[0].write_text(
+        f"| Cross-platform matrix | **{near_match}** providers pass the full graded live suite |\n",
+        encoding="utf-8",
+    )
+
+    validation = validate_headline_consistency(artifact_dir, tmp_path)
+
+    assert validation["expected_headline"] == "3/4"
+    assert validation["stale_paths"] == [str(active_paths[0])]
 
 
 def test_audit_run_all_suites():
@@ -43,9 +222,13 @@ def test_audit_run_all_suites():
     )
 
     # Each proposition should have evidence_rung
-    for key in ["p1_context_utilization", "p2_self_grading_cheating",
-                "p3_cost_optimization", "p4_real_scenario_benchmark",
-                "p5_cross_platform_verification"]:
+    for key in [
+        "p1_context_utilization",
+        "p2_self_grading_cheating",
+        "p3_cost_optimization",
+        "p4_real_scenario_benchmark",
+        "p5_cross_platform_verification",
+    ]:
         assert props[key]["evidence_rung"] >= 3
 
     # Gates should be present
@@ -94,19 +277,23 @@ def test_audit_with_baseline_path(tmp_path: Path):
     from src.evidence.baseline import CURRENT_GRADER_VERSION, current_task_set_digest
 
     baseline = tmp_path / "test-baseline.json"
-    baseline.write_text(json.dumps({
-        "schema": "external_baseline_v1",
-        "name": "test-baseline",
-        "source_ref": "artifact://test/baseline",
-        "model": "fixture-model",
-        "runtime": "fixture-runtime",
-        "evaluated_at": "2026-08-09T00:00:00Z",
-        "task_set_digest": current_task_set_digest(),
-        "grader_version": CURRENT_GRADER_VERSION,
-        "samples_per_task": 3,
-        "metrics": {"mean_score": 0.85},
-        "limitations": ["Test fixture only."],
-    }))
+    baseline.write_text(
+        json.dumps(
+            {
+                "schema": "external_baseline_v1",
+                "name": "test-baseline",
+                "source_ref": "artifact://test/baseline",
+                "model": "fixture-model",
+                "runtime": "fixture-runtime",
+                "evaluated_at": "2026-08-09T00:00:00Z",
+                "task_set_digest": current_task_set_digest(),
+                "grader_version": CURRENT_GRADER_VERSION,
+                "samples_per_task": 3,
+                "metrics": {"mean_score": 0.85},
+                "limitations": ["Test fixture only."],
+            }
+        )
+    )
 
     from src.benchmark import run_audit
 
@@ -121,19 +308,23 @@ def test_audit_rejects_incompatible_baseline_for_availability_gate(tmp_path: Pat
     from src.evidence.baseline import CURRENT_GRADER_VERSION
 
     baseline = tmp_path / "incompatible.json"
-    baseline.write_text(json.dumps({
-        "schema": "external_baseline_v1",
-        "name": "incompatible",
-        "source_ref": "artifact://test/incompatible",
-        "model": "fixture-model",
-        "runtime": "fixture-runtime",
-        "evaluated_at": "2026-08-09T00:00:00Z",
-        "task_set_digest": "different-task-set",
-        "grader_version": CURRENT_GRADER_VERSION,
-        "samples_per_task": 3,
-        "metrics": {"mean_score": 1.0},
-        "limitations": ["Test fixture only."],
-    }))
+    baseline.write_text(
+        json.dumps(
+            {
+                "schema": "external_baseline_v1",
+                "name": "incompatible",
+                "source_ref": "artifact://test/incompatible",
+                "model": "fixture-model",
+                "runtime": "fixture-runtime",
+                "evaluated_at": "2026-08-09T00:00:00Z",
+                "task_set_digest": "different-task-set",
+                "grader_version": CURRENT_GRADER_VERSION,
+                "samples_per_task": 3,
+                "metrics": {"mean_score": 1.0},
+                "limitations": ["Test fixture only."],
+            }
+        )
+    )
 
     result = run_audit(iterations=1, baseline_path=baseline)
 
@@ -290,9 +481,16 @@ def test_audit_cli_writes_json_file(tmp_path: Path):
     """uaek audit --output <file>.json should write valid JSON."""
     output = tmp_path / "test-audit.json"
     runner = CliRunner()
-    result = runner.invoke(main, [
-        "audit", "--iterations", "1", "--output", str(output),
-    ])
+    result = runner.invoke(
+        main,
+        [
+            "audit",
+            "--iterations",
+            "1",
+            "--output",
+            str(output),
+        ],
+    )
 
     assert result.exit_code == 0
     assert output.exists()

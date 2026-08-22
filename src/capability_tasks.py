@@ -7,16 +7,13 @@ executing it in an isolated subprocess against the cases — no model self-gradi
 
 from __future__ import annotations
 
-import json
 import random
-import subprocess
-import sys
-import tempfile
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
+
+from src.security.python_policy import run_candidate_cases, validate_candidate_code
 
 
 @dataclass(frozen=True)
@@ -260,8 +257,19 @@ HELD_OUT_COUNT = 16
 
 def _int_to_roman(n: int) -> str:
     table = [
-        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
-        (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+        (1000, "M"),
+        (900, "CM"),
+        (500, "D"),
+        (400, "CD"),
+        (100, "C"),
+        (90, "XC"),
+        (50, "L"),
+        (40, "XL"),
+        (10, "X"),
+        (9, "IX"),
+        (5, "V"),
+        (4, "IV"),
+        (1, "I"),
     ]
     out: list[str] = []
     for value, symbol in table:
@@ -494,36 +502,6 @@ def held_out_cases(task: CapabilityTask, count: int = HELD_OUT_COUNT) -> tuple[C
     return tuple(cases)
 
 
-_GRADE_HARNESS = """
-import importlib.util
-import json
-import sys
-
-spec = importlib.util.spec_from_file_location("candidate", sys.argv[1])
-module = importlib.util.module_from_spec(spec)
-results = []
-try:
-    spec.loader.exec_module(module)
-    fn = getattr(module, sys.argv[3])
-except Exception as exc:  # noqa: BLE001
-    print(json.dumps({"load_error": f"{type(exc).__name__}: {exc}"}))
-    sys.exit(0)
-
-with open(sys.argv[2], encoding="utf-8") as handle:
-    cases = json.load(handle)
-
-for index, case in enumerate(cases):
-    try:
-        actual = fn(*case["args"])
-        ok = actual == case["expected"]
-        results.append({"index": index, "ok": bool(ok), "error": None})
-    except Exception as exc:  # noqa: BLE001
-        results.append({"index": index, "ok": False, "error": f"{type(exc).__name__}: {exc}"})
-
-print(json.dumps({"results": results}))
-"""
-
-
 def get_task(task_id: str) -> CapabilityTask:
     """Return the capability task with the given id."""
     if task_id not in _TASKS_BY_ID:
@@ -573,57 +551,53 @@ def grade_code(
     if not code.strip():
         return _grade_result(task, passed=0, total=total, error="empty solution", cases=[])
 
-    with tempfile.TemporaryDirectory(prefix="uaek-grade-") as tmp_dir:
-        tmp_path = Path(tmp_dir)
-        solution_path = tmp_path / "candidate.py"
-        cases_path = tmp_path / "cases.json"
-        harness_path = tmp_path / "harness.py"
-        solution_path.write_text(code, encoding="utf-8")
-        cases_payload = [
-            {"args": list(case.args), "expected": case.expected} for case in all_cases
-        ]
-        cases_path.write_text(
-            json.dumps(cases_payload),
-            encoding="utf-8",
-        )
-        harness_path.write_text(_GRADE_HARNESS, encoding="utf-8")
-
-        try:
-            completed = subprocess.run(
-                [
-                    sys.executable,
-                    str(harness_path),
-                    str(solution_path),
-                    str(cases_path),
-                    task.entrypoint,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return _grade_result(
-                task, passed=0, total=total, error=f"grading timed out after {timeout:g}s", cases=[]
-            )
-
-    try:
-        data = json.loads(completed.stdout or "{}")
-    except json.JSONDecodeError:
+    diagnostics = validate_candidate_code(code, task.entrypoint)
+    if diagnostics:
         return _grade_result(
             task,
             passed=0,
             total=total,
-            error=f"grader produced no JSON (stderr: {completed.stderr.strip()[:200]})",
+            error=f"candidate policy rejected: {'; '.join(diagnostics)}",
             cases=[],
         )
 
-    if "load_error" in data:
-        return _grade_result(task, passed=0, total=total, error=data["load_error"], cases=[])
+    try:
+        execution_results = run_candidate_cases(
+            code,
+            task.entrypoint,
+            [case.args for case in all_cases],
+            timeout=timeout,
+        )
+    except Exception as exc:  # Defensive boundary: grading must never crash a benchmark run.
+        return _grade_result(
+            task,
+            passed=0,
+            total=total,
+            error=f"grader failed: {type(exc).__name__}: {exc}",
+            cases=[],
+        )
 
-    case_results = data.get("results", [])
-    passed = sum(1 for item in case_results if item.get("ok"))
-    return _grade_result(task, passed=passed, total=total, error=None, cases=case_results)
+    if len(execution_results) != total:
+        error = execution_results[0].error if execution_results else "grader returned no results"
+        return _grade_result(task, passed=0, total=total, error=error, cases=[])
+
+    case_results: list[dict[str, Any]] = []
+    first_error: str | None = None
+    for index, (case, execution) in enumerate(zip(all_cases, execution_results, strict=True)):
+        ok = execution.success and execution.result == case.expected
+        error = execution.error
+        if error is not None and first_error is None:
+            first_error = error
+        case_results.append({"index": index, "ok": bool(ok), "error": error})
+
+    passed = sum(1 for item in case_results if item["ok"])
+    return _grade_result(
+        task,
+        passed=passed,
+        total=total,
+        error=first_error,
+        cases=case_results,
+    )
 
 
 def _grade_result(

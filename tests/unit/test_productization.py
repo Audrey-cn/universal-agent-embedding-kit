@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import os
 import subprocess
@@ -24,6 +25,7 @@ from mcp.server import create_server as create_mcp_server
 from src.cli import main
 from src.memory.interface import MemoryLayerType
 from src.memory.service import MemoryService
+from src.memory.vector import VectorStore
 from src.skills.service import SkillService
 from src.workflow.runtime import execute_workflow_config, load_workflow_config
 
@@ -38,15 +40,51 @@ def test_packaging_includes_documented_api_and_mcp_packages():
     assert "mcp*" in include
 
 
+def test_mcp_console_script_and_host_config_are_relocatable() -> None:
+    """Installed hosts must launch MCP without repository-specific paths."""
+    pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    config_text = Path("mcp/config.json").read_text(encoding="utf-8")
+    config = json.loads(config_text)
+
+    assert pyproject["project"]["scripts"]["uaek-mcp"] == "mcp.server:main"
+    assert config["command"] == "uaek-mcp"
+    expected_keys = {"name", "version", "description", "type", "command", "args", "env", "_note"}
+    assert expected_keys <= set(config)
+    assert config["env"]["UAEK_MCP_IDLE_TIMEOUT"] == "300"
+    for forbidden in ("/Users/", "/home/", "cwd", "PYTHONPATH"):
+        assert forbidden not in config_text
+
+
 def test_packaging_uses_non_deprecated_license_metadata():
     """Build metadata should avoid setuptools license deprecation warnings."""
     data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
 
     assert data["project"]["license"] == "MIT"
     assert not any(
-        classifier.startswith("License ::")
-        for classifier in data["project"].get("classifiers", [])
+        classifier.startswith("License ::") for classifier in data["project"].get("classifiers", [])
     )
+
+
+def test_supported_extras_do_not_include_chromadb() -> None:
+    project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]
+    memory = project["optional-dependencies"]["memory"]
+
+    assert all(not item.startswith("chromadb") for item in memory)
+
+
+def test_memory_documentation_names_the_supported_and_retired_vector_paths() -> None:
+    """User-facing memory guidance must not advertise the retired ChromaDB integration."""
+    manual = Path("EXECUTION_MANUAL.md").read_text(encoding="utf-8")
+    store_doc = inspect.getdoc(VectorStore) or ""
+    chroma_doc = inspect.getdoc(VectorStore.use_chromadb) or ""
+
+    assert "ChromaDB" not in manual
+    assert "SimpleBackend" in manual
+    assert "sentence-transformers" in manual
+    assert "SimpleBackend" in store_doc
+    assert "retired" in chroma_doc
+    assert "always raises" in chroma_doc
+    assert "SimpleBackend" in chroma_doc
 
 
 def test_development_dependencies_and_ci_use_one_lock_contract() -> None:
@@ -129,15 +167,101 @@ exit 0
     assert result.returncode == 9
 
 
+def test_setup_verify_runs_the_format_gate(tmp_path: Path) -> None:
+    """Setup verification should fail when Ruff reports unformatted Python sources."""
+    repository = tmp_path / "repository"
+    scripts_dir = repository / "scripts"
+    venv_bin = repository / ".venv" / "bin"
+    fake_bin = tmp_path / "fake-bin"
+    scripts_dir.mkdir(parents=True)
+    venv_bin.mkdir(parents=True)
+    fake_bin.mkdir()
+    setup_script = scripts_dir / "setup.sh"
+    setup_script.write_text(Path("scripts/setup.sh").read_text(encoding="utf-8"), encoding="utf-8")
+    (venv_bin / "activate").write_text("", encoding="utf-8")
+
+    fake_python = """#!/usr/bin/env bash
+if [[ "$1" == "--version" ]]; then
+  echo "Python 3.12.0"
+  exit 0
+fi
+if [[ "$*" == *"-m ruff format --check"* ]]; then
+  exit 9
+fi
+exit 0
+"""
+    for command in ("python3.11", "python"):
+        path = fake_bin / command
+        path.write_text(fake_python, encoding="utf-8")
+        path.chmod(0o755)
+    fake_pip = fake_bin / "pip"
+    fake_pip.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    fake_pip.chmod(0o755)
+
+    result = subprocess.run(
+        ["bash", str(setup_script), "--verify"],
+        cwd=repository,
+        env={**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 9
+
+
+def test_contribution_commands_include_the_format_gate() -> None:
+    """Contributor instructions should match the formatting gate enforced by CI."""
+    contributing = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
+
+    assert "ruff format --check src api mcp tests scripts" in contributing
+
+
+def test_security_policy_describes_supported_version_and_execution_boundaries() -> None:
+    """Security guidance should distinguish trust boundaries without promising isolation."""
+    policy = Path("SECURITY.md").read_text(encoding="utf-8").lower()
+
+    assert "0.3.0.dev1" in policy
+    assert "main" in policy
+    assert "trusted adapters" in policy
+    assert "restricted candidate execution" in policy
+    assert "not a kernel-level sandbox" in policy
+
+
+def test_security_policy_distinguishes_restricted_and_bounded_only_candidate_paths() -> None:
+    """Security guidance should not apply the restricted policy to every candidate path."""
+    policy = Path("SECURITY.md").read_text(encoding="utf-8").lower()
+
+    assert "benchmark candidate python is checked" not in policy
+    restricted = policy.split("### restricted candidate execution", 1)[1].split(
+        "### adversarial verification", 1
+    )[0]
+    assert "capability grading" in restricted
+    assert "scenario verification" in restricted
+    assert "property verification" in restricted
+    assert "restrictive ast policy" in restricted
+    assert "limited builtins" in restricted
+
+    adversarial = policy.split("### adversarial verification", 1)[1].split(
+        "### residual isolation boundary", 1
+    )[0]
+    assert "bounded subprocess" in adversarial
+    assert "does not use the restricted ast or limited-builtins policy" in adversarial
+    assert "container or virtual machine" in adversarial
+
+
 def test_mcp_module_runs_stdio_initialize_and_tools_list():
     """`python -m mcp.server` should be a real stdio JSON-RPC MCP server."""
-    requests = "\n".join(
-        [
-            json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
-            json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
-            json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
-        ]
-    ) + "\n"
+    requests = (
+        "\n".join(
+            [
+                json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+                json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+                json.dumps({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}}),
+            ]
+        )
+        + "\n"
+    )
 
     completed = subprocess.run(
         [sys.executable, "-m", "mcp.server"],
@@ -149,11 +273,7 @@ def test_mcp_module_runs_stdio_initialize_and_tools_list():
     )
 
     assert completed.returncode == 0
-    responses = [
-        json.loads(line)
-        for line in completed.stdout.splitlines()
-        if line.strip()
-    ]
+    responses = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
     assert [response["id"] for response in responses[:2]] == [1, 2]
     assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
     tool_names = {tool["name"] for tool in responses[1]["result"]["tools"]}

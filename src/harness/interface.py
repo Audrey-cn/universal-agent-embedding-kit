@@ -41,4 +41,3 @@ class HarnessResult:
             "report": self.report,
             "errors": self.errors,
         }
-

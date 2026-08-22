@@ -47,10 +47,15 @@ def test_release_metadata_files_use_the_same_version():
     assert mcp_config["version"] == EXPECTED_VERSION
 
 
+def test_mcp_metadata_uses_the_portable_console_command() -> None:
+    """The checked-in host template must select the packaged MCP executable."""
+    mcp_config = json.loads(Path("mcp/config.json").read_text(encoding="utf-8"))
+
+    assert mcp_config["command"] == "uaek-mcp"
+
+
 def test_active_release_docs_use_current_setup_and_portable_paths() -> None:
-    documents = {
-        name: Path(name).read_text(encoding="utf-8") for name in ACTIVE_PORTABLE_DOCS
-    }
+    documents = {name: Path(name).read_text(encoding="utf-8") for name in ACTIVE_PORTABLE_DOCS}
 
     assert "# UAEK 0.3 Support Matrix" in documents["docs/support-matrix.md"]
     assert EXPECTED_VERSION in documents["docs/support-matrix.md"]
@@ -58,6 +63,37 @@ def test_active_release_docs_use_current_setup_and_portable_paths() -> None:
         assert "bash scripts/setup.sh --verify" in documents[name]
     for name, content in documents.items():
         assert "/Users/audrey" not in content, name
+
+
+def test_active_headline_surfaces_match_versioned_capability_runs() -> None:
+    """Active docs and generated summaries must agree with versioned raw run evidence."""
+    from scripts.check_headline_consistency import (
+        derive_headline,
+        validate_headline_consistency,
+    )
+
+    artifact_dir = Path("benchmarks/results/capability-runs")
+    assert derive_headline(artifact_dir) == "3/4"
+
+    validation = validate_headline_consistency(artifact_dir, Path("."))
+    assert validation == {
+        "expected_headline": "3/4",
+        "stale_paths": [],
+        "errors": [],
+    }
+
+    matrix = json.loads(
+        Path("benchmarks/results/capability-matrix.json").read_text(encoding="utf-8")
+    )
+    benchmark = json.loads(
+        Path("benchmarks/results/benchmark-capability.json").read_text(encoding="utf-8")
+    )
+    assert matrix["metrics"]["graded_live_provider_count"] == 3
+    assert matrix["metrics"]["expected_provider_count"] == 4
+    assert benchmark["capability_readiness"]["metrics"]["graded_live_provider_count"] == 3
+    assert benchmark["capability_readiness"]["metrics"]["expected_provider_count"] == 4
+    for readiness in (matrix, benchmark["capability_readiness"]):
+        assert "hermes 8/10" not in "\n".join(readiness["limitations"])
 
 
 def test_cli_reports_release_version():

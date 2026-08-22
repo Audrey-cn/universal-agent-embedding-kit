@@ -15,6 +15,7 @@ from mcp.server import ERR_ACCESS_DENIED, ERR_AUTH_FAILED, ERR_RATE_LIMITED, MCP
 # MCPAuth 测试
 # ============================================================
 
+
 class TestMCPAuth:
     """MCPAuth 认证管理器测试"""
 
@@ -89,6 +90,7 @@ class TestMCPAuth:
 # MCPRateLimiter 测试
 # ============================================================
 
+
 class TestMCPRateLimiter:
     """MCPRateLimiter 令牌桶限流器测试"""
 
@@ -148,6 +150,7 @@ class TestMCPRateLimiter:
 # ============================================================
 # ToolAccessControl 测试
 # ============================================================
+
 
 class TestToolAccessControl:
     """ToolAccessControl 工具级访问控制测试"""
@@ -225,6 +228,7 @@ class TestToolAccessControl:
 # MCPServer 安全集成测试
 # ============================================================
 
+
 def _make_verify_tool():
     """创建一个简单的验证工具用于测试"""
 
@@ -253,9 +257,7 @@ class TestMCPServerSecurity:
         """创建带安全组件的测试 server"""
         srv = MCPServer(name="test", version="1.0.0")
         tool = _make_verify_tool()
-        srv.register_tool(
-            tool["name"], tool["description"], tool["input_schema"], tool["handler"]
-        )
+        srv.register_tool(tool["name"], tool["description"], tool["input_schema"], tool["handler"])
         # 授予默认客户端访问权限
         srv._access_control.allow_tool_for_client("uaek_verify", "default")
         return srv
@@ -405,6 +407,7 @@ class TestMCPServerSecurity:
 # ============================================================
 # _extract_client_id 测试
 # ============================================================
+
 
 class TestClientIdExtraction:
     """客户端 ID 提取测试"""

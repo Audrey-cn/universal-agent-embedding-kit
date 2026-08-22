@@ -15,9 +15,10 @@ from .interface import MemoryEntry
 
 class CompressionClass(Enum):
     """压缩分类"""
-    KEEP = "keep"         # 保留：完整保留
-    COMPRESS = "compress" # 压缩：摘要化
-    DISCARD = "discard"   # 丢弃：直接移除
+
+    KEEP = "keep"  # 保留：完整保留
+    COMPRESS = "compress"  # 压缩：摘要化
+    DISCARD = "discard"  # 丢弃：直接移除
 
 
 class ContextCompressor:
@@ -31,35 +32,80 @@ class ContextCompressor:
 
     # ---- KEEP 关键词（完整保留） ----
     KEEP_KEYWORDS = [
-        "decision", "decide", "选择", "采用", "决定",
-        "constraint", "constrain", "限制", "必须", "不能",
-        "error", "bug", "fail", "failure", "错误", "失败",
-        "requirement", "specification", "需求", "规格",
-        "architecture", "design", "架构", "设计",
-        "todo", "pending", "未完成", "待办",
-        "security", "安全", "vulnerability", "漏洞",
+        "decision",
+        "decide",
+        "选择",
+        "采用",
+        "决定",
+        "constraint",
+        "constrain",
+        "限制",
+        "必须",
+        "不能",
+        "error",
+        "bug",
+        "fail",
+        "failure",
+        "错误",
+        "失败",
+        "requirement",
+        "specification",
+        "需求",
+        "规格",
+        "architecture",
+        "design",
+        "架构",
+        "设计",
+        "todo",
+        "pending",
+        "未完成",
+        "待办",
+        "security",
+        "安全",
+        "vulnerability",
+        "漏洞",
     ]
 
     # ---- COMPRESS 关键词（摘要化） ----
     COMPRESS_KEYWORDS = [
-        "discuss", "discussion", "讨论",
-        "review", "审查", "检查",
-        "refactor", "重构",
-        "test", "测试", "验证",
-        "implement", "实现", "开发",
-        "update", "更新", "修改",
-        "resolve", "解决", "修复",
+        "discuss",
+        "discussion",
+        "讨论",
+        "review",
+        "审查",
+        "检查",
+        "refactor",
+        "重构",
+        "test",
+        "测试",
+        "验证",
+        "implement",
+        "实现",
+        "开发",
+        "update",
+        "更新",
+        "修改",
+        "resolve",
+        "解决",
+        "修复",
     ]
 
     # ---- DISCARD 关键词（直接丢弃） ----
     DISCARD_KEYWORDS = [
-        "debug", "调试",
-        "log", "日志",
-        "output", "输出",
-        "temporary", "临时",
-        "draft", "草稿",
-        "print", "echo",
-        "trace", "追踪",
+        "debug",
+        "调试",
+        "log",
+        "日志",
+        "output",
+        "输出",
+        "temporary",
+        "临时",
+        "draft",
+        "草稿",
+        "print",
+        "echo",
+        "trace",
+        "追踪",
     ]
 
     def classify_entry(self, entry: MemoryEntry) -> CompressionClass:
@@ -200,10 +246,17 @@ class ContextCompressor:
         """按重要性排序并截断"""
         if use_decay:
             from .decay import compute_decayed_importance
+
             scored = [
-                (compute_decayed_importance(
-                    e.importance, e.timestamp, e.last_accessed, e.access_count,
-                ), e)
+                (
+                    compute_decayed_importance(
+                        e.importance,
+                        e.timestamp,
+                        e.last_accessed,
+                        e.access_count,
+                    ),
+                    e,
+                )
                 for e in entries
             ]
         else:

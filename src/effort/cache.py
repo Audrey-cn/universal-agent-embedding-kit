@@ -24,6 +24,7 @@ from .interface import EffortLevel, EffortResult
 @dataclass
 class CacheEntry:
     """缓存条目"""
+
     fingerprint: str
     result: EffortResult
     task_description: str
@@ -40,6 +41,7 @@ class CacheEntry:
 @dataclass
 class FeedbackRecord:
     """反馈记录"""
+
     task_description: str
     predicted_level: EffortLevel
     actual_difficulty: float  # 0.0-1.0，实际难度
@@ -130,12 +132,14 @@ class EffortCache:
             actual_difficulty: 实际难度（0.0-1.0）
             was_accurate: 预测是否准确
         """
-        self._feedback.append(FeedbackRecord(
-            task_description=task_description,
-            predicted_level=predicted_level,
-            actual_difficulty=actual_difficulty,
-            was_accurate=was_accurate,
-        ))
+        self._feedback.append(
+            FeedbackRecord(
+                task_description=task_description,
+                predicted_level=predicted_level,
+                actual_difficulty=actual_difficulty,
+                was_accurate=was_accurate,
+            )
+        )
 
         # 限制反馈历史大小
         if len(self._feedback) > 500:

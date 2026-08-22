@@ -649,7 +649,7 @@ def run_capability_readiness(
             "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
             "A provider must pass every task in the graded suite to count as graded-live; a "
             "'partial' provider ran the live suite and passed some but not all tasks (its real "
-            "tasks_passed/capability_score are reported, e.g. mimo_code 9/10, hermes 8/10) and "
+            "tasks_passed/capability_score are reported) and "
             "is evidence but not graded-live.",
             "'blocked' is reserved for genuine non-execution (usage limit, headless lock, or no "
             "code emitted, i.e. zero passing tasks); it is not used for providers that ran and "

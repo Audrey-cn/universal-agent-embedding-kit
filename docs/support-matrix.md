@@ -11,7 +11,7 @@ from advanced experiments so that a module's presence is not mistaken for a stab
 | Core verification | test, build, lint and fresh-context runners | Behavior-tested; failures are structured |
 | Effort routing | Python API and CLI | Deterministic classification contract |
 | Workflow execution | sequential, parallel, DAG and conditional shared runtime | CLI/API/MCP contract tested; safe-action allowlist enforced |
-| Memory | layered persistence, query, compression and restore | Local persistence and round-trip behavior tested |
+| Memory | layered persistence, query, compression, restore, and `SimpleBackend` vector retrieval | Local persistence and round-trip behavior tested; `SimpleBackend` is the supported vector store |
 | Security | workflow guardrails, MCP auth/access/rate limiting, sandbox primitives | Fail-closed boundary behavior tested |
 | Entrypoints | Click CLI, HTTP API, JSON-RPC MCP | Shared workflow results and package smoke tested |
 | Evidence | benchmarks, capability matrix and `uaek audit` | Evidence rung and limitations required; audit consistency gated |

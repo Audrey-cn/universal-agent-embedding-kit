@@ -21,18 +21,20 @@ from typing import Any
 
 class Perspective(Enum):
     """验证视角"""
-    CORRECTNESS = "correctness"     # 功能正确性
-    BOUNDARY = "boundary"           # 边界情况
-    SECURITY = "security"           # 安全性
+
+    CORRECTNESS = "correctness"  # 功能正确性
+    BOUNDARY = "boundary"  # 边界情况
+    SECURITY = "security"  # 安全性
     MAINTAINABILITY = "maintainability"  # 可维护性
-    PERFORMANCE = "performance"     # 性能
-    COMPATIBILITY = "compatibility" # 兼容性
-    USABILITY = "usability"         # 可用性
+    PERFORMANCE = "performance"  # 性能
+    COMPATIBILITY = "compatibility"  # 兼容性
+    USABILITY = "usability"  # 可用性
 
 
 @dataclass
 class PerspectiveResult:
     """单个视角的验证结果"""
+
     perspective: Perspective
     passed: bool
     score: float  # 0.0 - 1.0
@@ -44,6 +46,7 @@ class PerspectiveResult:
 @dataclass
 class MultiPerspectiveResult:
     """多视角一致性检查结果"""
+
     artifact_path: Path
     criteria_path: Path | None
     perspectives: list[PerspectiveResult]
@@ -121,12 +124,14 @@ class MultiPerspectiveChecker:
 
         for perspective in to_check:
             if perspective not in self._checkers:
-                results.append(PerspectiveResult(
-                    perspective=perspective,
-                    passed=False,
-                    score=0.0,
-                    evidence=f"No checker registered for {perspective.value}",
-                ))
+                results.append(
+                    PerspectiveResult(
+                        perspective=perspective,
+                        passed=False,
+                        score=0.0,
+                        evidence=f"No checker registered for {perspective.value}",
+                    )
+                )
                 continue
 
             start = time.monotonic()
@@ -135,13 +140,15 @@ class MultiPerspectiveChecker:
                 result.duration_ms = (time.monotonic() - start) * 1000
                 results.append(result)
             except Exception as e:
-                results.append(PerspectiveResult(
-                    perspective=perspective,
-                    passed=False,
-                    score=0.0,
-                    evidence=f"Checker error: {e}",
-                    duration_ms=(time.monotonic() - start) * 1000,
-                ))
+                results.append(
+                    PerspectiveResult(
+                        perspective=perspective,
+                        passed=False,
+                        score=0.0,
+                        evidence=f"Checker error: {e}",
+                        duration_ms=(time.monotonic() - start) * 1000,
+                    )
+                )
 
         # 计算整体结果
         return self._aggregate(results, artifact_path, criteria_path)
@@ -181,7 +188,8 @@ class MultiPerspectiveChecker:
             critical = {Perspective.CORRECTNESS, Perspective.SECURITY}
             critical_results = [r for r in results if r.perspective in critical]
             overall_passed = (
-                all(r.passed for r in critical_results) if critical_results
+                all(r.passed for r in critical_results)
+                if critical_results
                 else sum(1 for r in results if r.passed) >= len(results) * 0.7
             )
 
@@ -229,13 +237,16 @@ class MultiPerspectiveChecker:
 # 内置视角检查函数
 # --------------------------------------------------------------------------- #
 
+
 def _check_correctness(artifact_path: Path, criteria_path: Path | None) -> PerspectiveResult:
     """功能正确性检查：通过语法/结构分析验证代码基本正确性"""
     try:
         content = artifact_path.read_text(encoding="utf-8")
     except Exception as e:
         return PerspectiveResult(
-            perspective=Perspective.CORRECTNESS, passed=False, score=0.0,
+            perspective=Perspective.CORRECTNESS,
+            passed=False,
+            score=0.0,
             evidence=f"Cannot read: {e}",
         )
 
@@ -280,7 +291,9 @@ def _check_boundary(artifact_path: Path, criteria_path: Path | None) -> Perspect
         content = artifact_path.read_text(encoding="utf-8")
     except Exception as e:
         return PerspectiveResult(
-            perspective=Perspective.BOUNDARY, passed=False, score=0.0,
+            perspective=Perspective.BOUNDARY,
+            passed=False,
+            score=0.0,
             evidence=f"Cannot read: {e}",
         )
 
@@ -291,7 +304,7 @@ def _check_boundary(artifact_path: Path, criteria_path: Path | None) -> Perspect
     # 检查空输入处理
     has_empty_check = any(
         kw in content.lower()
-        for kw in ["if not", "if len(", "if .* is none", "if .* == \"\"", "if .* == []"]
+        for kw in ["if not", "if len(", "if .* is none", 'if .* == ""', "if .* == []"]
     )
     checks.append({"check": "empty_input_handling", "passed": has_empty_check})
     if not has_empty_check and len(lines) > 5:
@@ -330,7 +343,9 @@ def _check_security(artifact_path: Path, criteria_path: Path | None) -> Perspect
         content = artifact_path.read_text(encoding="utf-8")
     except Exception as e:
         return PerspectiveResult(
-            perspective=Perspective.SECURITY, passed=False, score=0.0,
+            perspective=Perspective.SECURITY,
+            passed=False,
+            score=0.0,
             evidence=f"Cannot read: {e}",
         )
 
@@ -357,11 +372,13 @@ def _check_security(artifact_path: Path, criteria_path: Path | None) -> Perspect
             found_dangerous.append({"pattern": pattern, "description": description})
             score -= 0.15
 
-    checks.append({
-        "check": "dangerous_patterns",
-        "passed": len(found_dangerous) == 0,
-        "details": found_dangerous,
-    })
+    checks.append(
+        {
+            "check": "dangerous_patterns",
+            "passed": len(found_dangerous) == 0,
+            "details": found_dangerous,
+        }
+    )
 
     # 检查是否有输入验证
     has_input_validation = any(
@@ -383,7 +400,7 @@ def _check_security(artifact_path: Path, criteria_path: Path | None) -> Perspect
         passed=passed,
         score=max(0.0, score),
         evidence=f"Security: {len(found_dangerous)} dangerous patterns, "
-                 f"input_validation={'yes' if has_input_validation else 'no'}",
+        f"input_validation={'yes' if has_input_validation else 'no'}",
         details={"checks": checks, "dangerous_found": found_dangerous},
     )
 
@@ -394,7 +411,9 @@ def _check_maintainability(artifact_path: Path, criteria_path: Path | None) -> P
         content = artifact_path.read_text(encoding="utf-8")
     except Exception as e:
         return PerspectiveResult(
-            perspective=Perspective.MAINTAINABILITY, passed=False, score=0.0,
+            perspective=Perspective.MAINTAINABILITY,
+            passed=False,
+            score=0.0,
             evidence=f"Cannot read: {e}",
         )
 
@@ -442,7 +461,7 @@ def _check_maintainability(artifact_path: Path, criteria_path: Path | None) -> P
         passed=passed,
         score=max(0.0, score),
         evidence=f"Maintainability: comment_ratio={comment_ratio:.1%}, "
-                 f"long_blocks={long_blocks}, lines={len(lines)}",
+        f"long_blocks={long_blocks}, lines={len(lines)}",
         details={"checks": checks},
     )
 
@@ -453,7 +472,9 @@ def _check_performance(artifact_path: Path, criteria_path: Path | None) -> Persp
         content = artifact_path.read_text(encoding="utf-8")
     except Exception as e:
         return PerspectiveResult(
-            perspective=Perspective.PERFORMANCE, passed=False, score=0.0,
+            perspective=Perspective.PERFORMANCE,
+            passed=False,
+            score=0.0,
             evidence=f"Cannot read: {e}",
         )
 
@@ -528,7 +549,7 @@ def _check_performance(artifact_path: Path, criteria_path: Path | None) -> Persp
         passed=passed,
         score=max(0.0, score),
         evidence=f"Performance: {len(found_anti_patterns)} anti-patterns found"
-                 + (f": {', '.join(found_anti_patterns)}" if found_anti_patterns else ""),
+        + (f": {', '.join(found_anti_patterns)}" if found_anti_patterns else ""),
         details={"checks": checks, "anti_patterns": found_anti_patterns},
     )
 
@@ -539,7 +560,9 @@ def _check_compatibility(artifact_path: Path, criteria_path: Path | None) -> Per
         content = artifact_path.read_text(encoding="utf-8")
     except Exception as e:
         return PerspectiveResult(
-            perspective=Perspective.COMPATIBILITY, passed=False, score=0.0,
+            perspective=Perspective.COMPATIBILITY,
+            passed=False,
+            score=0.0,
             evidence=f"Cannot read: {e}",
         )
 
@@ -569,11 +592,13 @@ def _check_compatibility(artifact_path: Path, criteria_path: Path | None) -> Per
             found_platform.append({"pattern": pattern, "description": desc})
             score -= 0.1
 
-    checks.append({
-        "check": "platform_specific_code",
-        "passed": len(found_platform) == 0,
-        "details": found_platform,
-    })
+    checks.append(
+        {
+            "check": "platform_specific_code",
+            "passed": len(found_platform) == 0,
+            "details": found_platform,
+        }
+    )
 
     # 检查 Python 版本兼容性
     uses_py310 = "match " in content and "case " in content
@@ -602,7 +627,7 @@ def _check_compatibility(artifact_path: Path, criteria_path: Path | None) -> Per
         passed=passed,
         score=max(0.0, score),
         evidence=f"Compatibility: {len(found_platform)} platform-specific patterns, "
-                 f"Python 3.10+ features={'yes' if (uses_py310 or uses_py310_types) else 'no'}",
+        f"Python 3.10+ features={'yes' if (uses_py310 or uses_py310_types) else 'no'}",
         details={"checks": checks, "platform_specific": found_platform},
     )
 
@@ -613,7 +638,9 @@ def _check_usability(artifact_path: Path, criteria_path: Path | None) -> Perspec
         content = artifact_path.read_text(encoding="utf-8")
     except Exception as e:
         return PerspectiveResult(
-            perspective=Perspective.USABILITY, passed=False, score=0.0,
+            perspective=Perspective.USABILITY,
+            passed=False,
+            score=0.0,
             evidence=f"Cannot read: {e}",
         )
 
@@ -626,9 +653,7 @@ def _check_usability(artifact_path: Path, criteria_path: Path | None) -> Perspec
     has_type_annotations = False
 
     # 检查公共 API 文档
-    has_public_api = any(
-        kw in content for kw in ["def ", "class "]
-    )
+    has_public_api = any(kw in content for kw in ["def ", "class "])
 
     if has_public_api:
         # 检查是否有 docstring
@@ -661,9 +686,14 @@ def _check_usability(artifact_path: Path, criteria_path: Path | None) -> Perspec
         # 检查错误信息是否包含描述性文本
         has_descriptive_errors = any(
             kw in content
-            for kw in ['raise ValueError("', "raise ValueError('",
-                       'raise TypeError("', "raise TypeError('",
-                       'raise RuntimeError("', "raise RuntimeError('"]
+            for kw in [
+                'raise ValueError("',
+                "raise ValueError('",
+                'raise TypeError("',
+                "raise TypeError('",
+                'raise RuntimeError("',
+                "raise RuntimeError('",
+            ]
         )
         checks.append({"check": "descriptive_errors", "passed": has_descriptive_errors})
         if not has_descriptive_errors:
@@ -692,8 +722,8 @@ def _check_usability(artifact_path: Path, criteria_path: Path | None) -> Perspec
         passed=passed,
         score=max(0.0, score),
         evidence=f"Usability: docstrings={'yes' if has_docstrings else 'no'}, "
-                 f"type_annotations={'yes' if has_type_annotations else 'no'}, "
-                 f"examples={'yes' if has_examples else 'no'}",
+        f"type_annotations={'yes' if has_type_annotations else 'no'}, "
+        f"examples={'yes' if has_examples else 'no'}",
         details={"checks": checks},
     )
 
@@ -701,6 +731,7 @@ def _check_usability(artifact_path: Path, criteria_path: Path | None) -> Perspec
 # --------------------------------------------------------------------------- #
 # 工厂函数
 # --------------------------------------------------------------------------- #
+
 
 def create_default_checker(
     strict_mode: bool = True,
