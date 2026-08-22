@@ -7,7 +7,11 @@ the ScenarioCheck hashability fix (list args normalized to a tuple) holds.
 
 from __future__ import annotations
 
-from src.scenario_benchmark import DIMENSIONS, evaluate_scenario
+from src.scenario_benchmark import (
+    DIMENSIONS,
+    evaluate_repository_scenario,
+    evaluate_scenario,
+)
 from src.scenario_pack_2 import FLAWED_PACK_2, REFERENCE_PACK_2, SCENARIO_PACK_2
 
 
@@ -34,7 +38,7 @@ def test_every_reference_solution_scores_full_marks():
     missing = [s.scenario_id for s in SCENARIO_PACK_2 if s.scenario_id not in REFERENCE_PACK_2]
     assert not missing, f"scenarios without a reference solution: {missing}"
     for s in SCENARIO_PACK_2:
-        report = evaluate_scenario(s, REFERENCE_PACK_2[s.scenario_id])
+        report = evaluate_repository_scenario(f"reference:{s.scenario_id}")
         assert report["overall"] == 1.0, f"{s.scenario_id} reference scored {report['overall']}"
 
 

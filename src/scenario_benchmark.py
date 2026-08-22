@@ -22,9 +22,13 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
-from src.security.python_policy import run_repository_harness, run_restricted_harness
+from src.security.python_policy import (
+    run_repository_scenario_harness,
+    run_restricted_harness,
+)
 
 DIMENSIONS = ("correctness", "completeness", "context_retention", "robustness")
 LIVE_MEASUREMENT_PATH = Path("benchmarks/results/scenario-live-measurement.json")
@@ -504,7 +508,8 @@ per_dimension_pass = {}
 per_dimension_total = {}
 load_error = None
 try:
-    namespace = {"__builtins__": SAFE_BUILTINS}
+    candidate_builtins = __builtins__ if PAYLOAD["repository_source"] else SAFE_BUILTINS
+    namespace = {"__builtins__": candidate_builtins}
     exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
 except Exception as exc:
     load_error = f"{type(exc).__name__}: {exc}"
@@ -552,11 +557,6 @@ print(json.dumps({
     "load_error": load_error,
 }))
 '''
-_TRUSTED_SCENARIO_HARNESS = _SCENARIO_HARNESS.replace(
-    'namespace = {"__builtins__": SAFE_BUILTINS}',
-    "namespace = {}",
-    1,
-)
 
 
 def _encode_scenario_value(value: Any) -> Any:
@@ -581,8 +581,12 @@ def _encode_scenario_value(value: Any) -> Any:
     return value
 
 
-def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
-    """Score a solution across the scenario's dimensions."""
+def _evaluate_scenario(
+    scenario: RealScenario,
+    *,
+    code: str | None = None,
+    repository_source_id: str | None = None,
+) -> dict[str, Any]:
     checks = [
         {
             "dimension": check.dimension,
@@ -601,26 +605,25 @@ def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
             "probe_input": _encode_scenario_value(scenario.reuse_probe.probe_input),
         }
     entrypoint = scenario.checks[0].entrypoint if scenario.checks else ""
-    process_result = run_restricted_harness(
-        code,
-        entrypoint,
-        _SCENARIO_HARNESS,
-        {"checks": checks, "reuse_probe": reuse_probe},
-        timeout=5.0,
-    )
-    repository_owned = (
-        code in REFERENCE_SOLUTIONS.values() or code in FLAWED_SOLUTIONS.values()
-    )
-    if (
-        repository_owned
-        and not process_result.success
-        and str(process_result.error).startswith("candidate policy rejected:")
-    ):
-        process_result = run_repository_harness(
-            code,
+    payload_input = {
+        "checks": checks,
+        "reuse_probe": reuse_probe,
+        "repository_source": repository_source_id is not None,
+    }
+    if repository_source_id is None:
+        process_result = run_restricted_harness(
+            code if code is not None else "",
             entrypoint,
-            _TRUSTED_SCENARIO_HARNESS,
-            {"checks": checks, "reuse_probe": reuse_probe},
+            _SCENARIO_HARNESS,
+            payload_input,
+            timeout=5.0,
+        )
+    else:
+        process_result = run_repository_scenario_harness(
+            repository_source_id,
+            entrypoint,
+            _SCENARIO_HARNESS,
+            payload_input,
             timeout=5.0,
         )
 
@@ -659,10 +662,30 @@ def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
     }
 
 
+def evaluate_scenario(scenario: RealScenario, code: str) -> dict[str, Any]:
+    """Score external solution source using the restricted candidate policy."""
+    return _evaluate_scenario(scenario, code=code)
+
+
+def evaluate_repository_scenario(source_id: str) -> dict[str, Any]:
+    """Score a fixed repository scenario source selected only by its identifier."""
+    try:
+        _repository_scenario_source(source_id)
+    except KeyError:
+        raise KeyError(f"unknown repository scenario source: {source_id!r}")
+    _, scenario_id = source_id.split(":", 1)
+    return _evaluate_scenario(
+        get_scenario(scenario_id),
+        repository_source_id=source_id,
+    )
+
+
 def run_scenario_readiness() -> dict[str, Any]:
     """Demonstrate multi-dimensional discrimination on 10 diverse scenarios."""
     reference_reports = {
-        scenario.scenario_id: evaluate_scenario(scenario, REFERENCE_SOLUTIONS[scenario.scenario_id])
+        scenario.scenario_id: evaluate_repository_scenario(
+            f"reference:{scenario.scenario_id}"
+        )
         for scenario in SCENARIOS
     }
     reference_overall = round(
@@ -671,8 +694,8 @@ def run_scenario_readiness() -> dict[str, Any]:
 
     # Evaluate all flawed solutions
     flawed_reports = {
-        scenario.scenario_id: evaluate_scenario(
-            scenario, FLAWED_SOLUTIONS[scenario.scenario_id]
+        scenario.scenario_id: evaluate_repository_scenario(
+            f"flawed:{scenario.scenario_id}"
         )
         for scenario in SCENARIOS
     }
@@ -850,3 +873,24 @@ except ImportError:
     _pack3_loaded = False
 except Exception:
     _pack3_loaded = False
+
+
+_REPOSITORY_SCENARIO_SOURCES = MappingProxyType(
+    {
+        **{
+            f"reference:{scenario_id}": code
+            for scenario_id, code in REFERENCE_SOLUTIONS.items()
+        },
+        **{
+            f"flawed:{scenario_id}": code
+            for scenario_id, code in FLAWED_SOLUTIONS.items()
+        },
+    }
+)
+
+
+def _repository_scenario_source(source_id: str) -> str:
+    """Return immutable repository source selected by an exact plain-string ID."""
+    if type(source_id) is not str:
+        raise KeyError(source_id)
+    return _REPOSITORY_SCENARIO_SOURCES[source_id]

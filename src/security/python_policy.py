@@ -252,15 +252,54 @@ def run_restricted_harness(
     return _run_harness(code, entrypoint, harness, payload, timeout=timeout)
 
 
-def run_repository_harness(
+def run_restricted_module_harness(
     code: str,
+    harness: str,
+    payload: dict[str, Any],
+    *,
+    timeout: float,
+) -> SandboxResult:
+    """Run a restricted module harness without requiring a named entrypoint."""
+    try:
+        tree = ast.parse(code, filename="candidate.py", mode="exec")
+    except (SyntaxError, ValueError) as exc:
+        return _failure_result(f"candidate policy rejected: syntax error: {exc}")
+    validation_entrypoint = next(
+        (
+            statement.name
+            for statement in tree.body
+            if isinstance(statement, ast.FunctionDef)
+        ),
+        "__uaek_missing_entrypoint__",
+    )
+    diagnostics = [
+        diagnostic
+        for diagnostic in validate_candidate_code(code, validation_entrypoint)
+        if not diagnostic.startswith("top-level executable statement ")
+        and not diagnostic.startswith("entrypoint ")
+    ]
+    if diagnostics:
+        return _failure_result(f"candidate policy rejected: {'; '.join(diagnostics)}")
+    return _run_harness(code, "", harness, payload, timeout=timeout)
+
+
+def run_repository_scenario_harness(
+    source_id: str,
     entrypoint: str,
     harness: str,
     payload: dict[str, Any],
     *,
     timeout: float,
 ) -> SandboxResult:
-    """Run source whose repository ownership was established by the caller."""
+    """Retrieve and run a fixed repository scenario source by immutable identifier."""
+    if type(source_id) is not str or source_id.count(":") != 1:
+        return _failure_result("unknown repository scenario source")
+    from src import scenario_benchmark
+
+    try:
+        code = scenario_benchmark._repository_scenario_source(source_id)
+    except KeyError:
+        return _failure_result(f"unknown repository scenario source: {source_id!r}")
     return _run_harness(code, entrypoint, harness, payload, timeout=timeout)
 
 

@@ -22,7 +22,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from src.security.python_policy import run_restricted_harness
+from src.security.python_policy import run_restricted_module_harness
 
 from .interface import VerificationResult, VerificationType
 
@@ -492,30 +492,35 @@ def safe_counterexample(value):
 try:
     namespace = {"__builtins__": SAFE_BUILTINS}
     exec(compile(SOURCE_CODE, "candidate.py", "exec"), namespace)
-    function = namespace[ENTRYPOINT]
-    if not callable(function):
-        raise TypeError("candidate entrypoint is not callable")
 except Exception as exc:
-    print(json.dumps({"load_error": f"{type(exc).__name__}: {exc}"}))
+    print(json.dumps({"load_error": str(exc)}))
 else:
-    tester = PropertyTester(trials=PAYLOAD["trials"], seed=PAYLOAD["seed"])
-    results = []
-    for requested_type in PAYLOAD["property_types"]:
-        if requested_type == PropertyType.IDEMPOTENT.value:
-            result = tester.test_idempotent(function)
-        elif requested_type == PropertyType.NO_CRASH.value:
-            result = tester.test_no_crash(function)
-        else:
-            continue
-        results.append({
-            "passed": result.passed,
-            "property_type": result.property_type.value,
-            "total_trials": result.total_trials,
-            "failed_trial": result.failed_trial,
-            "counterexample": safe_counterexample(result.counterexample),
-            "shrunk_counterexample": safe_counterexample(result.shrunk_counterexample),
-        })
-    print(json.dumps({"results": results}))
+    function_name = PAYLOAD["func_name"]
+    if function_name not in namespace:
+        available = [name for name in namespace if callable(namespace[name])]
+        print(json.dumps({"status": "missing", "available": available}))
+    elif not callable(namespace[function_name]):
+        print(json.dumps({"status": "not_callable"}))
+    else:
+        function = namespace[function_name]
+        tester = PropertyTester(trials=PAYLOAD["trials"], seed=PAYLOAD["seed"])
+        results = []
+        for requested_type in PAYLOAD["property_types"]:
+            if requested_type == PropertyType.IDEMPOTENT.value:
+                result = tester.test_idempotent(function)
+            elif requested_type == PropertyType.NO_CRASH.value:
+                result = tester.test_no_crash(function)
+            else:
+                continue
+            results.append({
+                "passed": result.passed,
+                "property_type": result.property_type.value,
+                "total_trials": result.total_trials,
+                "failed_trial": result.failed_trial,
+                "counterexample": safe_counterexample(result.counterexample),
+                "shrunk_counterexample": safe_counterexample(result.shrunk_counterexample),
+            })
+        print(json.dumps({"results": results}))
 '''
 
 
@@ -542,16 +547,32 @@ def property_test_verify(
             notes=f"Artifact read error: {e}",
         )
 
+    try:
+        compile(code, str(artifact_path), "exec")
+    except Exception as e:
+        return VerificationResult(
+            passed=False,
+            verdict="FAIL",
+            evidence=f"Cannot compile code: {e}",
+            verification_type=VerificationType.TEST,
+            artifact_path=artifact_path,
+            notes=f"Compile error: {e}",
+        )
+
     property_types = []
     if property_type is None or property_type == PropertyType.IDEMPOTENT:
         property_types.append(PropertyType.IDEMPOTENT.value)
     if property_type is None or property_type == PropertyType.NO_CRASH:
         property_types.append(PropertyType.NO_CRASH.value)
-    process_result = run_restricted_harness(
+    process_result = run_restricted_module_harness(
         code,
-        func_name,
         _PROPERTY_HARNESS,
-        {"property_types": property_types, "trials": trials, "seed": seed},
+        {
+            "func_name": func_name,
+            "property_types": property_types,
+            "trials": trials,
+            "seed": seed,
+        },
         timeout=5.0,
     )
     if not process_result.success:
@@ -575,6 +596,26 @@ def property_test_verify(
             verification_type=VerificationType.TEST,
             artifact_path=artifact_path,
             notes=f"Compile error: {load_error}",
+        )
+
+    status = payload.get("status")
+    if status == "missing":
+        available = payload.get("available", [])
+        return VerificationResult(
+            passed=False,
+            verdict="INDETERMINATE",
+            evidence=f"Function '{func_name}' not found in {artifact_path}",
+            verification_type=VerificationType.TEST,
+            artifact_path=artifact_path,
+            notes=f"Available: {available}",
+        )
+    if status == "not_callable":
+        return VerificationResult(
+            passed=False,
+            verdict="FAIL",
+            evidence=f"'{func_name}' is not callable",
+            verification_type=VerificationType.TEST,
+            artifact_path=artifact_path,
         )
 
     raw_results = payload.get("results", [])
