@@ -474,6 +474,28 @@ def test_capability_matrix_scores_99_with_three_graded(tmp_path: Path):
     assert _check_status(result, "blocked_attempt_diagnostics") == "pass"
 
 
+def test_capability_limitations_do_not_describe_graded_hermes_as_partial(tmp_path: Path):
+    """Current graded providers must not remain in the generated partial limitation."""
+    from src.capability_matrix import run_capability_readiness
+
+    for provider in ["claude_code", "codex", "hermes"]:
+        _write_json(
+            tmp_path / f"{provider}-capability-run.json",
+            _capability_artifact(provider, tasks_passed=4, suite_pass_rate=1.0),
+        )
+    _write_json(
+        tmp_path / "mimo_code-capability-run.json",
+        _capability_artifact("mimo_code", tasks_passed=3, suite_pass_rate=0.75),
+    )
+
+    result = run_capability_readiness(tmp_path)
+    partial_limitation = next(
+        item for item in result["limitations"] if "'partial' provider" in item
+    )
+
+    assert "hermes" not in partial_limitation
+
+
 def test_benchmark_capability_suite_uses_existing_artifacts():
     from src.benchmark import run_benchmark
 

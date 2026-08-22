@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from src.cli import main
@@ -52,7 +53,7 @@ def _write_capability_artifact(path: Path, provider: str, tasks_passed: int) -> 
     path.write_text(json.dumps(artifact), encoding="utf-8")
 
 
-def _write_stale_active_surfaces(repository_root: Path) -> list[Path]:
+def _write_active_surfaces(repository_root: Path, headline: str = "3/4") -> list[Path]:
     paths = [
         repository_root / "README.md",
         repository_root / "README.zh.md",
@@ -61,26 +62,26 @@ def _write_stale_active_surfaces(repository_root: Path) -> list[Path]:
         repository_root / "benchmarks/results/benchmark-capability.json",
     ]
     paths[0].write_text(
-        "| Cross-platform matrix | **3/4** providers pass the full graded live suite |\n",
+        f"| Cross-platform matrix | **{headline}** providers pass the full graded live suite |\n",
         encoding="utf-8",
     )
     paths[1].write_text(
-        "| 跨平台矩阵 | **3/4** 平台通过全套 graded live 任务 |\n",
+        f"| 跨平台矩阵 | **{headline}** 平台通过全套 graded live 任务 |\n",
         encoding="utf-8",
     )
     paths[2].write_text(
         "## 当前实测状态\n"
-        "| Capability matrix CLI（全套通过口径） | command | 3/4 full-suite graded-live |\n"
-        "| Capability benchmark CLI | command | 3/4 full-suite graded-live |\n"
-        "因此当前是 **3/4 full-suite graded-live**。\n"
+        f"| Capability matrix CLI（全套通过口径） | command | {headline} full-suite graded-live |\n"
+        f"| Capability benchmark CLI | command | {headline} full-suite graded-live |\n"
+        f"因此当前是 **{headline} full-suite graded-live**。\n"
         "## 评分维度\n",
         encoding="utf-8",
     )
     paths[3].parent.mkdir(parents=True, exist_ok=True)
     matrix = {
         "metrics": {
-            "graded_live_provider_count": 3,
-            "expected_provider_count": 4,
+            "graded_live_provider_count": int(headline.split("/")[0]),
+            "expected_provider_count": int(headline.split("/")[1]),
         }
     }
     paths[3].write_text(json.dumps(matrix), encoding="utf-8")
@@ -111,7 +112,7 @@ def test_headline_validator_reports_expected_value_and_every_stale_path(
         _write_capability_artifact(
             artifact_dir / f"{provider}-capability-run.json", provider, tasks_passed
         )
-    stale_paths = _write_stale_active_surfaces(tmp_path)
+    stale_paths = _write_active_surfaces(tmp_path)
 
     assert derive_headline(artifact_dir) == "2/4"
     exit_code = headline_main(
@@ -142,7 +143,7 @@ def test_audit_evidence_consistency_reuses_active_headline_validation(
         _write_capability_artifact(
             artifact_dir / f"{provider}-capability-run.json", provider, tasks_passed
         )
-    _write_stale_active_surfaces(tmp_path)
+    _write_active_surfaces(tmp_path)
     monkeypatch.chdir(tmp_path)
 
     expected = validate_headline_consistency(artifact_dir, Path("."))
@@ -156,6 +157,35 @@ def test_audit_evidence_consistency_reuses_active_headline_validation(
 
     assert consistency["status"] == "fail"
     assert consistency["errors"] == expected["errors"]
+
+
+@pytest.mark.parametrize("near_match", ["3/40", "13/4"])
+def test_headline_validator_rejects_numeric_near_matches(
+    tmp_path: Path, near_match: str,
+) -> None:
+    """A ratio containing the expected text must still be reported as stale."""
+    from scripts.check_headline_consistency import validate_headline_consistency
+
+    artifact_dir = tmp_path / "capability-runs"
+    for provider, tasks_passed in {
+        "claude_code": 4,
+        "codex": 4,
+        "hermes": 4,
+        "mimo_code": 3,
+    }.items():
+        _write_capability_artifact(
+            artifact_dir / f"{provider}-capability-run.json", provider, tasks_passed
+        )
+    active_paths = _write_active_surfaces(tmp_path)
+    active_paths[0].write_text(
+        f"| Cross-platform matrix | **{near_match}** providers pass the full graded live suite |\n",
+        encoding="utf-8",
+    )
+
+    validation = validate_headline_consistency(artifact_dir, tmp_path)
+
+    assert validation["expected_headline"] == "3/4"
+    assert validation["stale_paths"] == [str(active_paths[0])]
 
 
 def test_audit_run_all_suites():

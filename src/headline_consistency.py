@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -69,14 +70,24 @@ def _text_surface_matches(path: Path, relative_path: Path, expected: str) -> boo
         candidates = [line for line in text.splitlines() if "跨平台矩阵" in line]
     else:
         current_summary = text.partition("## 评分维度")[0]
-        candidates = [
+        table_candidates = [
             line
             for line in current_summary.splitlines()
             if "Capability matrix CLI" in line
             or "Capability benchmark CLI" in line
-            or "因此当前是" in line
         ]
-    return bool(candidates) and all(expected in line for line in candidates)
+        summary_candidates = [
+            line.partition("因此当前是")[2]
+            for line in current_summary.splitlines()
+            if "因此当前是" in line
+        ]
+        candidates = [*table_candidates, *summary_candidates]
+    return bool(candidates) and all(_first_ratio(line) == expected for line in candidates)
+
+
+def _first_ratio(text: str) -> str | None:
+    match = re.search(r"(?<!\d)\d+/\d+(?!\d)", text)
+    return match.group(0) if match else None
 
 
 def _json_surface_matches(path: Path, relative_path: Path, expected: str) -> bool:

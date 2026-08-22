@@ -96,6 +96,8 @@ def test_active_headline_surfaces_match_versioned_capability_runs() -> None:
         "graded_live_provider_count"
     ] == 3
     assert benchmark["capability_readiness"]["metrics"]["expected_provider_count"] == 4
+    for readiness in (matrix, benchmark["capability_readiness"]):
+        assert "hermes 8/10" not in "\n".join(readiness["limitations"])
 
 
 def test_cli_reports_release_version():

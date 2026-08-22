@@ -35,7 +35,7 @@
     ],
     "limitations": [
       "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
-      "A provider must pass every task in the graded suite to count as graded-live; a 'partial' provider ran the live suite and passed some but not all tasks (its real tasks_passed/capability_score are reported, e.g. mimo_code 9/10, hermes 8/10) and is evidence but not graded-live.",
+      "A provider must pass every task in the graded suite to count as graded-live; a 'partial' provider ran the live suite and passed some but not all tasks (its real tasks_passed/capability_score are reported) and is evidence but not graded-live.",
       "'blocked' is reserved for genuine non-execution (usage limit, headless lock, or no code emitted, i.e. zero passing tasks); it is not used for providers that ran and missed a task.",
       "The current grader runs fixed public cases plus deterministic per-task held-out/metamorphic cases; archived captured solutions were regraded in capability-heldout-regrade.json. Fresh randomized/property-based live reruns remain the stronger next step.",
       "This is a cross-CLI harness comparison, not cross-model-family: claude_code routes to mimo-v2.5-pro, so distinct model backends are at most 3.",
@@ -167,12 +167,12 @@
     "reason": "Example schema only. Replace with an authorized external Fable 5 run artifact before making comparative claims.",
     "status": "not_configured"
   },
-  "generated_at": "2026-08-22T08:21:33.391693+00:00",
+  "generated_at": "2026-08-22T08:37:44.287021+00:00",
   "iterations": 1,
   "metrics": {
-    "effort_latency_ms": 0.6151,
-    "harness_latency_ms": 2.8659,
-    "workflow_latency_ms": 2.6901
+    "effort_latency_ms": 0.5762,
+    "harness_latency_ms": 3.894,
+    "workflow_latency_ms": 2.3176
   },
   "scorecard": {
     "basis": [
