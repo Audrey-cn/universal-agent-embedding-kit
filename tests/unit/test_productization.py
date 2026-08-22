@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import os
 import subprocess
@@ -24,6 +25,7 @@ from mcp.server import create_server as create_mcp_server
 from src.cli import main
 from src.memory.interface import MemoryLayerType
 from src.memory.service import MemoryService
+from src.memory.vector import VectorStore
 from src.skills.service import SkillService
 from src.workflow.runtime import execute_workflow_config, load_workflow_config
 
@@ -54,6 +56,21 @@ def test_supported_extras_do_not_include_chromadb() -> None:
     memory = project["optional-dependencies"]["memory"]
 
     assert all(not item.startswith("chromadb") for item in memory)
+
+
+def test_memory_documentation_names_the_supported_and_retired_vector_paths() -> None:
+    """User-facing memory guidance must not advertise the retired ChromaDB integration."""
+    manual = Path("EXECUTION_MANUAL.md").read_text(encoding="utf-8")
+    store_doc = inspect.getdoc(VectorStore) or ""
+    chroma_doc = inspect.getdoc(VectorStore.use_chromadb) or ""
+
+    assert "ChromaDB" not in manual
+    assert "SimpleBackend" in manual
+    assert "sentence-transformers" in manual
+    assert "SimpleBackend" in store_doc
+    assert "retired" in chroma_doc
+    assert "always raises" in chroma_doc
+    assert "SimpleBackend" in chroma_doc
 
 
 def test_development_dependencies_and_ci_use_one_lock_contract() -> None:

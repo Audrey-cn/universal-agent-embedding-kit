@@ -32,7 +32,7 @@ class VectorDocument:
 
 
 class VectorStore:
-    """向量存储 — 支持可插拔后端（SimpleBackend / ChromaBackend）"""
+    """向量存储 — `SimpleBackend` 是受支持的内置后端。"""
 
     def __init__(self, dimension: int = 384, backend: VectorBackend | None = None):
         self.dimension = dimension
@@ -41,7 +41,7 @@ class VectorStore:
 
     @classmethod
     def use_chromadb(cls, persist_dir: str | None = None, dimension: int = 384) -> VectorStore:
-        """使用 ChromaDB 后端创建 VectorStore"""
+        """This is retired and always raises a migration error. Use SimpleBackend."""
         backend = ChromaBackend(persist_dir=persist_dir)
         return cls(dimension=dimension, backend=backend)
 

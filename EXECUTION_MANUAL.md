@@ -341,9 +341,10 @@ python3 ~/.hermes/skills/universal-agent-workflow/scripts/agent_goals.py --root 
 - pytest
 - uv (推荐) 或 pip
 
-### 可选
+### 记忆与可选依赖
 
-- ChromaDB（向量索引）
+- `SimpleBackend`（内置向量检索，无需额外安装）
+- sentence-transformers（可选的语义嵌入）
 - SQLite（持久化存储）
 - GitHub CLI（发布）
 
