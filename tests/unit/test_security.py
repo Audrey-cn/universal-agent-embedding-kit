@@ -11,6 +11,138 @@ from src.guardrails import (
 )
 from src.security.semantic_guard import GuardResult, SemanticGuard
 
+
+def test_candidate_policy_uses_only_explicit_safe_builtins():
+    from src.security.python_policy import SAFE_BUILTINS
+
+    assert set(SAFE_BUILTINS) == {
+        "Exception",
+        "ValueError",
+        "abs",
+        "all",
+        "any",
+        "bool",
+        "dict",
+        "enumerate",
+        "filter",
+        "float",
+        "int",
+        "isinstance",
+        "len",
+        "list",
+        "map",
+        "max",
+        "min",
+        "range",
+        "reversed",
+        "round",
+        "set",
+        "sorted",
+        "str",
+        "sum",
+        "tuple",
+        "zip",
+    }
+
+
+def test_candidate_policy_accepts_docstring_helpers_and_entrypoint():
+    from src.security.python_policy import validate_candidate_code
+
+    code = (
+        '"""Candidate solution."""\n'
+        "def helper(value):\n"
+        "    return abs(value)\n"
+        "def solve(value):\n"
+        "    return helper(value)\n"
+    )
+
+    assert validate_candidate_code(code, "solve") == []
+
+
+def test_candidate_policy_returns_syntax_diagnostic():
+    from src.security.python_policy import validate_candidate_code
+
+    diagnostics = validate_candidate_code("def solve(:\n    pass", "solve")
+
+    assert len(diagnostics) == 1
+    assert "syntax" in diagnostics[0].lower()
+
+
+def test_run_candidate_cases_returns_one_result_per_case():
+    from src.security.python_policy import run_candidate_cases
+
+    results = run_candidate_cases(
+        "def add(left, right):\n    return left + right\n",
+        "add",
+        [(1, 2), (4, 5)],
+        timeout=2.0,
+    )
+
+    assert [result.success for result in results] == [True, True]
+    assert [result.result for result in results] == [3, 9]
+
+
+def test_run_candidate_cases_uses_isolated_home_and_minimal_environment(monkeypatch):
+    from src.security import python_policy
+
+    captured = {}
+    original_run = python_policy.run_bounded_process
+
+    def capture_run(command, **kwargs):
+        captured["env"] = kwargs["env"]
+        captured["cwd"] = kwargs["cwd"]
+        return original_run(command, **kwargs)
+
+    monkeypatch.setenv("UAEK_GRADER_SENTINEL", "parent-secret")
+    monkeypatch.setattr(python_policy, "run_bounded_process", capture_run)
+
+    results = python_policy.run_candidate_cases(
+        "def identity(value):\n    return value\n",
+        "identity",
+        [(7,)],
+        timeout=2.0,
+    )
+
+    assert results[0].result == 7
+    assert captured["env"]["HOME"] == str(captured["cwd"])
+    assert captured["env"]["TMPDIR"] == str(captured["cwd"])
+    assert "UAEK_GRADER_SENTINEL" not in captured["env"]
+
+
+def test_candidate_policy_rejects_parent_environment_access(monkeypatch):
+    from src.capability_tasks import get_task, grade_code
+
+    monkeypatch.setenv("UAEK_GRADER_SENTINEL", "parent-secret")
+    code = (
+        "import os\n"
+        "def two_sum(nums, target):\n"
+        "    return os.environ['UAEK_GRADER_SENTINEL']\n"
+    )
+
+    result = grade_code(get_task("two_sum"), code, held_out=0)
+
+    assert result["status"] == "fail"
+    assert "imports" in str(result["error"]).lower()
+    assert "parent-secret" not in str(result)
+
+
+def test_candidate_policy_rejects_external_file_access(tmp_path):
+    from src.capability_tasks import get_task, grade_code
+
+    sentinel = tmp_path / "outside-grader.txt"
+    sentinel.write_text("filesystem-secret", encoding="utf-8")
+    code = (
+        "def two_sum(nums, target):\n"
+        f"    return open({str(sentinel)!r}, encoding='utf-8').read()\n"
+    )
+
+    result = grade_code(get_task("two_sum"), code, held_out=0)
+
+    assert result["status"] == "fail"
+    assert "open" in str(result["error"]).lower()
+    assert "filesystem-secret" not in str(result)
+    assert sentinel.read_text(encoding="utf-8") == "filesystem-secret"
+
 # ============================================================================
 # 注入攻击测试用例
 # ============================================================================
