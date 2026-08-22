@@ -47,6 +47,13 @@ def test_release_metadata_files_use_the_same_version():
     assert mcp_config["version"] == EXPECTED_VERSION
 
 
+def test_mcp_metadata_uses_the_portable_console_command() -> None:
+    """The checked-in host template must select the packaged MCP executable."""
+    mcp_config = json.loads(Path("mcp/config.json").read_text(encoding="utf-8"))
+
+    assert mcp_config["command"] == "uaek-mcp"
+
+
 def test_active_release_docs_use_current_setup_and_portable_paths() -> None:
     documents = {
         name: Path(name).read_text(encoding="utf-8") for name in ACTIVE_PORTABLE_DOCS

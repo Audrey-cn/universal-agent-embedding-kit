@@ -40,6 +40,21 @@ def test_packaging_includes_documented_api_and_mcp_packages():
     assert "mcp*" in include
 
 
+def test_mcp_console_script_and_host_config_are_relocatable() -> None:
+    """Installed hosts must launch MCP without repository-specific paths."""
+    pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    config_text = Path("mcp/config.json").read_text(encoding="utf-8")
+    config = json.loads(config_text)
+
+    assert pyproject["project"]["scripts"]["uaek-mcp"] == "mcp.server:main"
+    assert config["command"] == "uaek-mcp"
+    expected_keys = {"name", "version", "description", "type", "command", "args", "env", "_note"}
+    assert expected_keys <= set(config)
+    assert config["env"]["UAEK_MCP_IDLE_TIMEOUT"] == "300"
+    for forbidden in ("/Users/", "/home/", "cwd", "PYTHONPATH"):
+        assert forbidden not in config_text
+
+
 def test_packaging_uses_non_deprecated_license_metadata():
     """Build metadata should avoid setuptools license deprecation warnings."""
     data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))

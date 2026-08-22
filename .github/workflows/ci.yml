@@ -142,7 +142,7 @@ jobs:
           /tmp/release-venv/bin/uaek --version
           /tmp/release-venv/bin/uaek --help
 
-      - name: API and MCP smoke test
+      - name: API and MCP module compatibility smoke test
         run: |
           /tmp/release-venv/bin/python - <<'PY'
           import api.server
@@ -166,6 +166,41 @@ jobs:
           assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
           tools = {tool["name"] for tool in responses[1]["result"]["tools"]}
           assert {"uaek_verify", "uaek_effort", "uaek_memory_query"}.issubset(tools)
+          PY
+
+      - name: MCP console-script smoke test (installed wheel)
+        run: |
+          cd /tmp
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            '{"jsonrpc":"2.0","id":3,"method":"shutdown","params":{}}' \
+            | /tmp/release-venv/bin/uaek-mcp \
+            > /tmp/release-mcp-console-responses.jsonl
+          /tmp/release-venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+
+          responses = [
+              json.loads(line)
+              for line in Path("/tmp/release-mcp-console-responses.jsonl").read_text().splitlines()
+              if line.strip()
+          ]
+          assert [response["id"] for response in responses] == [1, 2, 3]
+          assert responses[0]["result"]["serverInfo"]["name"] == "uaek"
+          tools = {tool["name"] for tool in responses[1]["result"]["tools"]}
+          assert tools == {
+              "uaek_verify",
+              "uaek_effort",
+              "uaek_workflow_create",
+              "uaek_workflow_add_task",
+              "uaek_workflow_execute",
+              "uaek_memory_add",
+              "uaek_memory_query",
+              "uaek_memory_delete",
+              "uaek_memory_compress",
+          }
+          assert responses[2] == {"jsonrpc": "2.0", "id": 3, "result": {}}
           PY
 
       - name: Benchmark quick (from wheel)

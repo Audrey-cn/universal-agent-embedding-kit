@@ -2,6 +2,21 @@
 
 `mcp/server.py` exposes a simplified MCP-compatible server object for tests and host integration.
 
+## Install and configure a host
+
+Install UAEK before adding it to an MCP host. From a source checkout, use an
+editable install during development:
+
+```bash
+python -m pip install -e .
+```
+
+Then configure the host to launch the installed `uaek-mcp` command. The portable
+template in [`mcp/config.json`](../../mcp/config.json) keeps the idle timeout in
+its environment metadata and does not depend on a checkout location. Host-specific
+GUI settings, such as where the host stores its MCP configuration, remain the
+host's responsibility.
+
 It can also run as a newline-delimited JSON-RPC stdio process:
 
 ```bash
@@ -63,8 +78,11 @@ diagnosis.
 
 ```bash
 # 30-second idle timeout
-UAEK_MCP_IDLE_TIMEOUT=30 python -m mcp.server
+UAEK_MCP_IDLE_TIMEOUT=30 uaek-mcp
 
 # Disable idle timeout
-python -m mcp.server --idle-timeout 0
+uaek-mcp --idle-timeout 0
 ```
+
+For compatibility, both `python -m mcp` and `python -m mcp.server` remain
+supported after installation.
