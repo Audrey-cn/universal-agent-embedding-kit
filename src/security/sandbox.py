@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -58,8 +59,8 @@ class SandboxResult:
     success: bool = False
     error: str | None = None
     timed_out: bool = False
-    output_truncated: bool = False
     result: Any = None  # 从 stdout 解析的 JSON 结果
+    output_truncated: bool = False
 
 
 def _validate_policy(policy: SandboxPolicy) -> None:
@@ -173,6 +174,7 @@ def run_bounded_process(
         process = subprocess.Popen(command, **popen_kwargs)
     except Exception as exc:
         return SandboxResult(error=f"沙箱执行异常: {exc}")
+    deadline = time.monotonic() + active_policy.max_runtime_sec
 
     stdout_chunks: list[bytes] = []
     stderr_chunks: list[bytes] = []
@@ -214,18 +216,26 @@ def run_bounded_process(
         input_thread = threading.Thread(target=write_input, daemon=True)
         input_thread.start()
 
+    io_threads = [*drain_threads]
+    if input_thread is not None:
+        io_threads.append(input_thread)
+
     timed_out = False
     try:
-        process.wait(timeout=active_policy.max_runtime_sec)
+        process.wait(timeout=max(0.0, deadline - time.monotonic()))
     except subprocess.TimeoutExpired:
         timed_out = True
+
+    if not timed_out:
+        for thread in io_threads:
+            thread.join(timeout=max(0.0, deadline - time.monotonic()))
+        timed_out = any(thread.is_alive() for thread in io_threads)
+
+    if timed_out:
         _kill_process_group(process)
         process.wait()
-
-    for thread in drain_threads:
-        thread.join()
-    if input_thread is not None:
-        input_thread.join()
+        for thread in io_threads:
+            thread.join()
 
     with budget_lock:
         stdout_bytes = b"".join(stdout_chunks)

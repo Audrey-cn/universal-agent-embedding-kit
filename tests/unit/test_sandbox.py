@@ -126,6 +126,46 @@ def test_bounded_process_timeout_kills_child_process_group(tmp_path: Path) -> No
         pytest.fail(f"child process {child_pid} survived timeout")
 
 
+@pytest.mark.skipif(os.name != "posix", reason="requires POSIX process groups")
+def test_bounded_process_deadline_covers_descendant_pipe_drain(
+    tmp_path: Path,
+) -> None:
+    """父进程退出后，持有管道的后代仍必须受同一运行时限约束。"""
+    pid_path = tmp_path / "descendant.pid"
+    helper_path = tmp_path / "exit_with_descendant.py"
+    helper_path.write_text(
+        "import subprocess\n"
+        "import sys\n"
+        "from pathlib import Path\n"
+        "child = subprocess.Popen([sys.executable, '-c', "
+        "'import time; time.sleep(1)'])\n"
+        "Path(sys.argv[1]).write_text(str(child.pid), encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+
+    started_at = time.monotonic()
+    result = run_bounded_process(
+        [sys.executable, str(helper_path), str(pid_path)],
+        policy=SandboxPolicy(max_runtime_sec=0.1),
+        cwd=tmp_path,
+    )
+    elapsed = time.monotonic() - started_at
+
+    assert result.timed_out is True
+    assert result.success is False
+    assert elapsed < 0.75
+    descendant_pid = int(pid_path.read_text(encoding="utf-8"))
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        try:
+            os.kill(descendant_pid, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.02)
+    else:
+        pytest.fail(f"descendant process {descendant_pid} survived timeout")
+
+
 # --------------------------------------------------------------------------- #
 # 测试正常代码执行
 # --------------------------------------------------------------------------- #
@@ -444,6 +484,16 @@ def test_sandbox_result_failure():
     assert result.exit_code == 1
     assert result.error == "Something went wrong"
     assert result.timed_out is False
+
+
+def test_sandbox_result_preserves_legacy_positional_result_argument() -> None:
+    """新字段不应改变旧的第七个位置参数 result。"""
+    parsed_result = {"answer": 42}
+
+    result = SandboxResult("out", "err", 0, True, None, False, parsed_result)
+
+    assert result.result == parsed_result
+    assert result.output_truncated is False
 
 
 # --------------------------------------------------------------------------- #
