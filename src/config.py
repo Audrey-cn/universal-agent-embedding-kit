@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,8 @@ class UAEKConfig:
     skills: SkillsConfig = field(default_factory=SkillsConfig)
     verification: VerificationConfig = field(default_factory=VerificationConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    # Where this config came from: "builtin" or the resolved config file path.
+    source: str = "builtin"
 
     def to_dict(self) -> dict[str, Any]:
         """Return JSON-serializable config data."""
@@ -71,11 +74,19 @@ class UAEKConfig:
 
 
 def load_config(path: Path | str | None = None) -> UAEKConfig:
-    """Load a YAML/JSON UAEK config file, merging missing fields with defaults."""
+    """Load a YAML/JSON UAEK config file, merging missing fields with defaults.
+
+    With no explicit path, the source resolves as: ``$UAEK_CONFIG`` → the repo's
+    ``config/default.yaml`` → built-in dataclass defaults. ``UAEKConfig.source``
+    records which of the three applied.
+    """
+    if path is None:
+        path = _resolve_default_source()
     if path is None:
         return UAEKConfig()
 
-    raw = _read_config_file(Path(path))
+    resolved = Path(path)
+    raw = _read_config_file(resolved)
     data = raw.get("uaek", raw)
     if not isinstance(data, dict):
         raise ValueError("UAEK config must contain a mapping")
@@ -87,7 +98,20 @@ def load_config(path: Path | str | None = None) -> UAEKConfig:
         skills=_skills_config(data.get("skills")),
         verification=_verification_config(data.get("verification")),
         logging=_logging_config(data.get("logging")),
+        source=str(resolved),
     )
+
+
+def _resolve_default_source() -> Path | None:
+    """No explicit path: ``$UAEK_CONFIG`` wins, then the repo's config/default.yaml."""
+    env_path = os.environ.get("UAEK_CONFIG")
+    if env_path:
+        candidate = Path(env_path)
+        if not candidate.is_file():
+            raise ValueError(f"UAEK_CONFIG points to a missing config file: {candidate}")
+        return candidate
+    repo_default = Path(__file__).resolve().parents[1] / "config" / "default.yaml"
+    return repo_default if repo_default.is_file() else None
 
 
 def _read_config_file(path: Path) -> dict[str, Any]:

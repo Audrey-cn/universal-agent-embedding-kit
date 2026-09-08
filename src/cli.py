@@ -162,6 +162,7 @@ def run(
     table.add_column("Stage", style="cyan")
     table.add_column("Value", style="green")
     table.add_row("Task", payload["task"])
+    table.add_row("Config", config.source)
     table.add_row("Success", str(payload["success"]))
     table.add_row("Effort", payload["effort"]["level"])
     table.add_row("Workflow", payload["workflow"]["workflow_id"])

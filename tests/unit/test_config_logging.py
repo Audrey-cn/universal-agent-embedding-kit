@@ -18,10 +18,52 @@ def test_load_config_reads_default_yaml():
     config = load_config(Path("config/default.yaml"))
 
     assert config.version == SOURCE_VERSION
-    assert config.memory.storage_path == ".uaek/memory"
+    assert config.memory.storage_path == ".uaek/harness-memory"
     assert config.memory.default_layer == "l2"
     assert "effort" in config.workflow.safe_actions
     assert config.verification.test_command == ".venv/bin/python -m pytest"
+
+
+def test_load_config_no_path_reads_repo_default_and_tags_source():
+    """load_config() with no path reads the repo default file and tags its source."""
+    from src.config import load_config
+
+    config = load_config()
+
+    assert config.source.endswith("config/default.yaml")
+    # The repo default file is aligned with the built-in defaults, so loading it
+    # is behavior-neutral (storage path and allowlist unchanged).
+    assert config.memory.storage_path == ".uaek/harness-memory"
+    assert set(config.workflow.safe_actions) == {"noop", "echo", "concat", "sum", "effort", "fail"}
+
+
+def test_load_config_env_override_wins(tmp_path: Path, monkeypatch):
+    """$UAEK_CONFIG takes precedence over the repo default file."""
+    from src.config import load_config
+
+    override = tmp_path / "override.yaml"
+    override.write_text(
+        'uaek:\n  memory:\n    storage_path: "custom-path"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("UAEK_CONFIG", str(override))
+
+    config = load_config()
+
+    assert config.source == str(override)
+    assert config.memory.storage_path == "custom-path"
+
+
+def test_load_config_env_missing_file_raises(tmp_path: Path, monkeypatch):
+    """A UAEK_CONFIG pointing at a missing file must fail loudly, not silently fall back."""
+    import pytest
+
+    from src.config import load_config
+
+    monkeypatch.setenv("UAEK_CONFIG", str(tmp_path / "missing.yaml"))
+
+    with pytest.raises(ValueError, match="UAEK_CONFIG"):
+        load_config()
 
 
 def test_cli_run_uses_config_memory_and_logging(tmp_path: Path):

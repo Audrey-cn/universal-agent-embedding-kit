@@ -1,7 +1,10 @@
+# Effective UAEK configuration. Load precedence: $UAEK_CONFIG > this file > built-in defaults.
+# This file mirrors the built-in defaults (aligned 2026-09-08) so loading it is behavior-neutral.
+# Edit deliberately: workflow.safe_actions is an execution allowlist (security-relevant).
 uaek:
   version: "0.3.0.dev1"
   memory:
-    storage_path: ".uaek/memory"
+    storage_path: ".uaek/harness-memory"
     default_layer: "l2"
   workflow:
     default_type: "sequential"
@@ -11,22 +14,13 @@ uaek:
       - concat
       - sum
       - effort
-      - effort_cached
       - fail
-      - verify
-      - verify_lint
-      - verify_test
-      - verify_render
-      - verify_diff
-      - verify_multi_perspective
-      - memory_add
-      - memory_query
   skills:
     search_paths:
       - "skills"
   logging:
     enabled: true
-    file_path: ".uaek/uaek.jsonl"
+    file_path: null
   verification:
     lint_command: ".venv/bin/python -m ruff check src api mcp tests"
     typecheck_command: ".venv/bin/python -m mypy src api mcp"

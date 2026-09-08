@@ -23,6 +23,17 @@
   `keyword_complexity` was always 0.0 and `task_type` always `general` for Chinese input,
   biasing effort levels low.
 
+### Changed
+
+- `config/default.yaml` is now actually loaded: `load_config()` without an explicit path
+  resolves `$UAEK_CONFIG` → the repo's `config/default.yaml` → built-in defaults, and
+  `UAEKConfig.source` records which applied (also shown as `Config` in `uaek run` output).
+  The repo default file was first aligned to the previously-effective built-ins
+  (memory storage `.uaek/harness-memory`, 6-entry `workflow.safe_actions`, no log file by
+  default), so enabling it is behavior-neutral. `workflow.safe_actions` is an execution
+  allowlist — widening it must be a deliberate, reviewed edit. A `UAEK_CONFIG` pointing at
+  a missing file raises instead of silently falling back.
+
 ## 0.2.0rc1 (2026-08-09)
 
 ### Release closure
