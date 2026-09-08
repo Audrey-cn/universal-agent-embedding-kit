@@ -26,8 +26,26 @@ class WorkflowConfig:
     """Workflow runtime defaults."""
 
     default_type: str = "sequential"
+    # Owner decision (2026-09-08): full registry is allow-listed. verify_* actions
+    # spawn unsandboxed subprocesses against an artifact_path supplied by the task.
     safe_actions: list[str] = field(
-        default_factory=lambda: ["noop", "echo", "concat", "sum", "effort", "fail"]
+        default_factory=lambda: [
+            "noop",
+            "echo",
+            "concat",
+            "sum",
+            "effort",
+            "effort_cached",
+            "fail",
+            "verify",
+            "memory_add",
+            "memory_query",
+            "verify_lint",
+            "verify_test",
+            "verify_render",
+            "verify_diff",
+            "verify_multi_perspective",
+        ]
     )
 
 

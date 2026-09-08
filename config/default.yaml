@@ -1,6 +1,8 @@
 # Effective UAEK configuration. Load precedence: $UAEK_CONFIG > this file > built-in defaults.
-# This file mirrors the built-in defaults (aligned 2026-09-08) so loading it is behavior-neutral.
-# Edit deliberately: workflow.safe_actions is an execution allowlist (security-relevant).
+# This file mirrors the built-in defaults so loading it is behavior-neutral.
+# workflow.safe_actions is an execution allowlist (security-relevant) — widened to the full
+# registry by owner decision (2026-09-08). Note: verify_* actions spawn unsandboxed
+# subprocesses (e.g. verify_test runs pytest) against an artifact_path supplied by the task.
 uaek:
   version: "0.3.0.dev1"
   memory:
@@ -14,7 +16,16 @@ uaek:
       - concat
       - sum
       - effort
+      - effort_cached
       - fail
+      - verify
+      - memory_add
+      - memory_query
+      - verify_lint
+      - verify_test
+      - verify_render
+      - verify_diff
+      - verify_multi_perspective
   skills:
     search_paths:
       - "skills"

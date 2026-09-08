@@ -326,9 +326,9 @@ def test_workflow_config_rejects_actions_outside_safe_allowlist(tmp_path: Path):
                 "id": "unsafe-workflow",
                 "tasks": [
                     {
-                        "id": "verify",
-                        "name": "Verify arbitrary path",
-                        "action": "verify",
+                        "id": "rm_rf",
+                        "name": "Unregistered action must be rejected",
+                        "action": "rm_rf",
                         "args": ["."],
                     }
                 ],
@@ -582,4 +582,6 @@ def test_mcp_workflow_tool_schema_limits_actions_to_safe_allowlist():
     enum = tool["inputSchema"]["properties"]["func_name"]["enum"]
 
     assert "echo" in enum
-    assert "verify" not in enum
+    # Full registry is allow-listed (owner decision 2026-09-08); nothing outside it is.
+    assert "verify" in enum
+    assert "rm_rf" not in enum

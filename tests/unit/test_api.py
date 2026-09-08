@@ -377,9 +377,9 @@ class TestAPIEndpoints:
                 "id": "unsafe-api-workflow",
                 "tasks": [
                     {
-                        "id": "verify",
-                        "name": "Verify arbitrary path",
-                        "action": "verify",
+                        "id": "rm_rf",
+                        "name": "Unregistered action must be rejected",
+                        "action": "rm_rf",
                         "args": ["."],
                     }
                 ],

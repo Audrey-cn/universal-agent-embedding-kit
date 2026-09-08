@@ -34,7 +34,23 @@ def test_load_config_no_path_reads_repo_default_and_tags_source():
     # The repo default file is aligned with the built-in defaults, so loading it
     # is behavior-neutral (storage path and allowlist unchanged).
     assert config.memory.storage_path == ".uaek/harness-memory"
-    assert set(config.workflow.safe_actions) == {"noop", "echo", "concat", "sum", "effort", "fail"}
+    assert set(config.workflow.safe_actions) == {
+        "noop",
+        "echo",
+        "concat",
+        "sum",
+        "effort",
+        "effort_cached",
+        "fail",
+        "verify",
+        "memory_add",
+        "memory_query",
+        "verify_lint",
+        "verify_test",
+        "verify_render",
+        "verify_diff",
+        "verify_multi_perspective",
+    }
 
 
 def test_load_config_env_override_wins(tmp_path: Path, monkeypatch):

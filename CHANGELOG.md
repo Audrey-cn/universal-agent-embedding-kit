@@ -29,10 +29,13 @@
   resolves `$UAEK_CONFIG` → the repo's `config/default.yaml` → built-in defaults, and
   `UAEKConfig.source` records which applied (also shown as `Config` in `uaek run` output).
   The repo default file was first aligned to the previously-effective built-ins
-  (memory storage `.uaek/harness-memory`, 6-entry `workflow.safe_actions`, no log file by
-  default), so enabling it is behavior-neutral. `workflow.safe_actions` is an execution
-  allowlist — widening it must be a deliberate, reviewed edit. A `UAEK_CONFIG` pointing at
-  a missing file raises instead of silently falling back.
+  (memory storage `.uaek/harness-memory`, no log file by default), so enabling it is
+  behavior-neutral. A `UAEK_CONFIG` pointing at a missing file raises instead of silently
+  falling back.
+- `workflow.safe_actions` widened to the full 15-action registry (owner decision,
+  2026-09-08), in both the built-in defaults and `config/default.yaml`. Caveat:
+  `verify*` actions spawn unsandboxed subprocesses (e.g. `verify_test` runs pytest) against
+  an `artifact_path` supplied by the workflow task.
 
 ## 0.2.0rc1 (2026-08-09)
 
