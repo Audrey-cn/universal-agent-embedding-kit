@@ -12,6 +12,17 @@
 - The fixtures are contract evidence only. Paid multi-provider samples, five real sessions per
   cost cohort, 100 live sessions, and an approved comparable baseline remain external gates.
 
+### Fixed
+
+- `verify --type test` / `--type build` now run through the interpreter running UAEK
+  (`sys.executable`) instead of a bare `python` from `PATH`, which silently resolved to a host
+  interpreter without pytest/build installed (observed on Termux/proot where PATH python is not the
+  project venv). `lint` already resolved via `sys.executable` and was unaffected.
+- Effort classification no longer ignores Chinese task descriptions: complexity keywords,
+  task-type patterns, and irreversibility indicators now include Chinese terms. Previously
+  `keyword_complexity` was always 0.0 and `task_type` always `general` for Chinese input,
+  biasing effort levels low.
+
 ## 0.2.0rc1 (2026-08-09)
 
 ### Release closure

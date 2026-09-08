@@ -128,6 +128,15 @@ class ComplexityMetrics:
             r"release",
             r"production",
             r"database",
+            r"删除",
+            r"移除",
+            r"销毁",
+            r"部署",
+            r"发布",
+            r"上线",
+            r"生产",
+            r"数据库",
+            r"清空",
         ]
         for pattern in irreversible_indicators:
             if re.search(pattern, description, re.IGNORECASE):
@@ -139,12 +148,30 @@ class ComplexityMetrics:
         """推断任务类型"""
         # 注意：顺序很重要，更具体的模式要先匹配
         type_patterns = {
-            "refactoring": [r"refactor", r"restructure", r"reorganize", r"clean"],
-            "debugging": [r"fix", r"bug", r"error", r"issue", r"debug"],
-            "research": [r"research", r"investigate", r"analyze", r"study"],
-            "testing": [r"test", r"verify", r"validate", r"check"],
-            "documentation": [r"document", r"write", r"readme", r"guide"],
-            "coding": [r"implement", r"code", r"function", r"class", r"module"],
+            "refactoring": [
+                r"refactor", r"restructure", r"reorganize", r"clean",
+                r"重构", r"重组", r"整理",
+            ],
+            "debugging": [
+                r"fix", r"bug", r"error", r"issue", r"debug",
+                r"修复", r"调试", r"排障", r"报错",
+            ],
+            "research": [
+                r"research", r"investigate", r"analyze", r"study",
+                r"调研", r"研究", r"分析", r"评估",
+            ],
+            "testing": [
+                r"test", r"verify", r"validate", r"check",
+                r"测试", r"验证", r"校验", r"单测",
+            ],
+            "documentation": [
+                r"document", r"write", r"readme", r"guide",
+                r"文档", r"手册", r"指南", r"说明",
+            ],
+            "coding": [
+                r"implement", r"code", r"function", r"class", r"module",
+                r"实现", r"开发", r"编码", r"模块", r"接口", r"函数",
+            ],
         }
         for task_type, patterns in type_patterns.items():
             for pattern in patterns:
@@ -168,6 +195,24 @@ class ComplexityMetrics:
             "microservice",
             "database",
             "authentication",
+            # 中文复杂度关键词（子串匹配，CJK 无词边界）
+            "架构",
+            "重构",
+            "迁移",
+            "集成",
+            "优化",
+            "性能",
+            "并发",
+            "分布式",
+            "微服务",
+            "数据库",
+            "认证",
+            "鉴权",
+            "安全",
+            "加密",
+            "兼容",
+            "扩展",
+            "高可用",
         ]
         count = sum(1 for word in complex_words if word in description.lower())
         return min(1.0, count / 3.0)  # 归一化到 0-1

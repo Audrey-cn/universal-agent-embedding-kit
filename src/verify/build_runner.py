@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from .interface import VerificationResult, VerificationRunner, VerificationType
@@ -48,7 +49,8 @@ class BuildRunner(VerificationRunner):
                     notes="Cannot determine build system",
                 )
 
-            # 运行构建
+            # 运行构建（python 条目用当前解释器解析，避免 PATH 上的宿主解释器缺依赖）
+            build_cmd = [sys.executable if token == "python" else token for token in build_cmd]
             result = subprocess.run(
                 build_cmd,
                 capture_output=True,

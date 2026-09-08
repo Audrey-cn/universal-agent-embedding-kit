@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from .interface import VerificationResult, VerificationRunner, VerificationType
@@ -29,9 +30,9 @@ class TestRunner(VerificationRunner):
             else:
                 test_target = str(artifact_path / "tests")
 
-            # 运行 pytest
+            # 运行 pytest（用当前解释器；裸 "python" 会解析到 PATH 上的宿主解释器，丢失 venv 依赖）
             result = subprocess.run(
-                ["python", "-m", "pytest", test_target, "-v", "--tb=short"],
+                [sys.executable, "-m", "pytest", test_target, "-v", "--tb=short"],
                 capture_output=True,
                 text=True,
                 timeout=300,
