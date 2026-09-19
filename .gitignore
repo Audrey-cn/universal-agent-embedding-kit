@@ -49,3 +49,6 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+
+# macOS AppleDouble junk
+._*
