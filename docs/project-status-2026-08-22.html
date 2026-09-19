@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UAEK 项目状态 · 2026-08-22</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --paper: #fffdf8;
+      --ink: #17211b;
+      --muted: #667067;
+      --line: #d9d4c8;
+      --green: #155e4b;
+      --green-soft: #dff2e9;
+      --amber: #8a5a10;
+      --amber-soft: #fff0cc;
+      --red: #9d3327;
+      --red-soft: #fbe4df;
+      --blue: #254e70;
+      --blue-soft: #e2edf7;
+      --shadow: 0 16px 40px rgba(35, 42, 35, .08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(37, 78, 112, .08), transparent 34rem),
+        linear-gradient(180deg, #f7f4ed, var(--bg));
+      font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    }
+    a { color: var(--blue); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
+    .shell { max-width: 1220px; margin: 0 auto; padding: 34px 24px 60px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.45fr .55fr;
+      gap: 26px;
+      align-items: stretch;
+      margin-bottom: 22px;
+    }
+    .hero-main, .hero-side, .panel, .next-strip {
+      background: rgba(255,253,248,.92);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .hero-main { padding: 34px; }
+    .hero-side { padding: 28px; display: flex; flex-direction: column; justify-content: space-between; }
+    .eyebrow { color: var(--green); font-weight: 750; letter-spacing: .1em; text-transform: uppercase; font-size: 12px; }
+    h1 { margin: 8px 0 10px; font-size: clamp(34px, 5vw, 64px); line-height: 1.02; letter-spacing: -.045em; }
+    .lede { max-width: 780px; color: #38443c; font-size: 18px; margin: 0; }
+    .verdict { font-size: 26px; line-height: 1.2; font-weight: 780; margin: 10px 0; }
+    .stamp { color: var(--muted); font-size: 13px; }
+    .next-strip {
+      position: sticky;
+      top: 12px;
+      z-index: 4;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 15px 18px;
+      margin-bottom: 20px;
+      border-left: 5px solid var(--amber);
+    }
+    .next-strip strong { color: var(--amber); }
+    .next-strip .action { font-weight: 690; }
+    .next-strip .recommend { color: var(--muted); font-size: 13px; text-align: right; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+    .tab {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 9px 15px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .tab.active { background: var(--ink); color: white; border-color: var(--ink); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .panel { padding: 26px; margin-bottom: 18px; }
+    h2 { margin: 0 0 16px; font-size: 25px; letter-spacing: -.02em; }
+    h3 { margin: 24px 0 10px; font-size: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .metric { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: #fff; min-height: 132px; }
+    .metric .label { color: var(--muted); font-size: 12px; font-weight: 760; letter-spacing: .06em; text-transform: uppercase; }
+    .metric .value { font-size: 30px; font-weight: 820; line-height: 1.15; margin: 6px 0; }
+    .metric .note { color: var(--muted); font-size: 13px; }
+    .status { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 760; }
+    .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .green { color: var(--green); background: var(--green-soft); }
+    .amber { color: var(--amber); background: var(--amber-soft); }
+    .red { color: var(--red); background: var(--red-soft); }
+    .blue { color: var(--blue); background: var(--blue-soft); }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; }
+    th, td { text-align: left; vertical-align: top; padding: 11px 10px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    .sequence { position: relative; margin: 8px 0 0; }
+    .step { display: grid; grid-template-columns: 42px 1fr auto; gap: 14px; align-items: start; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .step:last-child { border-bottom: 0; }
+    .num { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--ink); color: white; font-weight: 800; }
+    .step h3 { margin: 0 0 3px; font-size: 16px; }
+    .step p { margin: 0; color: var(--muted); }
+    .risk { border-left: 4px solid var(--line); padding: 10px 14px; margin: 12px 0; background: #fff; border-radius: 0 10px 10px 0; }
+    .risk.high { border-color: var(--red); }
+    .risk.medium { border-color: var(--amber); }
+    .risk.low { border-color: var(--green); }
+    .risk strong { display: block; margin-bottom: 3px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .callout { padding: 16px 18px; border-radius: 12px; background: var(--blue-soft); border: 1px solid #c9dceb; }
+    .faq details { border-bottom: 1px solid var(--line); padding: 12px 0; }
+    .faq summary { cursor: pointer; font-weight: 750; }
+    .footer { color: var(--muted); font-size: 12px; padding: 8px 4px 0; }
+    @media (max-width: 900px) {
+      .hero, .two { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .next-strip { position: static; grid-template-columns: 1fr; }
+      .next-strip .recommend { text-align: left; }
+    }
+    @media (max-width: 560px) {
+      .shell { padding: 20px 14px 42px; }
+      .hero-main, .hero-side, .panel { padding: 20px; }
+      .grid { grid-template-columns: 1fr; }
+      .step { grid-template-columns: 38px 1fr; }
+      .step > .status { grid-column: 2; justify-self: start; }
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-main">
+        <div class="eyebrow">UAEK · Project Status Snapshot</div>
+        <h1>工程可合并，项目尚未发布</h1>
+        <p class="lede">仓库健康加固的 9 个工作流已完成并通过本地发布边界验证。但新实现仍在
+        <code>codex/repository-health-hardening</code> 分支，没有 PR、没有该 HEAD 的远程 CI，也没有 0.3 正式发布。</p>
+      </div>
+      <aside class="hero-side">
+        <div>
+          <span class="status amber">总体：Alpha / 集成待完成</span>
+          <div class="verdict">本地工程健康度高<br>发布与外部证据成熟度中等</div>
+        </div>
+        <div class="stamp">快照日期：2026-08-22<br>分支 HEAD：<code>f33f6f5</code><br>包版本：<code>0.3.0.dev1</code></div>
+      </aside>
+    </section>
+
+    <section class="next-strip">
+      <strong>NEXT</strong>
+      <div class="action">将加固分支集成到 <code>main</code>，并让 GitHub Actions 在 <code>f33f6f5</code> 或合并后 HEAD 上重跑。</div>
+      <div class="recommend">建议：推送分支 + PR<br>以取得可引用的远程 CI 证据</div>
+    </section>
+
+    <nav class="tabs" aria-label="Status sections">
+      <button class="tab active" data-tab="overview">概览</button>
+      <button class="tab" data-tab="workstreams">工作流</button>
+      <button class="tab" data-tab="risks">风险</button>
+      <button class="tab" data-tab="plan">计划</button>
+      <button class="tab" data-tab="faq">FAQ</button>
+    </nav>
+
+    <section id="overview" class="tab-panel active">
+      <div class="panel">
+        <h2>健康仪表盘</h2>
+        <div class="grid">
+          <div class="metric"><div class="label">本地测试</div><div class="value">847</div><div class="note">0 失败；收尾套件再次通过</div></div>
+          <div class="metric"><div class="label">覆盖率</div><div class="value">78.52%</div><div class="note">全局 floor 75%；6 个 supported modules 门禁通过</div></div>
+          <div class="metric"><div class="label">Capability</div><div class="value">3 / 4</div><div class="note">Claude Code、Codex、Hermes 10/10；Mimo 9/10 partial</div></div>
+          <div class="metric"><div class="label">当前评分</div><div class="value">99 / 100</div><div class="note">仅代表本地 capability 口径；状态仍为 partial</div></div>
+          <div class="metric"><div class="label">依赖安全</div><div class="value">双审计通过</div><div class="note">core + all supported extras；0 已知漏洞</div></div>
+          <div class="metric"><div class="label">安装态</div><div class="value">Py 3.11</div><div class="note">clean wheel 的 CLI / MCP / HTTP / benchmark smoke 全绿</div></div>
+          <div class="metric"><div class="label">暴露方式</div><div class="value">3 + API</div><div class="note">CLI、HTTP、MCP 9 tools，加 Python import/API</div></div>
+          <div class="metric"><div class="label">集成状态</div><div class="value">14 commits</div><div class="note">85 文件差异；未合并、未推送、无 PR</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>四个层次的真实状态</h2>
+        <table>
+          <thead><tr><th>层次</th><th>状态</th><th>结论</th><th>证据 / 边界</th></tr></thead>
+          <tbody>
+            <tr><td>代码与测试</td><td><span class="status green">健康</span></td><td>本地可合并</td><td>847 tests；Ruff lint/format、Mypy、coverage 全绿</td></tr>
+            <tr><td>接入能力</td><td><span class="status green">完整</span></td><td>主要入口齐全</td><td><code>uaek</code>、<code>uaek-mcp</code>、HTTP、Python；wheel 外部目录 smoke 通过</td></tr>
+            <tr><td>分支与远程</td><td><span class="status amber">待集成</span></td><td>实现仍在 feature branch</td><td>无 PR；最新远程 CI 成功对应旧的 <code>de49076</code></td></tr>
+            <tr><td>发布与外部证据</td><td><span class="status amber">Partial</span></td><td>不应声称生产完成</td><td>GitHub Release 仍为 v0.1.0；0.3 未发布；PyPI 未提供；外部 baseline/live corpus 仍缺</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel two">
+        <div>
+          <h2>已经完善的核心能力</h2>
+          <ul>
+            <li>统一子进程边界：超时、内存、输出上限和进程组回收。</li>
+            <li>Capability / scenario / property 候选路径进入限制性语言策略与临时环境。</li>
+            <li>Command adapter 的配置化 timeout / memory / output 真正生效，并保留 trusted env 兼容。</li>
+            <li>ChromaDB 从 supported dependencies 退役；<code>SimpleBackend</code> 成为支持路径。</li>
+            <li><code>uaek-mcp</code> 可从安装后 wheel 、任意目录启动。</li>
+            <li>头条 capability 数字从 raw runs 派生，README / scorecard / JSON / CI 一致。</li>
+          </ul>
+        </div>
+        <div>
+          <h2>还不能说“已完善”的部分</h2>
+          <ul>
+            <li>Adversarial verification 是 bounded-subprocess-only，不是内核级隔离。</li>
+            <li>Windows 上缺少 job-object 级子进程树回收证据；P5 跨平台仍 partial。</li>
+            <li>成本结论仍偏 warm path，冷路径真实会话不足。</li>
+            <li>40 个确定性场景未达到 100+ live 多小时会话目标。</li>
+            <li>3 个满分 provider 的 capability score spread = 0.0，套件尚不能区分它们。</li>
+            <li>当前 scorecard 的测试数、覆盖率和 Mypy 源文件数仍是 2026-08-09 快照，已落后于本分支。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="workstreams" class="tab-panel">
+      <div class="panel">
+        <h2>工作流顺序</h2>
+        <div class="sequence">
+          <div class="step"><div class="num">1</div><div><h3>可复用的有界进程原语</h3><p>合并 timeout、resource、output cap、环境与进程组回收；修复 descendant pipe deadline 兼容问题。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">2</div><div><h3>Capability 评分限制与隔离</h3><p>AST policy、SAFE_BUILTINS、最小环境、held-out 结果 schema 兼容；关闭定义期表达式副作用。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">3</div><div><h3>Scenario / Property 转移到子进程</h3><p>父进程只聚合结果；固定 source registry 与历史错误契约均经回归锁定。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">4</div><div><h3>Command Adapter 资源限制</h3><p>三个可配限值真正透传；信任环境保留；readiness 新增确定性输出边界检查。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">5</div><div><h3>ChromaDB 退役</h3><p>依赖图、lock、文档与检测均移除；公开 symbol 保留为迁移提示 stub。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">6</div><div><h3>可迁移 MCP</h3><p>新增 <code>uaek-mcp</code>；配置无个人路径；clean wheel 外部目录验证 9 tools 生命周期。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">7</div><div><h3>证据标题一致性</h3><p>raw capability runs 是唯一权威；<code>3/4</code> 精确比例匹配与内部 limitation 一致。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">8</div><div><h3>CI 与格式质量门</h3><p>core/all-extras audit、Ruff format check、security support language；57 文件格式化，56 个行为外文件 AST 等价。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">9</div><div><h3>发布边界验证</h3><p>Python 3.11.15 clean venv；CLI、MCP、HTTP、quick benchmark、coverage、audit 全部通过。</p></div><span class="status green">完成</span></div>
+          <div class="step"><div class="num">10</div><div><h3>集成与远程证明</h3><p>将 14 个提交推送/PR 或合并到 <code>main</code>，绑定新的 GitHub Actions URL。</p></div><span class="status amber">待完成</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="risks" class="tab-panel">
+      <div class="panel">
+        <h2>风险与缓解</h2>
+        <div class="risk high"><strong>高：当前分支没有远程 CI 证据</strong>最新 GitHub main CI 成功是 2026-08-14 的 <code>de49076</code>，不是 <code>f33f6f5</code>。缓解：推送 PR，等待 Python 3.11/3.12、dependency-audit 和 release-gate 全绿。</div>
+        <div class="risk high"><strong>高：不是内核级安全沙箱</strong>Restricted paths 有语言策略 + 有界子进程，adversarial verifier 只有 bounded subprocess。缓解：敌对性 artifact 必须放在无凭据、无敏感挂载、无网络的容器/VM。</div>
+        <div class="risk medium"><strong>中：0.3 发布链未闭环</strong>代码版本为 <code>0.3.0.dev1</code>，GitHub 公开 release 仍是 v0.1.0，README 也明确仅支持源码安装。缓解：先完成 PR/CI，再进行版本与发布审批。</div>
+        <div class="risk medium"><strong>中：外部证据尚不完整</strong>P3 成本优化和 P5 跨平台验证 partial；live matrix 未完整；Fable 5 已退役、无可复跑 baseline。缓解：按 README 外部 gate 收集多 backend、多样本、冷路径、100 live sessions 与可比 baseline。</div>
+        <div class="risk medium"><strong>中：Capability 平台不等于模型族</strong>Claude Code 与 Mimo Code 可能路由到同源后端；3 个满分平台 score spread 为 0.0。缓解：对外只声称跨 CLI/runtime harness，并扩充能产生实际区分度的任务。</div>
+        <div class="risk low"><strong>低：两个已知可维护性 minor</strong>Adapter fractional timeout 的 <code>cast(int, ...)</code> 仅在静态层面误导；退役 ChromaDB 的旧测试分支措辞已过时。最终评审判定两者不阻塞合并。</div>
+        <div class="risk low"><strong>低：状态文档局部过时</strong>README badge 仍写 600+ tests；scorecard 顶部仍是 671 tests / 77.15% / 107 sources 的 2026-08-09 快照。缓解：在合并后更新为 847 / 78.52% / 109，并标注新日期。</div>
+      </div>
+    </section>
+
+    <section id="plan" class="tab-panel">
+      <div class="panel">
+        <h2>建议路线</h2>
+        <table>
+          <thead><tr><th>优先级</th><th>动作</th><th>验收标准</th><th>建议时点</th></tr></thead>
+          <tbody>
+            <tr><td>P0</td><td>推送 <code>codex/repository-health-hardening</code> 并创建 PR</td><td>远程 CI 的 quality、dependency-audit、release-gate 全绿；评审链接可引用</td><td>立即</td></tr>
+            <tr><td>P0</td><td>完成合并后 main 复验</td><td><code>main</code> HEAD 与已验证分支等价；无合并回归</td><td>PR 合并时</td></tr>
+            <tr><td>P1</td><td>更新 scorecard / README 非 headline 状态数字</td><td>847 tests、78.52%、109 Mypy sources；状态日期同步</td><td>合并后</td></tr>
+            <tr><td>P1</td><td>处理两个 deferred minor</td><td>去掉 timeout 误导 cast；重写退役 backend 测试契约</td><td>合并前或下一个小 PR</td></tr>
+            <tr><td>P1</td><td>定义 0.3 发布门</td><td>版本冻结、CHANGELOG、release notes、tag/release 审批；是否 PyPI 发布有明确决策</td><td>远程 CI 稳定后</td></tr>
+            <tr><td>P2</td><td>提升证据阶梯</td><td>真实多 backend family、每任务多样本、warm/mixed/cold cohort、100 live sessions、可比 baseline</td><td>后续证据 campaign</td></tr>
+            <tr><td>P2</td><td>扩充跨平台边界</td><td>Windows process-tree/resource 实测；macOS/Linux 一致性；P5 由 partial 上升</td><td>0.3.x / 0.4</td></tr>
+          </tbody>
+        </table>
+        <div class="callout"><strong>推荐决策：</strong>当前最合理的下一步是“推送 + PR”，因为本地已经足够绿，而项目最缺的正是新 HEAD 的远程 CI 与可追溯 review 记录。</div>
+      </div>
+    </section>
+
+    <section id="faq" class="tab-panel">
+      <div class="panel faq">
+        <h2>FAQ</h2>
+        <details open><summary>现在可以说项目“完成”吗？</summary><p>可以说“本轮仓库健康加固完成，本地可合并”。不应说“已生产发布”或“已外部验证”。</p></details>
+        <details><summary>99/100 是生产就绪度吗？</summary><p>不是。它是本地 capability scorecard 的当前口径，总状态仍为 partial；远程 CI、发布、外部 baseline 和大规模 live evidence 是独立门禁。</p></details>
+        <details><summary>接入能力完整吗？</summary><p>主要形态完整：CLI、Python import/API、HTTP API 和 MCP server。新增的 <code>uaek-mcp</code> 已在 clean wheel 和仓库外 cwd 中验证。但真实外部 provider 凭据、host GUI 配置与生产网络安全仍需部署方处理。</p></details>
+        <details><summary>为什么 ChromaDB 被移除？</summary><p>它的当前支持依赖图带来无法在本项目内修复的已知风险。当前 supported 存储是 <code>SimpleBackend</code>，memory extra 仅保留 sentence-transformers。</p></details>
+        <details><summary>本地 CI 通过为什么还要 PR？</summary><p>因为当前 GitHub Actions 成功记录对应旧 main commit，并不能证明新的 workflow、dependency audit 和 release gate 在远程 runner 上也成立。</p></details>
+      </div>
+    </section>
+
+    <footer class="footer">
+      数据源：<code>codex/repository-health-hardening@f33f6f5</code>、<code>benchmarks/results/capability-matrix.json</code>、
+      <code>benchmark-capability.json</code>、README/scorecard/support/security 文档、本地 Task 9 发布边界验证、GitHub CLI 快照。
+      远程快照：无开放 PR；最新 main CI 成功于 2026-08-14；公开 Release 为 v0.1.0。本页是时点快照，不会自动更新。
+    </footer>
+  </main>
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabs.forEach((tab) => tab.addEventListener('click', () => {
+      tabs.forEach((item) => item.classList.remove('active'));
+      panels.forEach((panel) => panel.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    }));
+  </script>
+</body>
+</html>
