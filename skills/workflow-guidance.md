@@ -15,13 +15,15 @@ version: 1.0.0
 
 ## 首节点约定：私脑预检（brain-first，2026-10-15）
 
-凡工作流含**研究/调研/排障/复用经验类**任务，DAG 的第一个节点必须是私脑预检：
+凡工作流含**研究/调研/排障/创作/交付/执行/复用经验类**任务，DAG 的第一个节点必须是私脑预检：
 
 ```yaml
 - id: brain-check
   run: bash ~/项目/private-brain/scripts/brain-check.sh <课题关键词>
   # rc=0 命中 → 后续节点先读 L1 决定复用/防重复；rc=1 无命中 → 正常开新调研
 ```
+
+产出落盘前加对账节点：`brain-check <产出标题关键词>`（防重复轮子；commit 时 dup-check 闸再兜一道）。
 
 守则源：~/项目/devkit/methodology/brain-first.md（完整挂载矩阵见该文件）。
 
