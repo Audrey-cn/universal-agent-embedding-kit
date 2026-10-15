@@ -13,6 +13,18 @@ version: 1.0.0
 
 > "Weak planners hurt more than weak executors."
 
+## 首节点约定：私脑预检（brain-first，2026-10-15）
+
+凡工作流含**研究/调研/排障/复用经验类**任务，DAG 的第一个节点必须是私脑预检：
+
+```yaml
+- id: brain-check
+  run: bash ~/项目/private-brain/scripts/brain-check.sh <课题关键词>
+  # rc=0 命中 → 后续节点先读 L1 决定复用/防重复；rc=1 无命中 → 正常开新调研
+```
+
+守则源：~/项目/devkit/methodology/brain-first.md（完整挂载矩阵见该文件）。
+
 ## 工作流类型
 
 | 类型 | 适用场景 | 特点 |
@@ -162,6 +174,26 @@ tasks:
       max_attempts: 3
       delay: 5  # 秒
 ```
+
+## 决策点：A/B 方案维度打分
+
+当工作流遇到架构分叉（两种方案都可行），**不要直接选一个——先做维度打分再决策**。用户明确要求此流程。
+
+1. **定义 A/B**：一句话各自的核心思路和改动点
+2. **选维度**：3-6 个与决策相关的维度（路由精度、可维护性、实现成本等），标注权重
+3. **打分**：每个维度 1-5 分，越高越好
+4. **加权求和**：给出总分和推荐
+5. **用户确认后才继续推进**
+
+```markdown
+| 维度 | 权重 | A | B | 说明 |
+|------|:----:|:-:|:-:|------|
+| 精度 | 25% | 3 | 5 | ... |
+| 成本 | 10% | 5 | 2 | ... |
+| **总分** | | **3.55** | **4.05** | |
+```
+
+**Pitfall**: skip the scoring and just pick one — the user will ask "为什么选这个" and you will have no quantitative basis. The scoring is the deliverable, not just the conclusion.
 
 ## 最佳实践
 
