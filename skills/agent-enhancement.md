@@ -183,7 +183,27 @@ uaek verify --artifact ./README.md --type lint
 uaek memory add --layer l1 --content "修复了 README 中的拼写错误" --importance 0.3
 ```
 
+## 自主开发模式（用户指定工作流）
+
+用户委派目标型任务时的标准流程：
+
+1. **加载 SOP**——verification-framework + workflow-guidance + effort-control 三件套
+2. **定义工作流 DAG**——拆子任务，标注依赖
+3. **自行验证**——每个子任务完成后自测，不等用户确认
+4. **只报结果**——用户只要汇报，不要过程叙述
+5. **决策点停下来**——需要用户做 A/B 选择或方向判断时，给出分析后停下等确认
+
+**A/B 方案分析格式**：用户要求"分析AB选项优劣"时，输出维度打分表（1-5 分，含权重列），给出加权总分和推荐理由。用户确认后才继续。
+
+**Pitfall**: 用户说"你自己来权重"时，自行做加权决策并执行，不要再问。只有不可逆或高风险操作才必须停下来。
+
+**Pitfall**: 并行子任务用 delegate_task fan-out，不要串行等。汇总时先给数据表再给结论。
+
 ## 最佳实践
+
+### 0. 能力寻址层
+
+技能库膨胀后检索退化？参见 `references/capability-addressing.md`——分层路由 L0-L3、技能标注、冷门技能发现、因果关系图的完整设计模式和性能基准。
 
 ### 1. 根据任务选择组件
 

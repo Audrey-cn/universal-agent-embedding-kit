@@ -29,17 +29,20 @@ version: 1.0.0
 ### 2. 执行验证
 
 ```bash
-# 自动检测验证类型
-uaek verify --artifact <产出物路径>
+# 先确认当前安装支持的参数，再按位置参数传入产出物路径
+uaek verify --help
+uaek verify <产出物路径>
 
-# 指定验证类型
-uaek verify --artifact <产出物路径> --type test
-uaek verify --artifact <产出物路径> --type build
-uaek verify --artifact <产出物路径> --type lint
+# 指定验证类型（当前 CLI: test/build/lint/render/diff/adversarial）
+uaek verify <产出物路径> --type test
+uaek verify <产出物路径> --type build
+uaek verify <产出物路径> --type lint
 
 # 指定验收标准
-uaek verify --artifact <产出物路径> --criteria <验收标准路径>
+uaek verify <产出物路径> --criteria <验收标准路径>
 ```
+
+不要使用 `--artifact` 或 `--fresh-context`，除非当前版本的 `uaek verify --help` 明确列出这些选项；路径参数是位置参数，CLI 版本也可能有差异。独立复核应通过新建验证上下文/独立审阅者实现，而不是假设命令行有未公开的开关。
 
 ### 3. 检查结果
 
@@ -49,19 +52,7 @@ uaek verify --artifact <产出物路径> --criteria <验收标准路径>
 | ❌ FAIL | 验证失败 | 必须修复后重新验证 |
 | ⚠️ INDETERMINATE | 无法判断 | 必须明确说明原因 |
 
-## 全新上下文验证
-
-**关键原则**：验证者不继承执行者的上下文。
-
-```bash
-# 在全新上下文中验证
-uaek verify --artifact <产出物路径> --fresh-context
-```
-
-**为什么重要**：
-- 执行者的错误会被执行者的推理所掩盖
-- 全新上下文可以发现执行者忽略的问题
-- 避免"看起来正确"但实际有 bug 的情况
+**独立复核**：先用 `uaek verify --help` 确认此版本是否提供全新上下文选项；若没有，就使用单独的审阅者/验证会话，不要拼接未支持的 CLI flags。
 
 ## 验证标准清单
 
@@ -87,29 +78,22 @@ uaek verify --artifact <产出物路径> --fresh-context
 ### 示例 1：验证 Python 代码
 
 ```bash
-# 运行测试
-uaek verify --artifact ./src/auth.py --type test
-
-# 运行 lint
-uaek verify --artifact ./src/auth.py --type lint
-
-# 运行构建
-uaek verify --artifact ./ --type build
+# 先按仓库文档运行测试/语法检查；具体命令以项目工作流为准
+uaek verify ./src/auth.py --type test
+uaek verify ./src/auth.py --type lint
+uaek verify . --type build
 ```
 
 ### 示例 2：验证文档
 
 ```bash
-# 检查 Markdown 格式
-uaek verify --artifact ./docs/README.md --type lint
-
-# 检查链接
-uaek verify --artifact ./docs/ --type link-check
+uaek verify ./docs/README.md --type lint
 ```
 
-### 示例 3：全新上下文验证
+### 示例 3：指定验收标准
 
 ```bash
-# 在全新上下文中验证
-uaek verify --artifact ./output/ --criteria ./spec.md --fresh-context
+uaek verify ./output/ --criteria ./spec.md
 ```
+
+如果 CLI 报 unsupported file type，应改用该产物类型的原生校验（例如 JSON 用解析器、代码用项目测试和 lint），并如实记录验证范围；不要把验证器不支持误报为产物本身失败。
