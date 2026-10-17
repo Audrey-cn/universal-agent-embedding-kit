@@ -52,3 +52,4 @@ dist/
 
 # macOS AppleDouble junk
 ._*
+.mimocode/
