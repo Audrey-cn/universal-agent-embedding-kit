@@ -6,7 +6,9 @@ Five JavaScript modules recovered as a small, independent reference package from
 test, and [MIT license](LICENSE) are byte-for-byte copies. Original copyright:
 **2026 xiaoyuanda666-ship-it**. [SOURCE_MANIFEST.json](SOURCE_MANIFEST.json) records
 the original repository paths and SHA-256 hashes, so provenance remains inspectable
-without a running upstream repository.
+without a running upstream repository. The original repository has been retired;
+its URL and commit are historical provenance identifiers. Use the local files in
+this directory.
 
 | Module | Reusable idea | Host responsibilities |
 | --- | --- | --- |
