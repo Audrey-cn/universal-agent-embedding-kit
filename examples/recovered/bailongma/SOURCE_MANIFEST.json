@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/Audrey-cn/BaiLongma",
+  "source_commit": "cf452607d917a895b8428758cafcb172a1a5ce6c",
+  "source_license": "MIT",
+  "source_copyright": "Copyright (c) 2026 xiaoyuanda666-ship-it",
+  "copy_policy": "All listed files are byte-for-byte copies of the source commit. Tests under tests/ and this package documentation are new.",
+  "files": [
+    {
+      "source_path": "BaiLongma/LICENSE",
+      "path": "LICENSE",
+      "sha256": "01af6ff4bcc0824a9aa8c305fc609c800264de2feef0f1aeaf31ca4d1f29ce4a"
+    },
+    {
+      "source_path": "BaiLongma/src/runtime/background-budget.js",
+      "path": "src/runtime/background-budget.js",
+      "sha256": "83d0f91dff935d7bd9da134f64de4aaf43b92ced8767a01e64e1ce6d9e4e2a5a"
+    },
+    {
+      "source_path": "BaiLongma/src/runtime/tick-policy.js",
+      "path": "src/runtime/tick-policy.js",
+      "sha256": "8be51c47ce11be100726733af8390278884417308a8af3bd79415d36dab5d81a"
+    },
+    {
+      "source_path": "BaiLongma/src/memory/threads.js",
+      "path": "src/memory/threads.js",
+      "sha256": "762a727a84ecad6a55218af6733e738719fe6c033c37bd838a5598ba8f82d9b9"
+    },
+    {
+      "source_path": "BaiLongma/src/memory/keywords.js",
+      "path": "src/memory/keywords.js",
+      "sha256": "4fa7be20e69b3d858dc0b8f3f96fa8ca58052e05c9e2ed85cdc35eb5d8f72f08"
+    },
+    {
+      "source_path": "BaiLongma/src/privacy/write-policy.js",
+      "path": "src/privacy/write-policy.js",
+      "sha256": "5648a3ddd0edeb92b8eb5e7c578f060970f5d561664d8d5d9bf8f337b609af05"
+    },
+    {
+      "source_path": "BaiLongma/src/test-background-budget.js",
+      "path": "src/test-background-budget.js",
+      "sha256": "3e02cb0f7919fb2b51a97b258bd0d4f94cf0d2f1b2290a8ceed6a3d65f798192"
+    }
+  ]
+}

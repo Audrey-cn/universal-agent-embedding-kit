@@ -78,6 +78,8 @@ Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** 
 Vector memory uses the built-in `SimpleBackend`; install `uaek[memory]` only to enable optional
 sentence-transformers embeddings.
 
+For standalone JavaScript references, see the [recovered BaiLongma primitives](examples/recovered/bailongma/README.md): budget selection, heartbeat context, thread memory, keywords, and privacy write preparation, with original MIT provenance and local unit checks.
+
 ## 🔬 Honest evidence
 
 Every number below is the result of a deliberate **red-team round** (independent agents trying to prove each metric inflated) followed by **hardening** to a value that survives. Numbers came *down* in that process — that's the point. Each is tagged with its rung on the evidence ladder.

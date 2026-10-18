@@ -1,0 +1,9 @@
+{
+  "name": "uaek-recovered-bailongma-reference",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test src/test-background-budget.js tests/*.test.js"
+  }
+}
