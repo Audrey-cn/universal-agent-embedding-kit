@@ -9,12 +9,18 @@ def register_memory_tool(server) -> None:
     """注册记忆工具"""
     from src.memory import MemoryService
 
-    _service_error: str | None = None
-    try:
-        service = MemoryService(autoload=False)
-    except (OSError, PermissionError) as exc:
-        service = None
-        _service_error = str(exc)
+    service: MemoryService | None = None
+
+    def restored_service() -> MemoryService:
+        nonlocal service
+        try:
+            if service is None:
+                service = MemoryService()
+            else:
+                service.restore()
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise RuntimeError(f"Memory storage not available: {exc}") from exc
+        return service
 
     async def memory_add(
         content: str,
@@ -23,15 +29,14 @@ def register_memory_tool(server) -> None:
         tags: list[str] | None = None,
     ) -> dict[str, Any]:
         """添加记忆"""
-        if service is None:
-            return {"error": f"Memory storage not available: {_service_error}"}
-        entry = service.add(
+        current = restored_service()
+        entry = current.add(
             content=content,
             layer=layer,
             importance=importance,
             tags=tags or [],
         )
-        service.persist()
+        current.persist()
 
         return {
             "id": entry["id"],
@@ -49,9 +54,7 @@ def register_memory_tool(server) -> None:
         limit: int = 10,
     ) -> dict[str, Any]:
         """查询记忆"""
-        if service is None:
-            return {"error": f"Memory storage not available: {_service_error}"}
-        return service.query(
+        return restored_service().query(
             query,
             layer=layer,
             tags=tags or [],
@@ -64,10 +67,9 @@ def register_memory_tool(server) -> None:
         target_ratio: float = 0.5,
     ) -> dict[str, Any]:
         """压缩记忆"""
-        if service is None:
-            return {"error": f"Memory storage not available: {_service_error}"}
-        result = service.compress(layer=layer, target_ratio=target_ratio)
-        service.persist()
+        current = restored_service()
+        result = current.compress(layer=layer, target_ratio=target_ratio)
+        current.persist()
         return result
 
     server.register_tool(
@@ -143,11 +145,10 @@ def register_memory_tool(server) -> None:
         layer: str | None = None,
     ) -> dict[str, Any]:
         """删除记忆条目"""
-        if service is None:
-            return {"error": f"Memory storage not available: {_service_error}"}
-        result = service.remove(entry_id, layer=layer)
+        current = restored_service()
+        result = current.remove(entry_id, layer=layer)
         if result["removed"]:
-            service.persist()
+            current.persist()
         return result
 
     server.register_tool(

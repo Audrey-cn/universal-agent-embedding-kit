@@ -19,9 +19,27 @@ class MCPAuth:
     配置方式：
     - UAEK_MCP_TOKEN: 认证 token（设置即启用认证）
     - UAEK_MCP_TOKEN_TTL: token 有效期（秒），默认 3600（1小时）
+
+    每个实例绑定一个由嵌入方配置的 principal_id，默认 "default"。
+    所有通过认证的请求共享该主体及其 ACL/限流预算；请求中的
+    client_id 和身份 headers 不参与身份选择。无 token 模式仅适用于
+    单一可信 stdio 宿主，不提供多个调用者之间的身份隔离。
+
+    嵌入示例：MCPAuth(token="shared-secret", principal_id="local-host")。
+    principal_id 是服务端配置，不能从请求或未认证的 headers 中构造。
     """
 
-    def __init__(self, token: str | None = None, ttl: int | None = None):
+    def __init__(
+        self,
+        token: str | None = None,
+        ttl: int | None = None,
+        *,
+        principal_id: str = "default",
+    ):
+        if not isinstance(principal_id, str) or not principal_id.strip():
+            raise ValueError("principal_id must be a non-empty string")
+        self._principal_id = principal_id
+
         # 优先使用传入的 token，其次读取环境变量
         self._token = token or os.environ.get("UAEK_MCP_TOKEN")
         self._enabled = self._token is not None
@@ -35,6 +53,15 @@ class MCPAuth:
     def enabled(self) -> bool:
         """认证是否已启用"""
         return self._enabled
+
+    @property
+    def principal_id(self) -> str:
+        """由可信嵌入方配置的固定主体，用于 ACL 授权及限流。"""
+        return self._principal_id
+
+    def authenticate(self, request: dict[str, Any]) -> str | None:
+        """认证成功返回固定主体，失败返回 None；不读取请求自报身份。"""
+        return self._principal_id if self.verify(request) else None
 
     def verify(self, request: dict[str, Any]) -> bool:
         """验证请求是否合法
@@ -133,7 +160,7 @@ class MCPRateLimiter:
         """消费一个令牌（线程安全）
 
         Args:
-            client_id: 客户端标识，用于区分不同的限流桶
+            client_id: 认证层提供的可信主体，用于区分不同的限流桶
 
         Returns:
             True 表示令牌可用（请求通过），False 表示被限流

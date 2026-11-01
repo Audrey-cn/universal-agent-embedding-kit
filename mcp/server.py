@@ -73,8 +73,9 @@ class MCPServer:
         # Retained 0.3 behavior is method-dependent for requests without an id.
         is_notification = request_id is None
 
-        # 1. 认证检查
-        if not self._auth.verify(request):
+        # 1. 认证层提供主体；请求自报 client_id/身份 headers 不参与授权。
+        principal_id = self._auth.authenticate(request)
+        if principal_id is None:
             if is_notification:
                 return None
             return self._error_response(
@@ -82,8 +83,7 @@ class MCPServer:
             )
 
         # 2. 速率限制检查
-        client_id = self._extract_client_id(request)
-        if not self._rate_limiter.consume(client_id):
+        if not self._rate_limiter.consume(principal_id):
             if is_notification:
                 return None
             return self._error_response(
@@ -95,7 +95,7 @@ class MCPServer:
         elif method == "tools/list":
             return self._handle_list_tools(request_id)
         elif method == "tools/call":
-            return await self._handle_call_tool(request_id, params, client_id)
+            return await self._handle_call_tool(request_id, params, principal_id)
         elif method == "shutdown":
             return {"jsonrpc": "2.0", "id": request_id, "result": {}}
         else:
@@ -131,7 +131,7 @@ class MCPServer:
         }
 
     async def _handle_call_tool(
-        self, request_id: Any, params: dict[str, Any], client_id: str = "default"
+        self, request_id: Any, params: dict[str, Any], principal_id: str = "default"
     ) -> dict[str, Any]:
         """处理调用工具请求"""
         if not isinstance(params, dict):
@@ -149,7 +149,7 @@ class MCPServer:
             )
 
         # 工具级访问控制：检查客户端是否有权调用该工具
-        if not self._access_control.allow_tool(client_id, tool_name):
+        if not self._access_control.allow_tool(principal_id, tool_name):
             return self._error_response(
                 request_id,
                 ERR_ACCESS_DENIED,
@@ -254,40 +254,21 @@ class MCPServer:
             },
         }
 
-    def _extract_client_id(self, request: dict[str, Any]) -> str:
-        """从请求中提取客户端标识
 
-        优先从 _meta.client_id 提取，其次从 _meta.headers 中提取，
-        默认返回 "default"。
-        """
-        meta = request.get("_meta", {})
-        if not isinstance(meta, dict):
-            return "default"
+def create_server(*, auth: MCPAuth | None = None) -> MCPServer:
+    """创建单一可信宿主的 MCP 服务端并授权其固定认证主体。
 
-        # 显式指定的 client_id
-        client_id = meta.get("client_id")
-        if isinstance(client_id, str) and client_id:
-            return client_id
-
-        # 从 headers 中尝试提取
-        headers = meta.get("headers", {})
-        if isinstance(headers, dict):
-            for key in ("X-Client-ID", "x-client-id", "Client-ID"):
-                cid = headers.get(key)
-                if isinstance(cid, str) and cid:
-                    return cid
-
-        return "default"
-
-
-def create_server() -> MCPServer:
-    """创建 MCP 服务端"""
+    嵌入方可用 create_server(auth=MCPAuth(token=secret, principal_id="host"))
+    绑定主体。无参调用保留默认 stdio/token 环境变量行为。若需自定义
+    工具 ACL，使用 MCPServer(auth=..., access_control=...)；此工厂授权
+    所有内置工具给所配置的主体，不提供多个调用者之间的身份隔离。
+    """
     from .tools.effort import register_effort_tool
     from .tools.memory import register_memory_tool
     from .tools.verify import register_verify_tool
     from .tools.workflow import register_workflow_tool
 
-    server = MCPServer(name="uaek")
+    server = MCPServer(name="uaek", auth=auth)
 
     # 注册工具
     register_verify_tool(server)
@@ -295,8 +276,10 @@ def create_server() -> MCPServer:
     register_workflow_tool(server)
     register_memory_tool(server)
 
-    # 授予默认客户端所有工具的访问权限
-    server._access_control.allow_all_tools_for_client(list(server.tools.keys()), "default")
+    # 工厂授权同一个认证主体，不能假定嵌入方始终使用 default。
+    server._access_control.allow_all_tools_for_client(
+        list(server.tools.keys()), server._auth.principal_id
+    )
 
     return server
 

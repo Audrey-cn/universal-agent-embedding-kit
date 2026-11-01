@@ -345,18 +345,18 @@ class TestMCPServerSecurity:
         """未授权工具调用被拒绝"""
         ac = ToolAccessControl()
         ac.restrict_tool("uaek_verify", ["admin"])
-        server = MCPServer(name="test", access_control=ac)
+        server = MCPServer(name="test", auth=MCPAuth(principal_id="user"), access_control=ac)
         tool = _make_verify_tool()
         server.register_tool(
             tool["name"], tool["description"], tool["input_schema"], tool["handler"]
         )
 
-        # 以 "user" 身份调用被限制的工具
+        # 认证主体为 user，不能通过自报 admin 调用被限制的工具。
         request = {
             "method": "tools/call",
             "id": 1,
             "params": {"name": "uaek_verify", "arguments": {"artifact_path": "/tmp/test"}},
-            "_meta": {"client_id": "user"},
+            "_meta": {"client_id": "admin"},
         }
         response = asyncio.run(server.handle_request(request))
         assert "error" in response
@@ -366,18 +366,18 @@ class TestMCPServerSecurity:
         """已授权工具调用通过"""
         ac = ToolAccessControl()
         ac.restrict_tool("uaek_verify", ["admin"])
-        server = MCPServer(name="test", access_control=ac)
+        server = MCPServer(name="test", auth=MCPAuth(principal_id="admin"), access_control=ac)
         tool = _make_verify_tool()
         server.register_tool(
             tool["name"], tool["description"], tool["input_schema"], tool["handler"]
         )
 
-        # 以 "admin" 身份调用
+        # 服务端绑定的 admin 主体有权调用，未认证的自报身份不影响授权。
         request = {
             "method": "tools/call",
             "id": 1,
             "params": {"name": "uaek_verify", "arguments": {"artifact_path": "/tmp/test"}},
-            "_meta": {"client_id": "admin"},
+            "_meta": {"client_id": "user"},
         }
         response = asyncio.run(server.handle_request(request))
         assert "result" in response
@@ -405,43 +405,41 @@ class TestMCPServerSecurity:
 
 
 # ============================================================
-# _extract_client_id 测试
+# 认证主体绑定测试（请求自报身份不再是 ACL/限流合同）
 # ============================================================
 
 
-class TestClientIdExtraction:
-    """客户端 ID 提取测试"""
+class TestAuthenticatedPrincipal:
+    """认证层绑定固定主体，不接受客户端自报 ID。"""
 
     def test_default_client_id(self):
-        """无 meta 信息时返回 default"""
-        server = MCPServer()
-        result = server._extract_client_id({"method": "test", "id": 1})
+        """可信 stdio 模式在无 meta 时绑定 default。"""
+        auth = MCPAuth()
+        result = auth.authenticate({"method": "test", "id": 1})
         assert result == "default"
 
     def test_explicit_client_id(self):
-        """从 _meta.client_id 提取"""
-        server = MCPServer()
-        result = server._extract_client_id(
-            {"method": "test", "id": 1, "_meta": {"client_id": "agent-42"}}
-        )
-        assert result == "agent-42"
+        """_meta.client_id 无法更改默认认证主体。"""
+        auth = MCPAuth()
+        result = auth.authenticate({"method": "test", "id": 1, "_meta": {"client_id": "agent-42"}})
+        assert result == "default"
 
     def test_header_client_id(self):
-        """从 headers 提取 client ID"""
-        server = MCPServer()
-        result = server._extract_client_id(
+        """身份 header 无法更改默认认证主体。"""
+        auth = MCPAuth()
+        result = auth.authenticate(
             {
                 "method": "test",
                 "id": 1,
                 "_meta": {"headers": {"X-Client-ID": "agent-42"}},
             }
         )
-        assert result == "agent-42"
+        assert result == "default"
 
-    def test_explicit_priority_over_header(self):
-        """显式 client_id 优先于 header"""
-        server = MCPServer()
-        result = server._extract_client_id(
+    def test_server_configuration_overrides_all_claims(self):
+        """服务端固定主体优先于所有请求自报字段。"""
+        auth = MCPAuth(principal_id="configured-id")
+        result = auth.authenticate(
             {
                 "method": "test",
                 "id": 1,
@@ -451,4 +449,4 @@ class TestClientIdExtraction:
                 },
             }
         )
-        assert result == "explicit-id"
+        assert result == "configured-id"

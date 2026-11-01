@@ -12,7 +12,8 @@ class ToolAccessControl:
     默认策略：所有工具对所有客户端拒绝（_default_allow=False）。
     可通过 allow_tool_for_client() 显式授权客户端调用特定工具。
 
-    安全设计：client_id 必须来自认证层（MCPAuth），不可由客户端自行声明。
+    安全设计：client_id 指认证层（MCPAuth.authenticate）返回的固定主体，
+    必须由可信嵌入方配置，不可来自请求的 _meta.client_id 或身份 headers。
     """
 
     def __init__(self):
