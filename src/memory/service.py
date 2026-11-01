@@ -37,6 +37,7 @@ class MemoryService:
             storage_path = Path.home() / ".uaek" / "memory"
         self.storage_path = Path(storage_path)
         self.persistence = MemoryPersistence(self.storage_path)
+        self._storage_revision: tuple[str | None, ...] | None = None
 
         # 创建三层记忆
         l1 = L1CurrentContext()
@@ -251,25 +252,55 @@ class MemoryService:
         return {"removed": False, "layer": None}
 
     def persist(self) -> dict[str, Any]:
-        """Persist all memory layers."""
-        self.persistence.save_all(
-            {layer_type: list(layer.entries.values()) for layer_type, layer in self.layers.items()}
-        )
+        """Persist a loaded snapshot, rejecting corrupt or concurrently changed storage."""
+        with self.persistence.locked():
+            self._check_storage_revision()
+            self.persistence.save_all(
+                {
+                    layer_type: list(layer.entries.values())
+                    for layer_type, layer in self.layers.items()
+                }
+            )
+            self._storage_revision = self.persistence.revision()
         return {"status": "persisted", "storage_path": str(self.storage_path), **self.stats()}
+
+    def _check_storage_revision(self) -> None:
+        """Validate before any write; the caller must hold the storage lock."""
+        self.persistence.load_all()
+        current_revision = self.persistence.revision()
+        if self._storage_revision is None:
+            if any(revision is not None for revision in current_revision):
+                raise RuntimeError("Memory storage must be loaded with restore before writing")
+        elif self._storage_revision != current_revision:
+            raise RuntimeError(
+                "Memory storage changed since restore; restore and retry before writing"
+            )
 
     def restore(self) -> dict[str, Any]:
         """Restore all memory layers from storage."""
-        loaded = self.persistence.load_all()
-        for layer_type, entries in loaded.items():
-            self.layers[layer_type].entries = {entry.id: entry for entry in entries}
+        with self.persistence.locked():
+            loaded = self.persistence.load_all()
+            for layer_type, entries in loaded.items():
+                self.layers[layer_type].entries = {entry.id: entry for entry in entries}
+            self._storage_revision = self.persistence.revision()
+        self._vector_store = None
+        self._knowledge_graph.clear()
+        for entries in loaded.values():
+            for entry in entries:
+                self._knowledge_graph.ingest_memory_entry(
+                    entry.id, entry.content, importance=entry.importance, tags=entry.tags
+                )
         return {"status": "restored", "storage_path": str(self.storage_path), **self.stats()}
 
     def clear(self, clear_storage: bool = True) -> dict[str, Any]:
         """Clear in-memory state, and storage by default."""
+        if clear_storage:
+            with self.persistence.locked():
+                self._check_storage_revision()
+                self.persistence.clear()
+                self._storage_revision = self.persistence.revision()
         for layer in self.layers.values():
             layer.clear()
-        if clear_storage:
-            self.persistence.clear()
         if self._vector_store is not None:
             self._vector_store = None
         self._knowledge_graph.clear()
