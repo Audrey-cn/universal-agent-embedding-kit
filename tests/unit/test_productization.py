@@ -478,8 +478,11 @@ def test_api_workflow_and_memory_use_real_services():
     assert "workflow facts" in responses[-1][1]["results"][0]["content"]
 
 
-def test_mcp_workflow_and_memory_tools_are_stateful():
+def test_mcp_workflow_and_memory_tools_are_stateful(tmp_path: Path, monkeypatch):
     """MCP workflow/memory tools should maintain state across calls on one server."""
+    test_home = tmp_path / "home"
+    test_home.mkdir()
+    monkeypatch.setenv("HOME", str(test_home))
     server = create_mcp_server()
 
     async def call_tool(name: str, arguments: dict) -> dict:

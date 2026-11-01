@@ -16,9 +16,14 @@ class TestRunner(VerificationRunner):
         """检查是否是 Python 文件或包含测试"""
         if artifact_path.suffix == ".py":
             return True
-        # 检查目录下是否有 test_*.py 文件
+        # A project normally keeps tests in tests/; a caller may also pass that
+        # directory itself, or a directory with test files at its root.
         if artifact_path.is_dir():
-            return any(artifact_path.glob("test_*.py"))
+            return (
+                (artifact_path / "tests").is_dir()
+                or artifact_path.name == "tests"
+                or any(artifact_path.glob("test_*.py"))
+            )
         return False
 
     def run(self, artifact_path: Path, criteria_path: Path | None = None) -> VerificationResult:
@@ -28,7 +33,8 @@ class TestRunner(VerificationRunner):
             if artifact_path.is_file():
                 test_target = str(artifact_path)
             else:
-                test_target = str(artifact_path / "tests")
+                project_tests = artifact_path / "tests"
+                test_target = str(project_tests if project_tests.is_dir() else artifact_path)
 
             # 运行 pytest（用当前解释器；裸 "python" 会解析到 PATH 上的宿主解释器，丢失 venv 依赖）
             result = subprocess.run(

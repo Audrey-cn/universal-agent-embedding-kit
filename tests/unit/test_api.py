@@ -5,6 +5,7 @@ import tempfile
 
 import pytest
 
+from api import server as api_server
 from api.server import MAX_REQUEST_BODY_BYTES, UAEKHandler, create_server
 
 
@@ -101,15 +102,31 @@ def test_post_maps_oversized_json_integer_to_invalid_json() -> None:
     assert responses == [(400, {"error": "Invalid JSON"})]
 
 
-def test_post_maps_deep_json_nesting_to_invalid_json() -> None:
+def test_post_maps_deep_json_nesting_to_invalid_json(monkeypatch) -> None:
     """Decoder recursion failures remain inside the 400 boundary."""
+
+    def decoder_recursion(*args, **kwargs):
+        raise RecursionError("controlled decoder limit")
+
+    monkeypatch.setattr(api_server.json, "loads", decoder_recursion)
+    handler, responses = make_post_handler("/effort", b'{"task_description":"parser"}')
+
+    handler.do_POST()
+
+    assert responses == [(400, {"error": "Invalid JSON"})]
+
+
+def test_post_deep_json_stays_inside_bad_request_boundary() -> None:
+    """Interpreter depth thresholds may vary; invalid requests still yield 400."""
     depth = 10_000
     body = b'{"value":' + b"[" * depth + b"0" + b"]" * depth + b"}"
     handler, responses = make_post_handler("/effort", body)
 
     handler.do_POST()
 
-    assert responses == [(400, {"error": "Invalid JSON"})]
+    assert len(responses) == 1
+    assert responses[0][0] == 400
+    assert "error" in responses[0][1]
 
 
 def test_post_accepts_json_object_at_exact_body_limit() -> None:

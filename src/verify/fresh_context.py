@@ -36,6 +36,10 @@ class FreshContextVerifier:
             VerificationResult: 验证结果
         """
         try:
+            # Resolve before changing subprocess cwd; relative paths otherwise
+            # acquire the artifact directory twice.
+            artifact_path = artifact_path.resolve()
+            criteria_path = criteria_path.resolve()
             if not criteria_path.is_file():
                 return VerificationResult(
                     passed=False,
