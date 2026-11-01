@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail when active capability headlines drift from versioned raw run evidence."""
+"""Fail when current capability, context or cost headlines drift from evidence."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from pathlib import Path
 
 from src.capability_matrix import DEFAULT_CAPABILITY_RUN_DIR
 from src.headline_consistency import derive_headline, validate_headline_consistency
+from src.model_headlines import validate_model_headlines
 
 __all__ = ["derive_headline", "main", "validate_headline_consistency"]
 
@@ -26,7 +27,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"stale path: {path}")
         return 1
 
-    print(f"headline consistency passed: {validation['expected_headline']}")
+    model_errors = validate_model_headlines(args.repository_root)
+    if model_errors:
+        for error in model_errors:
+            print(error)
+        return 1
+    print(f"headline consistency passed: {validation['expected_headline']}; modeled context/cost")
     return 0
 
 
