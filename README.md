@@ -109,6 +109,8 @@ The most reusable thing here isn't a metric — it's the discipline two practice
 
 See [`docs/methodology.md`](docs/methodology.md), the research framing in [`RESEARCH_PROPOSAL.md`](RESEARCH_PROPOSAL.md), and the operating procedure in [`SOP.md`](SOP.md) / [`EXECUTION_MANUAL.md`](EXECUTION_MANUAL.md).
 
+For command execution across host boundaries, see [host-command evidence](docs/guides/host-command-evidence.md) for receipt, outcome, identity, retry, and historical-evidence limits.
+
 ## 🗺️ Roadmap
 
 Climbing the evidence ladder is the roadmap:

@@ -104,6 +104,8 @@ python -m pytest -q                  # 完整测试套件
 
 详见 [`docs/methodology.md`](docs/methodology.md)、研究框架 [`RESEARCH_PROPOSAL.md`](RESEARCH_PROPOSAL.md),以及操作手册 [`SOP.md`](SOP.md) / [`EXECUTION_MANUAL.md`](EXECUTION_MANUAL.md)。
 
+跨宿主执行命令时，参见[宿主命令证据指南](docs/guides/host-command-evidence.md)，区分回执、实际结果、身份、重试与历史证据边界。
+
 ## 🗺️ 路线图
 
 往证据阶梯上爬,就是路线图:

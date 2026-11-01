@@ -53,9 +53,9 @@
 | Capability tests | `.venv/bin/python -m pytest tests/unit/test_capability_matrix.py -q` | grade_code/extract_code、artifact 校验、live driver、环境隔离+显式 seed、seed 缺 provider_home 防误用、batch manifest、dry-run 校验、难度分层评分、full-suite graded-live 口径、benchmark/CLI 覆盖通过 | pass |
 | 对抗验证（命题2/P0） | `.venv/bin/uaek benchmark --suite adversarial` | `benchmark-adversarial.json`：naive 作弊率 60% → 对抗 0%（<10% 目标），误拒 0%；填补维度2 | pass |
 | 对抗验证 tests | `.venv/bin/python -m pytest tests/unit/test_adversarial_verification.py -q` | 参考 oracle 正确性、对抗 accept/reject+反例、naive 漏边界 bug、作弊率测量、readiness<10%、benchmark/CLI 覆盖通过（9 passed） | pass |
-| 上下文管理（命题1/P0） | `.venv/bin/uaek benchmark --suite context` | `benchmark-context.json`：可用利用率 naive 40% → 自适应 90%（≥70% 目标）；填补维度3 | pass |
+| 上下文管理（命题1/P0） | `.venv/bin/uaek benchmark --suite context` | 当前数值及范围见下方受检「当前建模指标」；不再把旧90%利用率上限作为headline | completed（建模） |
 | 上下文管理 tests | `.venv/bin/python -m pytest tests/unit/test_context_management.py -q` | naive dumb-zone 衰减、自适应 70% 保持、token 效率、利用率上限曲线、readiness、benchmark/CLI 覆盖通过（8 passed） | pass |
-| 成本模型（命题3） | `.venv/bin/uaek benchmark --suite cost` | `benchmark-cost.json`：缓存命中 97%、成本降 63%（大会话 75%），超 -50% 目标；填补维度4 | pass |
+| 成本模型（命题3） | `.venv/bin/uaek benchmark --suite cost` | 当前默认负载与partial状态见下方受检摘要；63%仅fresh-cache best case | partial |
 | 成本模型 tests | `.venv/bin/python -m pytest tests/unit/test_cost_model.py -q` | baseline 全价、缓存高命中、降幅>50%、effort 路由、readiness、前缀/轮数扫描、benchmark/CLI 覆盖通过（8 passed） | pass |
 | 真实场景基准（命题4） | `.venv/bin/uaek benchmark --suite scenario` | `benchmark-scenario.json`：多维评估 reference 100% vs 改对功能但回归 67%（correctness 100%/completeness 0%），抓住单一 pass/fail 漏掉的回归 | pass |
 | 真实场景基准 tests | `.venv/bin/python -m pytest tests/unit/test_scenario_benchmark.py -q` | reference 满分、多维抓回归、多步多维+歧义、readiness 区分、benchmark/CLI 覆盖通过（6 passed） | pass |
@@ -65,7 +65,7 @@
 | Excellence tests | `.venv/bin/python -m pytest tests/unit/test_excellence.py -q` | strict live artifact validation、excellence evaluator、benchmark/CLI 覆盖通过 | pass |
 | Live matrix tests | `.venv/bin/python -m pytest tests/unit/test_live_matrix.py -q` | 3/4 partial matrix、4/4 full matrix、benchmark/CLI 覆盖通过 | pass |
 | Config/Logging tests | `.venv/bin/python -m pytest tests/unit/test_config_logging.py -q` | `load_config`、`uaek run --config`、`--log-file` 覆盖通过 | pass |
-| CI workflow | `.github/workflows/ci.yml` | Quality gates 覆盖 Python 3.11/3.12 matrix；lint/typecheck/test+coverage floor；release-gate wheel build/metadata/clean install/API+MCP smoke/benchmark/audit semantic validation 已配置；最新本地修改仍需远端 Actions 复跑绑定 URL | configured |
+| CI workflow | `.github/workflows/ci.yml` | Quality gates 配置 Python 3.11/3.12/3.14 matrix（新增3.14尚待远端运行）；lint/typecheck/test+coverage floor；release-gate wheel build/metadata/clean install/API+MCP smoke/benchmark/audit semantic validation 已配置；最新本地修改仍需远端 Actions 复跑绑定 URL | configured |
 | Release gate (wheel) | `pip install dist/uaek-*.whl` | Clean venv 动态安装构建产物 + `uaek --version` + API/MCP import + MCP stdio + benchmark/audit 语义门禁；wheel metadata 校验项目 name/version/requires-python | pass（本地） |
 | Release gate (CI) | GitHub Actions release-gate job | Build wheel → clean venv install → CLI/API/MCP smoke → quick/adversarial/manifest/audit；最新 workflow 已加 audit semantic validation，远端运行记录待复跑 | configured |
 | Baseline schema | `benchmarks/baselines/fable5.example.json` | 示例 schema 存在，明确不是 Fable 5 实测证据 | configured |
@@ -73,6 +73,18 @@
 
 结论：核心库测试、ruff、渐进 mypy 门禁已通过；P2/P3 已打通 workflow/memory/skill 的 CLI/API/MCP 最小产品路径和最小文档样例；P4/P5 已补 `uaek benchmark` quick runner、本地 Agent Harness、统一 `uaek run`、配置管理、结构化日志、CI workflow、baseline schema、GitHub-derived proxy validation、命令式外部 Agent Adapter、platform run artifact、excellence evidence suite、live matrix suite 和 capability matrix suite。把 live 证据从"平台可跑通"（echo `UAEK_LIVE_TASK_OK`）升级为"任务能力对比"，并进一步把 4 题 easy 套件升级为 **10 题 3 难度层（easy×4/medium×3/hard×3）的区分度套件**，按难度加权出 capability_score。  
 红队复审后，capability matrix 改为更严格的 **full-suite graded-live** 口径：只有 10/10 通过的 provider 才计入成功。当前 `claude_code`、`codex`、`hermes` 为 10/10（Hermes 于 2026-08-13 以 `--safe-mode --ignore-user-config --ignore-rules` 复跑从 8/10 升级到 10/10），Mimo 9/10 作为 partial evidence 保留但不再计作 graded-live 成功。因此当前是 **3/4 full-suite graded-live，scorecard current_score 99，status partial**。**必须如实声明的边界**：(1) Codex/Claude/Hermes 需要显式 seed 本地配置/凭证才能在隔离 HOME 中复跑；(2) Mimo 唯一失败是 is_palindrome 120s 超时；(3) Claude Code CLI（2.1.181）经 settings.json 配置 `ANTHROPIC_MODEL=mimo-v2.5-pro`，模型层路由到 mimo-v2.5-pro，故 graded provider 是平台运行时、模型后端最多 3 个互异（claude_code 与 mimo_code 可能同源）——**这是跨 CLI harness 对比，不是跨模型族对比**；(4) 该分数仍是本地 capability 口径，**不等于正式发布级"全面超越 Fable 5"**——后者仍需最新远端 CI 记录、发布流程和真实外部 Fable 5 baseline，本仓库始终无直接 Fable 5 复跑证据；(5) **评分器已加 held-out/变形用例**（红队 #2 加固）：每题除固定公开用例外，再跑 16 个由可信参考实现生成、provider 未见过的随机输入；写死查找表只过公开用例、必挂 held-out（控制实验：overfit lookup 1/19 fail）。**历史 held-out regrade** 对已捕获解的原评分为 claude_code/codex 10/10、mimo 9/10、hermes 8/10，证据 `benchmarks/results/capability-heldout-regrade.json`；这些历史分数不覆盖 2026-08-13 Hermes 新 live run 的 10/10。**残留诚实边界**：held-out 输入是按题定种子（可复现），非每次全新随机；更强的是 property-based 全随机；且 provider 当时是按公开用例 live 评分、此处重评的是已捕获代码（有效的泛化检验，非新 live run）；(6) 三个 graded provider 之间的 **观测 capability_score spread = 0.0**（套件在此难度未把它们区分开），`discriminative_task_suite` 判 pass 仅反映套件**结构**（含 hard 层），不代表观测到了区分度；(7) **红队复审（2026-06-24）修正**：`_provider_status` 旧逻辑把任何未满分的 live 运行一律标 `blocked / 0.0` 并归因"usage limit/lock"——这把真实跑出的 mimo 9/10、hermes 8/10 谎报成"跑不通"。现已加 `partial` 状态，如实报告真实 tasks_passed/capability_score，`blocked` 仅保留给真正零通过的非执行。
+
+<!-- current-model-headlines:start -->
+| 当前建模指标 | 归档证据口径 | 状态 |
+|---|---|---|
+| Context accuracy | 0.8497 expected accuracy @ 70% utilization; modeled | completed |
+| Cost reduction | 49.23%; 1h cache tier, 20% TTL miss; modeled | partial |
+
+来源：[context](benchmarks/results/benchmark-context.json)、[cost](benchmarks/results/benchmark-cost.json)。
+warm-only live 抽检是 best case；这里未重新运行模型，不将其推广为通用生产收益。
+<!-- current-model-headlines:end -->
+
+以下评分维度及过程记录保留历史原文，不作为当前数值摘要。
 
 ## 评分维度
 
