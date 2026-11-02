@@ -6,6 +6,7 @@ import asyncio
 import io
 import json
 import os
+import select
 import signal
 import subprocess
 import sys
@@ -266,6 +267,56 @@ class TestMultiRequestFlow:
         assert responses[0]["error"]["code"] == -32700
         assert responses[1]["id"] == 1
         assert "result" in responses[1]
+
+    def test_burst_requests_with_open_stdin_all_processed(self):
+        """Regression: burst-written requests must all be processed while stdin stays open.
+
+        A real MCP host (e.g. Claude Code) writes several JSON-RPC lines in one
+        burst and keeps stdin open. With TextIO.readline() + select() on the fd,
+        the first readline read-ahead moves the later lines into the userspace
+        buffer, select() never reports the fd readable again, and those requests
+        hang until the host's request timeout. The old subprocess.run(input=...)
+        tests masked this by closing stdin (EOF flushes the buffer).
+        """
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "mcp.server"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            burst = (
+                "\n".join(
+                    [
+                        json.dumps(
+                            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
+                        ),
+                        json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}),
+                        json.dumps(
+                            {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
+                        ),
+                        json.dumps(
+                            {"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}}
+                        ),
+                    ]
+                )
+                + "\n"
+            )
+            proc.stdin.write(burst)
+            proc.stdin.flush()
+            # deliberately NOT closing stdin — this is the point of the test
+
+            ids = []
+            for _ in range(3):
+                ready, _, _ = select.select([proc.stdout], [], [], 5)
+                assert ready, "timed out waiting for response — burst requests stuck"
+                line = proc.stdout.readline()
+                assert line, "server stopped responding mid-burst"
+                ids.append(json.loads(line)["id"])
+            assert ids == [1, 2, 3]
+        finally:
+            proc.stdin.close()
+            proc.wait(timeout=5)
 
 
 # =========================================================================

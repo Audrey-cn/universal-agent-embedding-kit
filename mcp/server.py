@@ -336,66 +336,91 @@ async def run_stdio(
         poll_interval = 1.0
         shutdown_reason = None
 
-        # Check if the input stream supports select (needs a real file descriptor)
+        # Check if the input stream supports select (needs a real file descriptor).
+        # On the fd path, read raw bytes and assemble lines ourselves instead of
+        # input_stream.readline(): TextIO read-ahead pulls later burst lines into
+        # the userspace buffer, where select() on the fd can never see them — the
+        # classic buffered-stdin + select trap. A real MCP host keeps stdin open,
+        # so no EOF ever flushes the buffer and those requests hang forever.
         try:
-            input_stream.fileno()
-            _select_supported = True
+            input_fd = input_stream.fileno()
         except (io.UnsupportedOperation, AttributeError, OSError):
-            _select_supported = False
+            input_fd = None
+
+        pending = b""
+
+        async def _process_line(line: str) -> bool:
+            """Handle one JSON-RPC line. Return False when the loop must stop."""
+            request_id = None
+            method = None
+            try:
+                request = json.loads(line)
+                if not isinstance(request, dict):
+                    raise ValueError("JSON-RPC request must be an object")
+                request_id = request.get("id")
+                method = request.get("method")
+                response = await server.handle_request(request)
+            except json.JSONDecodeError as exc:
+                response = server._error_response(request_id, -32700, f"Parse error: {exc.msg}")
+            except Exception as exc:
+                response = server._error_response(request_id, -32600, str(exc))
+
+            if response is None:
+                return True
+            output_stream.write(json.dumps(response, ensure_ascii=False) + "\n")
+            output_stream.flush()
+            return method != "shutdown"
 
         while not shutdown_flag:
-            # Poll stdin with timeout for idle detection
-            if _select_supported:
+            if input_fd is not None:
+                # Poll stdin with timeout for idle detection
                 try:
-                    ready_streams, _, _ = select.select([input_stream], [], [], poll_interval)
-                    is_readable = bool(ready_streams)
+                    ready_streams, _, _ = select.select([input_fd], [], [], poll_interval)
                 except InterruptedError:
                     if shutdown_flag:
                         break
                     continue
+
+                if ready_streams:
+                    chunk = os.read(input_fd, 65536)
+                    if not chunk:
+                        shutdown_reason = "stdin EOF"
+                        break
+                    last_activity = time.monotonic()
+                    pending += chunk
+                    stop = False
+                    while b"\n" in pending:
+                        raw_line, pending = pending.split(b"\n", 1)
+                        line = raw_line.decode("utf-8", errors="replace")
+                        if not line.strip():
+                            continue
+                        if not await _process_line(line):
+                            shutdown_reason = "shutdown request"
+                            stop = True
+                            break
+                    if stop:
+                        break
+                    continue
             else:
                 # Fallback for in-memory streams (StringIO, etc.)
-                is_readable = True
-
-            if is_readable:
                 line = input_stream.readline()
                 if not line:
                     shutdown_reason = "stdin EOF"
                     break
                 if not line.strip():
                     continue
-
                 last_activity = time.monotonic()
-
-                request_id = None
-                method = None
-                try:
-                    request = json.loads(line)
-                    if not isinstance(request, dict):
-                        raise ValueError("JSON-RPC request must be an object")
-                    request_id = request.get("id")
-                    method = request.get("method")
-                    response = await server.handle_request(request)
-                except json.JSONDecodeError as exc:
-                    response = server._error_response(request_id, -32700, f"Parse error: {exc.msg}")
-                except Exception as exc:
-                    response = server._error_response(request_id, -32600, str(exc))
-
-                if response is None:
-                    continue
-                output_stream.write(json.dumps(response, ensure_ascii=False) + "\n")
-                output_stream.flush()
-
-                if method == "shutdown":
+                if not await _process_line(line):
                     shutdown_reason = "shutdown request"
                     break
-            else:
-                # No data available - check idle timeout
-                if idle_timeout and idle_timeout > 0:
-                    idle_seconds = time.monotonic() - last_activity
-                    if idle_seconds > idle_timeout:
-                        shutdown_reason = f"idle timeout ({idle_timeout}s)"
-                        break
+                continue
+
+            # No data available - check idle timeout
+            if idle_timeout and idle_timeout > 0:
+                idle_seconds = time.monotonic() - last_activity
+                if idle_seconds > idle_timeout:
+                    shutdown_reason = f"idle timeout ({idle_timeout}s)"
+                    break
     finally:
         for signum, original_handler in original_handlers:
             signal.signal(signum, original_handler)
