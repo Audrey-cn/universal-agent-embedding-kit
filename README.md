@@ -24,7 +24,7 @@
 
 ## Why UAEK
 
-UAEK started as a study of what made a now-retired frontier agent ("Fable 5") effective, on the thesis that **the advantage was engineering, not the model**. It packages that engineering — verification, adaptive context, effort routing, memory, workflow — as a layer you can embed into *any* agent runtime, and it measures every claim honestly, including where the honest answer is "less impressive than we hoped."
+UAEK started as a study of what made a frontier agent built on Anthropic's Claude Fable 5 effective (Fable 5 was briefly suspended in June 2026, restored in July, and has since been succeeded by Fable 5.1), working from the hypothesis that **much of the advantage came from engineering, not just the model**. It packages that engineering — verification, adaptive context, effort routing, memory, workflow — as a layer you can embed into *any* agent runtime, and it measures every claim honestly, including where the honest answer is "less impressive than we hoped."
 
 What makes it different isn't a number — it's the **discipline**: every headline metric is red-teamed and reported at its rung on an evidence-strength ladder, with the caveat stated in the open.
 
@@ -119,7 +119,7 @@ Climbing the evidence ladder is the roadmap:
 - [ ] **Rung ④ → ⑤** — multi-provider / multi-sample live runs; remote-CI evidence beyond a single account
 - [ ] **Real-scenario corpus** — grow from 40 deterministic scenarios toward 100+ live, multi-hour sessions
 - [ ] **Cost, cold-path** — measure TTL-miss-heavy real sessions, not just warm ones
-- [ ] **External baseline** — a reproducible substitute for the retired reference model
+- [ ] **External baseline** — a reproducible baseline against the reference model (now a legacy model) or a documented substitute
 - [x] **Red-team hardening pass** — every headline metric attacked and hardened
 - [x] **Source release packaging, CI gate, evidence archive** path
 
@@ -131,7 +131,7 @@ PRs and issues are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). The one
 
 - Benchmarks are **deterministic local models with live spot-checks**, not a large-scale live evaluation. Where a claim is modeled, it says so.
 - Live measurements lean on a single dominant provider; multi-provider scaling and **external (rung-⑤) validation are open work**.
-- The original reference model is retired, so there is **no direct baseline**; comparisons use documented figures and proxy validation, never a fabricated rerun.
+- The original reference model (Fable 5) is now a legacy model, and this repo has **not yet rerun it as a direct baseline**; comparisons use documented figures and proxy validation, never a fabricated rerun.
 
 ## 📄 License
 
