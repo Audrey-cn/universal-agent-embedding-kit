@@ -16,13 +16,13 @@ You can also attach an external-baseline metadata file:
 
 `benchmarks/baselines/fable5.example.json` is only a schema example and intentionally records `status = not_configured`. Replace it with an authorized run artifact before making comparative Fable 5 claims.
 
-When the reference model is unavailable or withdrawn, use the proxy validation suite instead of pretending a direct baseline exists:
+When this repository has not rerun a direct reference-model baseline, use the proxy validation suite instead of pretending a direct baseline exists:
 
 ```bash
 .venv/bin/uaek benchmark --suite proxy --iterations 2 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results
 ```
 
-This writes `benchmarks/results/benchmark-proxy.json` with a GitHub-derived validation matrix and `direct_baseline.status = retired_unavailable`.
+This writes `benchmarks/results/benchmark-proxy.json` with a GitHub-derived validation matrix. The legacy serialized field `direct_baseline.status = retired_unavailable` is retained for compatibility; the accurate field is `direct_baseline.current_status = legacy_not_rerun`, because Fable 5 is Active (legacy) and this repository has not rerun its direct baseline.
 
 The adapter-readiness suite verifies the first external Agent Adapter contract without claiming a live platform benchmark:
 
@@ -47,7 +47,7 @@ The excellence-readiness suite is the 95+ product evidence gate:
 .venv/bin/uaek benchmark --suite excellence --iterations 2 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results
 ```
 
-This writes `benchmarks/results/benchmark-excellence.json`. It requires at least one valid `live_external` task artifact, the four-platform artifact matrix, adversarial validation checks and a deterministic self-improvement scoring loop. The current evidence includes one Codex live task artifact returning `UAEK_LIVE_TASK_OK`. We do not roll this up into a single "/100" readiness score — per-dimension results and their evidence-ladder rungs live in [`../VERIFICATION_SCORECARD.md`](../VERIFICATION_SCORECARD.md). This is still not a retired Fable 5 rerun and not a full live run for every platform.
+This writes `benchmarks/results/benchmark-excellence.json`. It requires at least one valid `live_external` task artifact, the four-platform artifact matrix, adversarial validation checks and a deterministic self-improvement scoring loop. The current evidence includes one Codex live task artifact returning `UAEK_LIVE_TASK_OK`. We do not roll this up into a single "/100" readiness score — per-dimension results and their evidence-ladder rungs live in [`../VERIFICATION_SCORECARD.md`](../VERIFICATION_SCORECARD.md). This is still not a direct Fable 5 baseline rerun and not a full live run for every platform.
 
 The live-matrix suite measures the next evidence layer:
 

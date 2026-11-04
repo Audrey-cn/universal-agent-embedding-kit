@@ -69,7 +69,7 @@ def run_live_matrix_readiness(
         "resolved_findings": _resolved_findings(full_matrix, recommended_score),
         "remaining_findings": _remaining_findings(full_matrix, diagnostics_ready),
         "limitations": [
-            "Live matrix readiness does not claim a retired Fable 5 rerun.",
+            "Live matrix readiness does not claim a direct Fable 5 baseline rerun.",
             "A blocked provider is diagnostic evidence, not live success evidence.",
             "Remote CI and release publication remain separate evidence tracks.",
         ],

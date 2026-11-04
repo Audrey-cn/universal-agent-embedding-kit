@@ -30,7 +30,7 @@ Add a `proxy` benchmark suite that:
 - records a GitHub-derived validation matrix in machine-readable benchmark output;
 - runs local evidence checks for harness execution, config/logging, CI gate definition and safe workflow actions;
 - raises the evidence-backed product score from 82 to 88 when the proxy suite passes;
-- explicitly marks the retired direct model baseline as unavailable, not completed.
+- explicitly marks the legacy direct-model baseline as not rerun, not completed.
 
 ## Non-Goals
 

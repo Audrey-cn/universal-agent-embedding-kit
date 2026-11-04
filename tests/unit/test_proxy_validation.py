@@ -27,6 +27,10 @@ def test_proxy_validation_matrix_documents_github_practices():
 
     assert result["status"] == "completed"
     assert result["direct_baseline"]["status"] == "retired_unavailable"
+    assert result["direct_baseline"]["current_status"] == "legacy_not_rerun"
+    assert result["direct_baseline"]["reason"] == (
+        "Fable 5 is Active (legacy), but this repository has not rerun its direct baseline."
+    )
     assert result["recommended_score"] == 88
     assert result["score_delta"] == 6
     assert result["checks"]
@@ -45,6 +49,7 @@ def test_benchmark_proxy_suite_writes_side_validation_evidence(tmp_path: Path):
     assert "F007_PROXY_VALIDATED" in result["scorecard"]["resolved_findings"]
     assert "DIRECT_RETIRED_MODEL_UNAVAILABLE" in result["scorecard"]["remaining_findings"]
     assert result["proxy_validation"]["direct_baseline"]["status"] == "retired_unavailable"
+    assert result["proxy_validation"]["direct_baseline"]["current_status"] == "legacy_not_rerun"
     assert result["external_baseline"]["status"] == "not_configured"
 
     output_path = write_benchmark_result(result, tmp_path / "benchmark-proxy.json")

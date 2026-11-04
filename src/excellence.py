@@ -103,7 +103,7 @@ def run_excellence_readiness(artifact_dir: Path | str = DEFAULT_PLATFORM_RUN_DIR
         "resolved_findings": _resolved_findings(checks),
         "remaining_findings": _remaining_findings(checks),
         "limitations": [
-            "Excellence readiness is not a retired Fable 5 rerun.",
+            "Excellence readiness is not a direct Fable 5 baseline rerun.",
             "A single live_external artifact does not prove every platform completed a live task.",
             "Remote CI and release publication remain separate evidence tracks.",
         ],

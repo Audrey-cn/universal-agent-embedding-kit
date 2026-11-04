@@ -385,7 +385,7 @@ def _scorecard_for_suite(
                 "and Hermes",
                 "adversarial validation rejects failed or forged live artifacts",
                 "self-improvement score loop resolves findings only when evidence exists",
-                "excellence readiness does not claim a retired Fable 5 rerun",
+                "excellence readiness does not claim a direct Fable 5 baseline rerun",
             ],
         }
 
@@ -1036,7 +1036,8 @@ def _build_limitations(suite_results: dict[str, dict[str, Any]]) -> list[str]:
     )
     return [
         (
-            "No direct Fable 5 baseline — reference model is retired; "
+            "No direct Fable 5 baseline — Fable 5 is Active (legacy), "
+            "but this repo has not rerun it as a direct baseline; "
             "all comparisons use proxy/side evidence"
         ),
         "Live cost measurement is warm-session (91.6% hit); cold-session costs MORE than baseline",
