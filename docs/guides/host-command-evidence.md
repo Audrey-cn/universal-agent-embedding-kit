@@ -74,6 +74,8 @@ authorized, isolated target; inspect any fixture or helper before using it.
 | Ctrl-C in a persistent terminal | The intended process stops, the session remains usable if required, and termination and cleanup are observed; sending Ctrl-C alone is insufficient |
 | Timeout or lost receipt | Postcondition and process observations distinguish completed, failed, partial, and unknown outcomes; a mutation is not automatically repeated |
 | Changed file during verification | The check detects or explicitly leaves unknown a changed identity/metadata window; byte equality alone does not pass the stability criterion |
+| Visual behavior behind a structural proxy | Record which layer was checked. Geometry, DOM, compilation, or image-file validity alone does not establish final pixels. Include a known failing case and verify the relevant compositing, depth, ordering, animation, and interaction behavior on the intended renderer and target. |
+| User state changes while an operation is pending | Capture the relevant state immediately before the mutation and compare it with readback afterward. Preserve earlier snapshots with their timestamps; do not restore or evaluate against a stale snapshot when the user changed state in the meantime. Visible state and application identity establish only the fields observed, not a complete private-data backup. |
 
 ## Report historical and current results separately
 
