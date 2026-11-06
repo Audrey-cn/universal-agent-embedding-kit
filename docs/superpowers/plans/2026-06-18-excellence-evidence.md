@@ -55,5 +55,5 @@
 - [x] Generate at least one valid `live_external` task artifact from an installed external platform.
 - [x] Run `.venv/bin/uaek benchmark --suite excellence --iterations 2 --baseline benchmarks/baselines/fable5.example.json --output benchmarks/results`.
 - [x] Update score language to 96/100 excellence-readiness when evidence proves every required check.
-- [x] Keep direct retired-model and full live-per-platform claims out of the score language.
+- [x] Keep direct legacy-model baseline and full live-per-platform claims out of the score language.
 - [x] Run final ruff, mypy, pytest, coverage and JSON/YAML gates.

@@ -240,7 +240,7 @@
         <div class="risk high"><strong>高：当前分支没有远程 CI 证据</strong>最新 GitHub main CI 成功是 2026-08-14 的 <code>de49076</code>，不是 <code>f33f6f5</code>。缓解：推送 PR，等待 Python 3.11/3.12、dependency-audit 和 release-gate 全绿。</div>
         <div class="risk high"><strong>高：不是内核级安全沙箱</strong>Restricted paths 有语言策略 + 有界子进程，adversarial verifier 只有 bounded subprocess。缓解：敌对性 artifact 必须放在无凭据、无敏感挂载、无网络的容器/VM。</div>
         <div class="risk medium"><strong>中：0.3 发布链未闭环</strong>代码版本为 <code>0.3.0.dev1</code>，GitHub 公开 release 仍是 v0.1.0，README 也明确仅支持源码安装。缓解：先完成 PR/CI，再进行版本与发布审批。</div>
-        <div class="risk medium"><strong>中：外部证据尚不完整</strong>P3 成本优化和 P5 跨平台验证 partial；live matrix 未完整；Fable 5 已退役、无可复跑 baseline。缓解：按 README 外部 gate 收集多 backend、多样本、冷路径、100 live sessions 与可比 baseline。</div>
+        <div class="risk medium"><strong>中：外部证据尚不完整</strong>P3 成本优化和 P5 跨平台验证 partial；live matrix 未完整；Fable 5 当前为 <strong>Active (legacy)</strong>，由 Fable 5.1 接替，最早 2027-06-09 才会退役；本仓库尚未重跑直接 baseline。缓解：按 README 外部 gate 收集多 backend、多样本、冷路径、100 live sessions 与可比 baseline。</div>
         <div class="risk medium"><strong>中：Capability 平台不等于模型族</strong>Claude Code 与 Mimo Code 可能路由到同源后端；3 个满分平台 score spread 为 0.0。缓解：对外只声称跨 CLI/runtime harness，并扩充能产生实际区分度的任务。</div>
         <div class="risk low"><strong>低：两个已知可维护性 minor</strong>Adapter fractional timeout 的 <code>cast(int, ...)</code> 仅在静态层面误导；退役 ChromaDB 的旧测试分支措辞已过时。最终评审判定两者不阻塞合并。</div>
         <div class="risk low"><strong>低：状态文档局部过时</strong>README badge 仍写 600+ tests；scorecard 顶部仍是 671 tests / 77.15% / 107 sources 的 2026-08-09 快照。缓解：在合并后更新为 847 / 78.52% / 109，并标注新日期。</div>

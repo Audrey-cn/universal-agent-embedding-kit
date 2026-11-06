@@ -24,7 +24,9 @@
 
 ## Why UAEK
 
-UAEK started as a study of what made a now-retired frontier agent ("Fable 5") effective, on the thesis that **the advantage was engineering, not the model**. It packages that engineering — verification, adaptive context, effort routing, memory, workflow — as a layer you can embed into *any* agent runtime, and it measures every claim honestly, including where the honest answer is "less impressive than we hoped."
+UAEK started as a study of what made a frontier agent built on Anthropic's Claude Fable 5 effective (Fable 5 has since been succeeded by Fable 5.1), working from the hypothesis that **much of the advantage came from engineering, not just the model**. It packages that engineering — verification, adaptive context, effort routing, memory, workflow — as a layer you can embed into *any* agent runtime, and it measures every claim honestly, including where the honest answer is "less impressive than we hoped."
+
+Claude Fable 5 was released on 2026-06-09, temporarily paused for U.S. export-control compliance on 2026-06-12, and restored globally on 2026-07-01. Its current lifecycle status is **Active (legacy)**; Fable 5.1 has succeeded it, and Anthropic's documented commitment means Fable 5 will not be retired before 2027-06-09. Sources: [Redeploying Fable 5](https://www.anthropic.com/news/redeploying-fable-5) and the [Fable 5 model overview](https://platform.claude.com/docs/en/models/fable-5/overview).
 
 What makes it different isn't a number — it's the **discipline**: every headline metric is red-teamed and reported at its rung on an evidence-strength ladder, with the caveat stated in the open.
 
@@ -119,7 +121,7 @@ Climbing the evidence ladder is the roadmap:
 - [ ] **Rung ④ → ⑤** — multi-provider / multi-sample live runs; remote-CI evidence beyond a single account
 - [ ] **Real-scenario corpus** — grow from 40 deterministic scenarios toward 100+ live, multi-hour sessions
 - [ ] **Cost, cold-path** — measure TTL-miss-heavy real sessions, not just warm ones
-- [ ] **External baseline** — a reproducible substitute for the retired reference model
+- [ ] **External baseline** — a reproducible baseline against the reference model (Fable 5, **Active (legacy)**) or a documented substitute
 - [x] **Red-team hardening pass** — every headline metric attacked and hardened
 - [x] **Source release packaging, CI gate, evidence archive** path
 
@@ -131,7 +133,7 @@ PRs and issues are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). The one
 
 - Benchmarks are **deterministic local models with live spot-checks**, not a large-scale live evaluation. Where a claim is modeled, it says so.
 - Live measurements lean on a single dominant provider; multi-provider scaling and **external (rung-⑤) validation are open work**.
-- The original reference model is retired, so there is **no direct baseline**; comparisons use documented figures and proxy validation, never a fabricated rerun.
+- The original reference model (Fable 5) is **Active (legacy)** and will not be retired before 2027-06-09, but this repo has **not yet rerun it as a direct baseline**; comparisons use documented figures and proxy validation, never a fabricated rerun.
 
 ## 📄 License
 

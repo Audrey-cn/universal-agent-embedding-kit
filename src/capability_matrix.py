@@ -646,7 +646,8 @@ def run_capability_readiness(
             full_matrix, graded_live_count, diagnostics_ready
         ),
         "limitations": [
-            "Capability readiness grades real code tasks; it is not a retired Fable 5 rerun.",
+            "Capability readiness grades real code tasks; it is not a direct Fable 5 "
+            "baseline rerun.",
             "A provider must pass every task in the graded suite to count as graded-live; a "
             "'partial' provider ran the live suite and passed some but not all tasks (its real "
             "tasks_passed/capability_score are reported) and "

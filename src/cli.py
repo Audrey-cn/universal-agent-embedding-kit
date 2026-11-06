@@ -933,7 +933,7 @@ def audit(
     table.add_row(
         "外部 Baseline",
         "✗" if not gates["external_baseline_available"] else "✓",
-        "Fable 5 已退役，无可复跑 baseline",
+        "Fable 5 为 Active (legacy)，本仓库尚未重跑直接基线",
     )
     console.print(table)
     console.print(f"[green]written[/green] {audit_path}")

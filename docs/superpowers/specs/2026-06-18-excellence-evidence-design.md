@@ -19,7 +19,7 @@ Add an excellence evidence suite that moves the product maturity score above 95 
 
 `benchmark --suite excellence` may recommend 96/100 when every required check passes. If no valid `live_external` task artifact exists, the suite must stay below 95 even if all readiness checks pass.
 
-This remains an excellence-readiness product score. It is not a direct Fable 5 rerun because the reference model is retired. It is also not a claim that every platform completed a live task unless each provider has its own valid `live_external` artifact.
+This remains an excellence-readiness product score. It is not a direct Fable 5 baseline rerun because this repository has not rerun the Active (legacy) reference model. It is also not a claim that every platform completed a live task unless each provider has its own valid `live_external` artifact.
 
 ## Architecture
 

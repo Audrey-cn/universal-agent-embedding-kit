@@ -6,7 +6,7 @@ Move beyond 96/100 excellence-readiness by measuring whether every discovered pl
 
 ## Scope
 
-This phase adds a dedicated `live_matrix` benchmark. It does not claim a retired Fable 5 rerun, remote CI success, release readiness, or cost superiority. It only evaluates live task evidence for Codex, Claude Code/App, Mimo Code, and Hermes.
+This phase adds a dedicated `live_matrix` benchmark. It does not claim a direct Fable 5 baseline rerun, remote CI success, release readiness, or cost superiority. It only evaluates live task evidence for Codex, Claude Code/App, Mimo Code, and Hermes.
 
 ## Evidence Rules
 

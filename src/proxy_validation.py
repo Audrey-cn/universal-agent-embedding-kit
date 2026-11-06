@@ -1,4 +1,4 @@
-"""GitHub-derived proxy validation for unavailable direct baselines."""
+"""GitHub-derived proxy validation for absent direct baselines."""
 
 from __future__ import annotations
 
@@ -77,11 +77,15 @@ def build_proxy_validation_matrix() -> dict[str, Any]:
         "cross_environment_readiness",
     ]
     return {
+        # Retained as a serialized compatibility key. New consumers should use
+        # `current_strategy`; Fable 5 is Active (legacy), not retired.
         "strategy": "proxy_validation_for_retired_direct_baseline",
+        "current_strategy": "proxy_validation_for_legacy_baseline_not_rerun",
         "sources": sources,
         "dimensions": dimensions,
         "limitations": [
-            "This is not a direct run against the retired reference model.",
+            "This is not a direct Fable 5 baseline run; this repository has not rerun the "
+            "Active (legacy) reference model.",
             "Remote CI and live external agent adapters still require separate evidence.",
         ],
     }
@@ -105,8 +109,13 @@ def run_proxy_validation(iterations: int = 1) -> dict[str, Any]:
         "status": "completed" if pass_rate == 1.0 else "partial",
         "matrix": matrix,
         "direct_baseline": {
+            # `status` is a legacy serialized identifier retained for backward
+            # compatibility. Fable 5 is Active (legacy), not retired; use
+            # `current_status` for the accurate lifecycle/repo-run semantics.
             "status": "retired_unavailable",
-            "reason": "The reference model is not currently available for direct reruns.",
+            "current_status": "legacy_not_rerun",
+            "reason": "Fable 5 is Active (legacy), but this repository has not rerun its "
+            "direct baseline.",
         },
         "checks": checks,
         "metrics": {
