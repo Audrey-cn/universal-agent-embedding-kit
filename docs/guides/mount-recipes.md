@@ -66,24 +66,21 @@ inactivity (set `0` to disable) so orphaned processes do not linger.
 
 ## Recipe C — Hermes Agent
 
-In `~/.hermes/config.yaml`, under the MCP servers section:
+In `~/.hermes/config.yaml`, under the `mcp_servers:` section:
 
 ```yaml
 mcp_servers:
   uaek:
     command: /full/path/to/universal-agent-embedding-kit/.venv/bin/uaek-mcp
-    tools:
-      - uaek_verify
-      - uaek_effort
-      - uaek_workflow_create
-      - uaek_workflow_add_task
-      - uaek_workflow_execute
-      - uaek_memory_add
-      - uaek_memory_query
+    args: []
+    env:
+      UAEK_MCP_IDLE_TIMEOUT: "300"
+    enabled: true
 ```
 
 Restart Hermes, then ask the agent to run `uaek_effort` on one of your real
-tasks.
+tasks. (Hermes also supports `tools.exclude` to trim the tool surface, e.g.
+dropping `uaek_memory_delete`.)
 
 ## Recipe D — Your own runtime (newline JSON-RPC over stdio)
 
