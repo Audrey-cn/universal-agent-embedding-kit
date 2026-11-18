@@ -1,7 +1,7 @@
 {
   "adapter_result": {
     "artifacts": {
-      "command": "/Users/USER/.mimocode/bin/mimo run --pure --dir /Users/USER/项目/fable-research --format json Do not use tools. Reply exactly: UAEK_LIVE_TASK_OK",
+      "command": "~/.mimocode/bin/mimo run --pure --dir ~/项目/fable-research --format json Do not use tools. Reply exactly: UAEK_LIVE_TASK_OK",
       "session_id": "ses_124ff8c0fffe9dfz5KRxH2D1L7"
     },
     "duration_ms": 2675.7207,
@@ -23,7 +23,7 @@
     },
     "return_code": 0,
     "stderr": "",
-    "stdout": "{\"success\": true, \"output\": \"UAEK_LIVE_TASK_OK\", \"artifacts\": {\"session_id\": \"ses_124ff8c0fffe9dfz5KRxH2D1L7\", \"command\": \"/Users/USER/.mimocode/bin/mimo run --pure --dir /Users/USER/\\u9879\\u76ee/fable-research --format json Do not use tools. Reply exactly: UAEK_LIVE_TASK_OK\"}, \"metrics\": {\"return_code\": 0, \"stdout_chars\": 941, \"stderr_chars\": 0, \"events\": 3}, \"error\": null}\n",
+    "stdout": "{\"success\": true, \"output\": \"UAEK_LIVE_TASK_OK\", \"artifacts\": {\"session_id\": \"ses_124ff8c0fffe9dfz5KRxH2D1L7\", \"command\": \"~/.mimocode/bin/mimo run --pure --dir ~/\\u9879\\u76ee/fable-research --format json Do not use tools. Reply exactly: UAEK_LIVE_TASK_OK\"}, \"metrics\": {\"return_code\": 0, \"stdout_chars\": 941, \"stderr_chars\": 0, \"events\": 3}, \"error\": null}\n",
     "success": true,
     "task": "mimo live matrix task",
     "trace_id": "a278277d-9311-4106-96be-edebab1b445c"
@@ -32,11 +32,11 @@
   "provenance": {
     "adapter_result_path": "benchmarks/results/platform-runs/mimo-live-adapter-result.json",
     "command": [
-      "/Users/USER/.mimocode/bin/mimo",
+      "~/.mimocode/bin/mimo",
       "run",
       "--pure",
       "--dir",
-      "/Users/USER/项目/fable-research",
+      "~/项目/fable-research",
       "--format",
       "json",
       "Do not use tools. Reply exactly: UAEK_LIVE_TASK_OK"

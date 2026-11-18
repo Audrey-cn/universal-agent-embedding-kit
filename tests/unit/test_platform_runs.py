@@ -21,6 +21,19 @@ def test_platform_discovery_declares_supported_local_tools():
     assert all("available" in platform for platform in platforms)
 
 
+def test_portable_path_is_machine_neutral(tmp_path: Path):
+    """Recorded command paths must not embed the generating user's home."""
+    from src.platform_runs import _portable_path
+
+    home_file = Path.home() / ".local" / "bin" / "hermes"
+    assert _portable_path(str(home_file)) == "~/.local/bin/hermes"
+
+    external = tmp_path / "bin" / "codex"
+    assert _portable_path(str(external)) == str(external)
+
+    assert _portable_path("") == ""
+
+
 def test_platform_run_record_wraps_adapter_result_and_validates(tmp_path: Path):
     """Platform artifacts should preserve adapter provenance and validation state."""
     from src.platform_runs import record_platform_run, validate_platform_run_artifact

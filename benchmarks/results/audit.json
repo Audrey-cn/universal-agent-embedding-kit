@@ -1326,7 +1326,7 @@
         "platforms": [
           {
             "available": true,
-            "command_path": "/Users/audrey/.local/bin/codex",
+            "command_path": "~/.local/bin/codex",
             "display_name": "Codex",
             "interactive": false,
             "matched_candidate": "codex",
@@ -1335,7 +1335,7 @@
           },
           {
             "available": true,
-            "command_path": "/Users/audrey/.local/bin/claude",
+            "command_path": "~/.local/bin/claude",
             "display_name": "Claude Code",
             "interactive": true,
             "matched_candidate": "claude",
@@ -1353,7 +1353,7 @@
           },
           {
             "available": true,
-            "command_path": "/Users/audrey/.local/bin/hermes",
+            "command_path": "~/.local/bin/hermes",
             "display_name": "Hermes",
             "interactive": false,
             "matched_candidate": "hermes",

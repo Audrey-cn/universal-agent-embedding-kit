@@ -244,11 +244,26 @@ def _discover_platform(definition: dict[str, Any]) -> dict[str, Any]:
         "provider": definition["provider"],
         "display_name": definition["display_name"],
         "available": bool(found_path),
-        "command_path": found_path,
+        "command_path": _portable_path(found_path),
         "matched_candidate": matched_candidate,
         "run_hint": definition["run_hint"],
         "interactive": definition["interactive"],
     }
+
+
+def _portable_path(resolved: str) -> str:
+    """Represent home-local binaries as ``~``-relative paths.
+
+    Recorded evidence (platform discovery artifacts) must be machine-neutral:
+    an absolute path embeds the generating user's home directory and is wrong
+    on every other host. Display-only consumers can expanduser() when needed.
+    """
+    if not resolved:
+        return resolved
+    try:
+        return f"~/{Path(resolved).relative_to(Path.home())}"
+    except ValueError:
+        return resolved
 
 
 def _resolve_candidate(candidate: str) -> str:

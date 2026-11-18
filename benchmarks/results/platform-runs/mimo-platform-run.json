@@ -2,7 +2,7 @@
   "adapter_result": {
     "artifacts": {
       "command": [
-        "/Users/USER/.mimocode/bin/mimo",
+        "~/.mimocode/bin/mimo",
         "--version"
       ]
     },
@@ -22,7 +22,7 @@
     },
     "return_code": 0,
     "stderr": "",
-    "stdout": "{\"success\": true, \"output\": \"0.1.0\", \"artifacts\": {\"command\": [\"/Users/USER/.mimocode/bin/mimo\", \"--version\"]}, \"metrics\": {\"return_code\": 0}}\n",
+    "stdout": "{\"success\": true, \"output\": \"0.1.0\", \"artifacts\": {\"command\": [\"~/.mimocode/bin/mimo\", \"--version\"]}, \"metrics\": {\"return_code\": 0}}\n",
     "success": true,
     "task": "probe mimo platform",
     "trace_id": "80b20ae7-7595-4e4c-b34e-4541e6c1ceb6"
@@ -31,7 +31,7 @@
   "provenance": {
     "adapter_result_path": "benchmarks/results/platform-runs/mimo-adapter-result.json",
     "command": [
-      "/Users/USER/.mimocode/bin/mimo",
+      "~/.mimocode/bin/mimo",
       "--version"
     ],
     "source": "mimo version probe via uaek adapter"

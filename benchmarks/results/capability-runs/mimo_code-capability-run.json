@@ -23,7 +23,7 @@
   },
   "provenance": {
     "command": [
-      "/Users/USER/.mimocode/bin/mimo",
+      "~/.mimocode/bin/mimo",
       "run",
       "--pure",
       "--dir",

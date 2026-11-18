@@ -65,6 +65,26 @@ def test_active_release_docs_use_current_setup_and_portable_paths() -> None:
         assert "/Users/audrey" not in content, name
 
 
+def test_committed_evidence_artifacts_are_machine_neutral() -> None:
+    """Recorded evidence must not embed any generating host's home paths.
+
+    Platform discovery and adapter traces resolve real binaries; if their
+    absolute paths land in committed artifacts, the evidence carries the
+    author's username and is wrong on every other machine. The portable
+    representation for home-local paths is ``~/...``.
+    """
+    import re
+
+    machine_home = re.compile(r"/(Users|home)/[A-Za-z0-9._-]+/")
+    offenders: list[str] = []
+    for artifact in sorted(Path("benchmarks").rglob("*.json")):
+        content = artifact.read_text(encoding="utf-8")
+        if machine_home.search(content):
+            offenders.append(str(artifact))
+
+    assert offenders == []
+
+
 def test_active_headline_surfaces_match_versioned_capability_runs() -> None:
     """Active docs and generated summaries must agree with versioned raw run evidence."""
     from scripts.check_headline_consistency import (

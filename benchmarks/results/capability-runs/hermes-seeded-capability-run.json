@@ -23,7 +23,7 @@
   },
   "provenance": {
     "command": [
-      "/Users/USER/.local/bin/hermes",
+      "~/.local/bin/hermes",
       "--safe-mode",
       "--ignore-user-config",
       "--ignore-rules",
@@ -32,8 +32,8 @@
     "output_mode": "plain",
     "provider_home": "/tmp/uaek-provider-homes/hermes-seeded",
     "provider_home_seed_paths": [
-      "/Users/USER/.hermes/config.yaml",
-      "/Users/USER/.hermes/.env"
+      "~/.hermes/config.yaml",
+      "~/.hermes/.env"
     ],
     "source": "uaek capability run"
   },

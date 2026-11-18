@@ -20,7 +20,7 @@
     },
     {
       "available": true,
-      "command_path": "/Users/USER/.mimocode/bin/mimo",
+      "command_path": "~/.mimocode/bin/mimo",
       "display_name": "Mimo Code",
       "interactive": false,
       "matched_candidate": "mimo",
@@ -29,7 +29,7 @@
     },
     {
       "available": true,
-      "command_path": "/Users/USER/.local/bin/hermes",
+      "command_path": "~/.local/bin/hermes",
       "display_name": "Hermes",
       "interactive": false,
       "matched_candidate": "hermes",
