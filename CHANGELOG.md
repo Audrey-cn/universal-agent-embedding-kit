@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.3.0.dev1 (2026-11-18)
 
-### 0.3.0.dev1 evidence core
+### Added
+
+- `docs/guides/mount-recipes.md`: copy-paste mount recipes for Claude Code, generic MCP
+  clients, Hermes, and raw JSON-RPC stdio, plus a five-minute first-outcome walkthrough and
+  explicit honest boundaries (UAEK is a discipline layer; the host model stays the executor).
+- `test_committed_evidence_artifacts_are_machine_neutral` guard: no committed benchmark
+  artifact may embed a generating host's `/Users/...` or `/home/...` paths.
+
+#### 0.3.0.dev1 evidence core
 
 - Added validated multi-sample campaigns grouped by actual backend family, with immutable sample
   identity, uncertainty, timeout rates, and failure rates.
@@ -14,6 +22,12 @@
 
 ### Fixed
 
+- Platform discovery now records `command_path` in `~`-relative portable form
+  (`src/platform_runs.py::_portable_path`); previously resolved home-local binaries leaked
+  the generating user's absolute home path into evidence artifacts.
+- All committed evidence artifacts under `benchmarks/` were normalized to the same
+  machine-neutral `~/...` convention (the old ad-hoc `/Users/USER` placeholder is retired).
+- README test badge corrected from `600+` to the actual `950+` passing suite.
 - `verify --type test` / `--type build` now run through the interpreter running UAEK
   (`sys.executable`) instead of a bare `python` from `PATH`, which silently resolved to a host
   interpreter without pytest/build installed (observed on Termux/proot where PATH python is not the

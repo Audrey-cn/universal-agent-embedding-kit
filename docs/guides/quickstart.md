@@ -26,7 +26,10 @@ Run a project skill:
 .venv/bin/uaek skill run verification-framework
 ```
 
-Run the local Agent Harness:
+Run the local Agent Harness (a deterministic local pipeline exercising the
+effort -> workflow -> verification -> memory chain; it does not call an LLM.
+For real agent execution, mount UAEK into your agent over MCP — see
+[docs/guides/mount-recipes.md](mount-recipes.md)):
 
 ```bash
 .venv/bin/uaek run "implement external adapter plan" --output /tmp/uaek-run.json

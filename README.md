@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-0.3.0.dev1-orange.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-600%2B%20passing-brightgreen.svg)](#status)
+[![Tests](https://img.shields.io/badge/tests-950%2B%20passing-brightgreen.svg)](#status)
 [![Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -62,6 +62,9 @@ uaek audit --output -                # full audit report as JSON on stdout
 python -m pytest -q                  # full test suite
 ```
 
+**Mount it into your agent:** Claude Code, Hermes, any MCP client, or raw
+JSON-RPC — copy a recipe from [docs/guides/mount-recipes.md](docs/guides/mount-recipes.md).
+
 ## 🧩 What's inside
 
 | Component | Module | What it does |
@@ -75,7 +78,8 @@ python -m pytest -q                  # full test suite
 | 📚 Evidence contracts | `src/evidence` | multi-sample, cost, session, and comparable-baseline validation |
 | 🔧 Workflow / memory / skills / harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | orchestration primitives |
 
-Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** (`mcp/`). See the
+Exposed three ways: **CLI** (`uaek`), **HTTP API** (`api/`), and **MCP server** (`mcp/`) — mount
+recipes for real hosts are in [`docs/guides/mount-recipes.md`](docs/guides/mount-recipes.md). See the
 [`0.3 support matrix`](docs/support-matrix.md) for supported versus experimental capabilities.
 Vector memory uses the built-in `SimpleBackend`; install `uaek[memory]` only to enable optional
 sentence-transformers embeddings.

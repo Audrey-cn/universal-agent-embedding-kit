@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-0.3.0.dev1-orange.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-600%2B%20passing-brightgreen.svg)](#状态)
+[![Tests](https://img.shields.io/badge/tests-950%2B%20passing-brightgreen.svg)](#状态)
 [![Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -62,6 +62,8 @@ uaek audit --output -                # 完整审计报告(JSON 输出到 stdout)
 python -m pytest -q                  # 完整测试套件
 ```
 
+**挂载进你的 Agent:** Claude Code、Hermes、任意 MCP 客户端或裸 JSON-RPC —— 直接复制 [docs/guides/mount-recipes.md](docs/guides/mount-recipes.md) 里的现成配方。要旨:UAEK 是纪律层,大脑仍是宿主模型。
+
 ## 🧩 组件概览
 
 | 组件 | 模块 | 作用 |
@@ -75,7 +77,7 @@ python -m pytest -q                  # 完整测试套件
 | 📚 证据契约 | `src/evidence` | 多样本、成本、会话与可比 baseline 校验 |
 | 🔧 工作流 / 记忆 / 技能 / Harness | `src/workflow`, `src/memory`, `src/skills`, `src/harness` | 编排原语 |
 
-三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)。稳定能力与实验能力的边界见 [`0.3 支持矩阵`](docs/support-matrix.md)。
+三种暴露方式:**CLI**(`uaek`)、**HTTP API**(`api/`)、**MCP 服务器**(`mcp/`)——接入真实宿主的具体配方见 [`docs/guides/mount-recipes.md`](docs/guides/mount-recipes.md)。稳定能力与实验能力的边界见 [`0.3 支持矩阵`](docs/support-matrix.md)。
 向量记忆使用内置 `SimpleBackend`；仅在需要可选的 sentence-transformers 嵌入时安装 `uaek[memory]`。
 
 ## 🔬 诚实证据
